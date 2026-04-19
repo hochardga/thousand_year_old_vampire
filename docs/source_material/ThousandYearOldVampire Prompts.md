@@ -1,10 +1,6 @@
 # ThousandYearOldVampire Prompts
 
-## PDF Page 1
-
 The Prompts
-
-## PDF Page 2
 
 In your blood-hunger you destroy someone close to you. Kill a mortal Character. Create a mortal if none are available. Take the skill Bloodthirsty.
 
@@ -12,15 +8,11 @@ You are overcome by panic and maul someone close to you, accidentally turning th
 
 You are captured and enslaved by a wicked and powerful supernatural entity. Create an immortal Character. How do you eventually escape their servitude? Check a Skill and take the Skill Humans are Cattle. Strike out all mortal Characters, as a hundred years have passed. Take a Resource you have used for evil while in service to your former master.
 
-## PDF Page 3
-
 Horrified at your new nature, you withdraw from society. Where do you hide? How do you feed? Create a stationary Resource which shelters you.
 
 You reinvent your existence around the seclusion of your hiding place. You begin to work in an artful way, changing your living environment. How do you come to appreciate beauty or craft in a new way? Create a Skill based on a Memory.
 
 Your hiding place is destroyed by mortals. What steps had you taken to ensure your survival? What revenge do you wreak upon your persecutors? Degrade a Resource into ruins. Take the Skill Vile Acts.
-
-## PDF Page 4
 
 A loved one discovers your condition and works to help you. Create a Resource which represents their assistance. Create a mortal Character if none are available.
 
@@ -28,15 +20,11 @@ You manipulate this mortal into committing atrocious deeds on your behalf. What 
 
 At the end of the mortal’s life you convert them into a mindless meat machine, an undying thing from which you feed. What regrets do you have? Change the Character to a Resource. Check a Skill.
 
-## PDF Page 5
-
 You are exposed and flee to a neighboring region. Lose any stationary Resources. Check a Skill. A mortal flees with you. What new name do you adopt among these strangers?
 
 You are adopted into a strange cult who take you in despite (or because of) your outlander origin. Check a Skill and create a Resource, The Secret Cabal. How did they find you? What vile initiation ceremony do you undergo? Do they know what you are?
 
 The Secret Cabal, without your knowledge, performs a dark ceremony that changes a mortal Character into a horrific, alien and immortal thing. Convert a mortal Character into an immortal enemy. What alien objectives does this new immortal pursue? Did the Cabal manipulate you into helping with this creation? How does this change your relationship to the Cabal?
-
-## PDF Page 6
 
 You murder someone you love or respect rather than let them expose you. Kill a Character. Check a Skill. If you have no living Characters, kill no one and create a beloved mortal Character who you have betrayed.
 
@@ -44,15 +32,11 @@ A Character you’ve victimized comes to you in a dream. Do they curse or forgiv
 
 Love hidden within your soul propels you on a foolish quest for absolution from some great guilt. What wrong did you try to right? How do you fail and make everything much, much worse? Lose a Resource. Check a Skill.
 
-## PDF Page 7
-
 A mortal Character begins serving you. Who are they? Why are they drawn to you? Create a new mortal Character.
 
 A trusted mortal Character betrays you in a surprising way. Lose a Resource. Why did they do this? Why do you forgive them?
 
 A mortal Character sacrifices themselves to save you. Check a Skill. Gain a Skill relevant to love or trust.
-
-## PDF Page 8
 
 Your body manifests some trait related to the vampire that created you. How do you become more like them? Create a Skill that reflects this.
 
@@ -60,15 +44,11 @@ People see a horror in you that you cannot perceive in yourself. What Mark do yo
 
 Through grim work with iron and fire you remove a Mark. Record an Experience of pain and blood. Who do you blame? You may remove a Mark or replace an existing Mark with something worse.
 
-## PDF Page 9
-
 You are recognized for what you are by another creature like yourself. Create an immortal Character, lose a Resource and gain a Skill. What did you lose to them?
 
 You gain an advantage over an immortal Character. What do you take from them? What do you learn? Convert a Memory to a Skill; strike out that Memory. Gain a mysterious Resource.
 
 A Character you’ve angered has powerful allies. Create a new enemy immortal Character who is the face of this mysterious group which harries you. Check a Skill to escape their grasp. Take the Skill Time to Leave. Move to a far-off region and lose any stationary Resources. Take a new name.
-
-## PDF Page 10
 
 You develop a system for feeding. What is it? What happens to those who die? Create a Skill that reflects this.
 
@@ -76,15 +56,11 @@ You not only drink their blood but financially profit from your victims as well!
 
 Another Character usurps your feeding system and improves it. Do you crawl back to your ouster, begging to be let back in? If so, then gain the Skill Belly on the Ground. If you instead build a new feeding system from scratch, check two Skills and gain one Resource.
 
-## PDF Page 11
-
 The stars pinwheel above you in the night. The seasons are a blur. You are as an automaton, unconscious of the passage of decades. A century passes. Strike out a Memory. Strike out all mortal Characters.
 
 A potent artifact, religious or magical or technological, falls into your hands. With it you can remake the world. What is this thing? Who seeks it? Create a mortal Character. Add the item as a Resource. If you still have it when you achieve any game ending result, you may rewrite the ending as you like. You must lose this item first if you lose Resources in an encounter with an immortal Character.
 
 While fiddling with the artifact you accidentally bring about the end times. Devils rise, angels fall, spirits are made manifest. Human populations are levied in a war which will last centuries and decide the fate of the cosmos itself. Create a Character or Resource that represents the manifestation of a supernatural conflict that fits your story up to this point. Create two immortal Characters aligned with either side of the conflict who are now interested in your Vampire.
-
-## PDF Page 12
 
 How do you find solace from the raging hunger within you? You may lose one checked or unchecked Skill.
 
@@ -92,15 +68,11 @@ You discover an internal focus which lets you maintain control of your vampire s
 
 Your control breaks. You slaver and kill and revel in blood. You are your hunger. What were the last words of your closest friendly Character, mortal or immortal, as you feasted upon them? Change a beloved Memory to a lie in which you murder to protect yourself. Create a Skill that invokes the name of a dead Character in a mocking way.
 
-## PDF Page 13
-
 New laws or social mores make it harder for you to hide among the populace. How are you nearly caught and destroyed? Check a Skill. Create a Skill. Create a mortal criminal who assists you.
 
 Working across generations you change the laws of society to your advantage. How do you bend leaders to your will? What do you change? Create a Resource.
 
 A mortal protégé outstrips you. They are smarter, crueler, and more capable than you can ever be. They lock you in a dungeon—for what purpose do they use you? Create a wicked mortal Character.
-
-## PDF Page 14
 
 Generations of the same family serve you. This line starts from any living mortal Character, or from the descendants of a dead mortal Character. What bizarre rituals do they tie to their servitude? Lose a Resource and create a Servitors of the Lineage Resource.
 
@@ -108,15 +80,11 @@ Your servants are numerous, enthusiastic, and sometimes useless. Create a Skill 
 
 Your servants bring you a gift you do not want. Create a problematic Resource.
 
-## PDF Page 15
-
 An enemy Character uses a lost Resource to turn your few friends against you. Check three Skills to regain the Resource, or check one Skill to barely survive. Which former friend did you kill? Where do you flee?
 
 You were born in a time and place much different than that in which you find yourself now. What values must you set aside to survive in this strange world? Create an appropriate contemporary Skill based on your most recent Memory. What new name have you recently adopted?
 
 How do you rise to a position of leadership in this place? What neighbors or populations do you subjugate through war and violence? Gain a Resource you took from someone who wanted nothing but peace.
-
-## PDF Page 16
 
 While traveling you come into conflict with another immortal. Gain a Mark. Who are they? What trick did you play upon them? Create a new immortal Character.
 
@@ -124,15 +92,11 @@ An immortal proves to be much more than they appear. Check a Skill or else lose 
 
 How does human society change drastically due to the meddling of immortals like yourself? Who benefits? What Resource do you lose? Gain one Resource, Skill or Mark.
 
-## PDF Page 17
-
 Some mortals have banded together to hunt you, well-armed and wise to your tricks. How do you defeat or evade them? Create a mortal hunter related to one of your checked Skills. Check a Skill.
 
 The hunters are persistent, capable, and well-informed. They know things about you that you don’t—create a Mark that is revealed in a confrontation. You are driven into hiding in an unpeopled wasteland. Lose any stationary Resources. Learn a new Skill related to this desolate region. What new name comes to you in loneliness?
 
 Returning to civilization you wreak a terrible vengeance upon the hapless descendants of your harassers. Songs will be sung of their suffering for a thousand years. Historians will use it as a benchmark for evil. Create a mortal Character that was innocent and good until you exacted your toll. Do not actually write down what acts you committed against these people.
-
-## PDF Page 18
 
 You commit a despicable murder, but not for the sake of feeding. Why? Check a Skill. Remove a mortal Character, if you like.
 
@@ -140,15 +104,11 @@ You are hounded for your crime. Check a Skill, lose a Resource. Confess your cri
 
 You fight a duel with a beloved Character, create one if you have none. Check a violent Skill or appropriate Resource and win by killing them, or gain a Mark and flee to another land.
 
-## PDF Page 19
-
 You have fed too long in one place, destroying a community or social group. Who were they? How did the last community member die? Gain a scavenged Resource, lose a Resource.
 
 A community outcast has survived and vows to revenge themselves upon you. How did you know them? How did they know to catch you at your most vulnerable? Create a mortal Character bent on your destruction.
 
 You are hounded out of the land. Lose any stationary Resources. Check one Skill to escape, two to destroy your persecutor, three to make amends.
-
-## PDF Page 20
 
 Two friendly Characters become embroiled in an internecine conflict. Become involved and check a Skill. Create up to two Characters, if needed. How do you profit? Gain a Resource.
 
@@ -156,15 +116,11 @@ You scheme while your friends make war on one another. Manipulate the conflict t
 
 Too much fighting, too much blood. Acting as peacemaker you try to end the conflict between former friends, but they both turn on you. Lose a Resource. Gain a Mark.
 
-## PDF Page 21
-
 There is a great shift in the way society moves goods. How does this work to your advantage? Check a Skill. Create a Skill based on a Memory.
 
 Your vampiric state enables you to manipulate people across generations, using them to your own advantage. Create one stationary Resource and one ostentatious Resource that symbolizes wealth and power.
 
 Living off investments and rents makes you lazy and blunts your hunting edge. Check a Skill that is cruel or grasping, lose a checked Skill related to creativity or effort. Gain a stationary Resource that you didn’t truly earn.
-
-## PDF Page 22
 
 You are trapped outside when the sun rises and take shelter some place you are not supposed to be. A child discovers and befriends you. Create a mortal child Character and record a humanizing Experience.
 
@@ -172,15 +128,11 @@ The child teaches you to appreciate the world again. You see small things, you s
 
 Decades pass. The child has died of old age. You stand at their grave. What more could you have done to make their life better? How did you betray them? Strike out that Character with great ceremony.
 
-## PDF Page 23
-
 Create a mortal Character. You have shaped them from infancy to be exactly what you want. Lose a Resource.
 
 Your Diary is lost or stolen. Lose the Diary and all Memories it contains. If you have no Diary, lose one Resource. Create a Character who you wrongly blame for this loss.
 
 You become a loner embedded in the now, manipulating a hundred threads to stay fed and safe. Lose a Memory slot permanently. Take the Skill Feral Cunning.
-
-## PDF Page 24
 
 You master a strange new science or field of knowledge. How does your vampire nature give you special insight into these studies? Create an appropriate Skill based on a Memory.
 
@@ -188,15 +140,11 @@ You strike up a long correspondence and fall in love. Create a mortal Character.
 
 Your mortal love dies through the machinations of another Character unless you check one Skill. If you do save them they will instead die of sickness, or accident, or old age. Either way, you keep a token by which to remember them. Create a Resource.
 
-## PDF Page 25
-
 You are forced to adopt a new name. Why?
 
 Erase the first sentence of any two Memories. You’re not quite sure why. Do not create an Experience about this.
 
 One place is as another to you, and you simply stop returning home. Lose a stationary Resource. Where do you wander?
-
-## PDF Page 26
 
 Your methods for acquiring victims are no longer effective. What has changed? Lose a Resource and create a Skill which describes your new feeding techniques.
 
@@ -204,15 +152,11 @@ What physical labors are necessary to utilize this method? Create a simple, prac
 
 A mortal Character discovers your feeding system. What compelling argument do they use to get you to abandon it? Check a Skill.
 
-## PDF Page 27
-
 You accidentally create a vampire through sloppy feeding. Create an immortal Character from an existing mortal Character. Why do you not destroy them? Check a Skill.
 
 This immortal Character lurks on the fringes of your existence. They become an embodiment of one of your least savory checked Skills. How do they act when your paths cross? What disturbing gift do they give you? Create a Resource.
 
 This immortal Character falls into the hands of mortals, indirectly imperiling your existence. Save them by checking three Skills. Lose three Resources if you do not save them. If you cannot lose all three Resources, lose as many as possible and flee to a new land—from now on all humans know vampires are real.
-
-## PDF Page 28
 
 Wars rage throughout the region in which you reside. You withdraw into a hidden retreat, waiting for them to pass. Lose a Resource.
 
@@ -220,15 +164,11 @@ Your secretive ways result in you being arrested as a spy. Check a Skill to esca
 
 You become a spy, selling out the land you call home. Gain two Resources. Check a Skill, gain a Skill, uncheck an ancient and surprising Skill. Which Character suffers and dies because of your actions?
 
-## PDF Page 29
-
 A long dead mortal Character returns. What do they want from you? How have they survived death? You only recognize them if you still have a related Memory. Check a Skill.
 
 What peril do they pull down upon you? Create a new enemy Character, mortal or immortal. Check a Skill or lose a Resource.
 
 You are ceaselessly hunted by potent, supernatural beings. Describe the methods you develop to avoid detection. Lose a Memory to gain a Skill or Resource, or do not lose a Memory and create a mortal servitor.
-
-## PDF Page 30
 
 You are exposed as a monster and flee to a far-off land. Lose any stationary Resources. You do not know the language of this new place—how do you overcome this obstacle? What new name do you take?
 
@@ -236,15 +176,11 @@ You disguise yourself with an entirely new persona. Take an old Memory and modif
 
 You lose yourself in your assumed personality. Lose your oldest and newest Memories. Throw away your Diary. Create a Skill and Resource tied to your new life.
 
-## PDF Page 31
-
 What social mores have your forgotten? Lose a checked Skill.
 
 You feel a love forbidden by the convention of mortals around you. Create a new Character. Lose a Resource.
 
 You reinvent yourself and how you relate to the world. Uncheck a Skill.
-
-## PDF Page 32
 
 You fall into a deep slumber for a hundred years. Strike out any mortal Characters.
 
@@ -252,15 +188,11 @@ You recognize the descendant of a dead mortal who features in one of your Memori
 
 Your mortal friend discovers family documents that reveal you for what you are. How does your relationship change? You may regain a forgotten Memory related to the mortal’s ancestor.
 
-## PDF Page 33
-
 You keep a prisoner. Why this particular person? Why don’t you feed upon them? Create a Character and a Skill related to keeping them captive.
 
 Mortals rescue your prisoner. Create two mortal rescuers. Lose a Resource.
 
 Your prisoner returns to you, but on their own terms. What is this strange new relationship?
-
-## PDF Page 34
 
 You know where the old things are. Create a Resource and make an enemy Character into a friend.
 
@@ -268,15 +200,11 @@ You publish a book or in some other way cement a Memory (either current or from 
 
 A massive shift of power happens in the mortal realm— governments fall, wars are waged, a new order is created. Who benefits? Check a Skill. Commit atrocious deeds to gain a Resource related to controlling innocent people. Take the Skill Join the Winning Side or instead check two Skills.
 
-## PDF Page 35
-
 You destroy something important to you in a purposeless rage. Lose a precious Memory or destroy a Resource.
 
 Your frenzies terrify even yourself. Do you learn to control them or instead choose to embrace this horror? Kill a mortal Character, if there is one, or create a Mark if not.
 
 Pull the very skin from your face in an attempt to expunge yourself of lingering humanity. Create a Mark. How do you cover your disfigurement going forward?
-
-## PDF Page 36
 
 You encounter the descendant of an old foe and help them in some way. Why did you do this? Check a Skill. Create a mortal Character.
 
@@ -284,15 +212,11 @@ They repay your kindness by lashing out at those they perceive as your enemies. 
 
 The mortal is in grave peril. Check a Skill or lose a Resource to save them, otherwise they die a terrible death.
 
-## PDF Page 37
-
 The deceptions you practice fool even yourself. Combine any three Traits to fabricate an Experience that you believe to be true.
 
 Punish someone because of this false Memory. You kill a or maim a Character. Check a Skill. Take the Skill I Know What’s Real.
 
 One of your real Memories turns out to be completely fabricated, a fever dream spun of cobwebs. Completely erase one Memory.
-
-## PDF Page 38
 
 Things fall to dust. Lose a Resource for which you have no corresponding Memory. Do not create a new Experience for this Prompt, it simply happens as you stare in silence.
 
@@ -300,15 +224,11 @@ You are a creature with habits of unknown origin. Lose an unchecked Skill for wh
 
 Your thoughts are calcifying, your habits are tyrants. You are nearly captured by an enemy who has been studying your patterns over many years. Break a Resource and remake it into something new and surprising.
 
-## PDF Page 39
-
 Your whole being becomes centered in your senses and your hungers. Create a Skill that demonstrates your feral vampire nature and lose an existing Memory.
 
 You move differently than humans and they unconsciously sense it. Create a Mark.
 
 You can always find the frail, the weak, the vulnerable. Take the Skill Cull the Herd. Do not meet the eyes of the strong— they are not for you.
-
-## PDF Page 40
 
 Age has damaged your Diary. Strike out three nouns from the Memories in your Diary, starting from the oldest entry. If you have no Diary, do this to the first three nouns in a Memory of middling age.
 
@@ -316,15 +236,11 @@ You make a new copy of your crumbling Diary. In your most recent Diary Memory, s
 
 Find a character record from an earlier play through of this game. Swap a Memory for one from that character sheet.
 
-## PDF Page 41
-
 How do you conceal yourself while you sleep? What steps have you taken for protection? Check a Skill and create a Resource. Create a mortal servant Character, if you like.
 
 You are approached by a supernatural Character unknown to you. They take you on a bizarre journey, then offer you spiritual solace in exchange for a terrible pledge. What do they demand? Will you accept? If you accept, gain a Skill.
 
 The potent beings which populate the spaces beyond sight have been revealed to you and nothing will ever be the same again. Let this bizarre world heavily influence the rest of your game. Take the Skill I See In-Between.
-
-## PDF Page 42
 
 Your body is distant from human concerns. Lose a Memory slot. Erase your oldest extant name.
 
@@ -332,15 +248,11 @@ A social convention or taboo from some long-forgotten part of your existence is 
 
 A ghost haunts you, though you do not know if it is real or a manifestation of madness. Bring back a long dead Character as a spirit.
 
-## PDF Page 43
-
 What piece of contemporary technology can you not interact with due to your vampire nature? How did your first encounter with this technology almost get you destroyed? Check a Skill.
 
 You make the acquaintance of a group of mortals who share an interest in some Resource you possess. Is it a club? Are these friends? Create three mortal Characters. Develop a Skill related to the Resource in question.
 
 Decades pass. You remain ageless as your friends slowly curl and dry up; you must leave or be exposed as a monster. Stand outside in the darkness, watching them laugh as they tell stories of how they miss you.
-
-## PDF Page 44
 
 You have archaic ways in spite of your focus on blending in. Create a Resource based on a checked Skill that reflects this.
 
@@ -348,15 +260,11 @@ Swap around the proper nouns between two Memories. Do not create an Experience a
 
 Examining a Resource you possess sparks a forgotten Memory. That Resource once belonged to another Character, but you had forgotten this. Gain tremendous insight into your history by recalling this Memory. Write this forgotten Experience into your Memory or directly into a Diary. To be clear, you are creating a new “forgotten” Experience, not bringing back a Memory you struck out.
 
-## PDF Page 45
-
 An immortal Character you’ve met returns to claim a debt. What is it? How have they changed? Do you pay willingly? If you have a Memory of this Character you lose two Resources, if not then lose three Resources and check a Skill.
 
 What did they do to send you into the darkest despair? Erase your earliest Memory. You will never get it back. Gain a Skill.
 
 You develop a plan and carry it through with ruthless efficiency, bringing death and destruction to an immortal Character. You may either reclaim a Resource they took, or destroy them. Check a Skill.
-
-## PDF Page 46
 
 Your body is undergoing further corruption and change. When do you first notice these new changes? Create a Mark.
 
@@ -364,15 +272,11 @@ Your body is becoming more effective as it becomes less human. Create a Skill ba
 
 You find companionship in a group of mortals who are in some way outside society. Do they know what you are? Would they care? Create two friendly mortal Characters, each related to one of your Marks.
 
-## PDF Page 47
-
 You are exposed and flee to a far-off land. Convert any stationary Resources to a new Resource representing portable cash or treasure. What name do you travel under? What profession do you claim when you come to rest?
 
 You flee again, this time to a far-off enclave or colony. How do you use colonial rule to your benefit? Choose one Skill: Occupier, Insurgent, Inconspicuous, or Gone Native along with an appropriate new name.
 
 Revolution! As a suspicious outlander you are imprisoned. Escape by checking two Skills or bribe your way free with two Resources. Spend an additional Resource to rescue any traveling companions.
-
-## PDF Page 48
 
 The world has evolved in ways you can’t comprehend, causing you to lose a good amount of wealth. What happened? Check a Skill. Create a Skill that will hopefully prevent this happening again. Lose a Resource.
 
@@ -380,15 +284,11 @@ You have helpless people put in your charge. Create a Skill that helps you explo
 
 You are impressed by the fighting spirit of one of your victims. What did they do? How do they remind you of your own earliest memories? Did they survive? Create a mortal Character.
 
-## PDF Page 49
-
 You awaken covered in dust. Generations have passed. Your sleeping place has been sealed off. How do you escape? Lose a Resource. Strike out all mortal Characters.
 
 A Mortal you thought dead is still alive, somehow. Remarkable! Bring back the most recently struck out mortal Character.
 
 In your long dreaming you discover a path to lands beyond the real, a fantastic place of enormous terrors and great beauty. You may abandon this Earth and go where none may follow; leave behind all Characters, Marks, and Resources except a Silver Sword and return to Prompt 10. Proceed forward from there, an unMarked vampire in a realm of dreams. If you land on this Prompt a second time, you awaken and can never return. If you do not travel to this dream land you instead take the Resource A Handwritten Book of Fantastic Dreams.
-
-## PDF Page 50
 
 What simple, practical skill proves invaluable in your strange existence? How did you learn it? Create a Skill.
 
@@ -396,15 +296,11 @@ How did you come to be in a place of common laborers? What previously checked Sk
 
 Your new friends become a source of food. Create a Resource that reflects this.
 
-## PDF Page 51
-
 You are captured in a trap set for predatory mortals. What sort of criminal are you taken to be? How does this experience help you learn to better prey on mortals? Make a new Skill that sours the purity of a pleasant Memory.
 
 You are almost uncovered and must dramatically shift your hunting patterns. Become a member of the lowest classes and lose a Resource. If you already are of the lowest classes instead become a member of the highest and check a Skill.
 
 You take up with predatory mortals. Create a repugnant mortal Character who becomes your associate. Even you fear these people. Why?
-
-## PDF Page 52
 
 When you hunger too much you become a hunting creature bereft of intellect. Lose a random Experience from a Memory somewhere in the middle of your Memory list.
 
@@ -412,15 +308,11 @@ You find companionship in something that is not human. Is it an animal, or maybe
 
 All things end, but apparently not this. A mortal Character for whom you hold great affection is un-aging. Is it magic? Some form of infection? They still count as a mortal Character, but they will never die of old age.
 
-## PDF Page 53
-
 The beauty of the dawn calls you. Create an additional Memory slot dedicated to beauty, nature, or peace.
 
 You stay long enough to hear the end of a morning bird’s song. You are burned by the Sun—create a Mark.
 
 Stretch out your arms, feel the warmth. The light pushes through your eyelids and you are not consumed in fire. Sunlight (or some other environmental condition) no longer harms you. Create a Skill about freedom.
-
-## PDF Page 54
 
 A mortal Character you trusted, or one of their descendants, leads a hunting party. What shared secrets are being used against you? Check a Skill.
 
@@ -428,15 +320,11 @@ You have the troublemaking Character at your mercy. Record an Experience of forg
 
 They betray you again and escape. Lose a Resource or gain a disfiguring Mark.
 
-## PDF Page 55
-
 Your strange accent and old ways always reveal you as an outsider, mocked and cheated at best or hated at worst. Smother these useless traits by converting an old Memory to a new Skill for blending in.
 
 Your old memories are changing to reflect the attitudes you need in the present. Change a Memory to incorporate anachronistic, contemporary aspects. Do not create a new Experience.
 
 Discard a Resource that is more than a hundred years old.
-
-## PDF Page 56
 
 Timeless introspection becomes manifest in creative acts. Choose a creative Skill based on a lost Memory.
 
@@ -444,15 +332,11 @@ You dedicate yourself to an art. Lose a Resource but gain back one lost Memory.
 
 You achieve fame for your art but must remain in shadow. Destroy a Resource in frustration. Gain a Skill.
 
-## PDF Page 57
-
 You begin a fantastic construction that puzzles the mortals around you. Give just a hint as to its purpose. Lose a Resource and gain the Skill Visionary.
 
 Mortals try to prevent you from realizing your vision. Check a Skill to persevere. What awful crime did you commit to protect your construction?
 
 You’ve finished your construction. Why did you make this? Does it have a function? Does it change the world?
-
-## PDF Page 58
 
 Your knowledge of old things becomes a strength. Based on a checked Skill, what knowledge do you share with contemporary mortals? Check a Skill. Create a Resource.
 
@@ -460,15 +344,11 @@ What humans seek you out for your knowledge? What do you give them? What do you 
 
 You are brought to the site of one of your oldest crimes. Who brought you here? Why? Do you even remember? Check a Skill. If you have no Memory of this crime, you will be reminded.
 
-## PDF Page 59
-
 Society has changed. How has travel become easier for you? Recover any stationary Resources for which you still have a Memory, they are re-added to your Resource list.
 
 What memories are unearthed by wandering these old places? Get back a lost Memory related to the stationary Resource, or gain a new treasure Resource which you’d concealed here.
 
 What grisly trap was set for you here? Lose a Resource, gain a Mark.
-
-## PDF Page 60
 
 A mortal discovers the journals of a long dead Character, or your own lost Diary, and approaches you. What do they seek? Gain a Skill or a Resource. Create a mortal Character.
 
@@ -476,15 +356,11 @@ The mortal harms, shames or exposes you. Check a Skill as you fruitlessly pursue
 
 The mortal’s lust for forbidden knowledge results in the release of a supernatural horror upon the world. Is this a gigantic monstrosity that will eventually destroy the world, or a personal horror set upon destroying you in particular? Create an immortal Character or Characters.
 
-## PDF Page 61
-
 Check a Skill to avoid arrest as a criminal. What happened? Who was arrested in your place? Create a mortal Character if necessary.
 
 Create an innocent mortal Character. They were executed for a crime you committed. What hobby were you tinkering with the night they were put to death? Take the Skill It’s None of my Concern.
 
 An entire class of people are blamed for crimes you committed. Take the Skill Always Have a Scapegoat. Who suffers in your place? Create a friendly Character who represents these people and is ignorant of your complicity. Create another Character who is in a position of authority; they know these people are innocent but do not care.
-
-## PDF Page 62
 
 Someone reminds you of a beloved Character long dead. Check a Skill to curry their acquaintance. Create a mortal Character.
 
@@ -492,15 +368,11 @@ You frequently confuse living mortals with a dead Character. Take the Mark I See
 
 Your body is ancient. A Mark becomes disabling. You must seek mortal assistance. Create a mortal Character who is especially capable of helping you.
 
-## PDF Page 63
-
 You realize that some ancient taboo or limitation you long believed in no longer applies. What circumstances prompted this discovery? How does this make your existence more satisfying? Change one checked or unchecked Skill in a way that’s relevant.
 
 You discover a point of weakness where you were once strong. What have the ages taken from you? What causes this condition? Lose a checked Skill.
 
 You receive an injury which incapacitates you. Left alone you would recover, but helpful people rush you to a hospital. There you awaken, and realize that you are known. Create a Character: a horrified mortal medical professional who knows exactly what you are.
-
-## PDF Page 64
 
 How do you provide for your banal, material needs? Record an Experience about the time this went wrong. Check a Skill.
 
@@ -508,15 +380,11 @@ How do you avoid the eye of the government? Create a Skill based on a Memory.
 
 How do you try to fool yourself into thinking you provide a valuable service to society? Take the skill Parasite.
 
-## PDF Page 65
-
 Vast numbers of humans are migrating around the world. What group becomes easy to feed upon? How do you capitalize on their helplessness? Create a Resource.
 
 You manipulate society’s leaders to make one group of humans even more vulnerable to your vampiric feeding. What system do you build around victimizing these people? Check a Skill, create a relevant Skill from a Memory. Create a Character who is central to those resisting your machinations.
 
 Society collapses on a global scale and will not recover for centuries. Millions starve, governments dissolve, there is murder in the streets as cities burn. How do you take advantage of the chaos? Check a Skill. Create two new Resources. Create a Skill. What Character rises to a position of global leadership in these awful times?
-
-## PDF Page 66
 
 A possession turns out to have financial value as an antique. Trade your oldest Resource for two contemporary Resources.
 
@@ -524,15 +392,11 @@ You experience intense regret over a Resource you have given away or lost. Do an
 
 Objects are transient. All is nothing. Throw away your oldest or most precious Resource.
 
-## PDF Page 67
-
 Your knowledge is outmoded. Lose an unchecked Skill which is now useless.
 
 Your concept of value is outdated. Lose a Resource.
 
 You are so ancient you no longer look like the people of today. Create a Mark that reflects this. How do you come to realize that your very body no longer fits in?
-
-## PDF Page 68
 
 Language itself leaves you behind. People discuss concepts you cannot grasp using tools you cannot understand. How is this problem dramatically made manifest? Create a Character who will teach you a Skill to help you offset this disadvantage.
 
@@ -540,15 +404,11 @@ New forms of communication offer new ways to hunt. Modify an old Memory to inclu
 
 Language has grown into something outside your ken. You can invoke phonemic patterns to which mortals will react in certain ways, but you can no longer share actual thoughts or feelings or abstract ideas. Create a Skill that expresses this.
 
-## PDF Page 69
-
 An antiquity has surfaced which is directly tied to your mortal life. Check a Skill or lose a Resource and gain the antiquity as a Resource, then regain one of your earliest Memories. Record an Experience about acquiring the antique.
 
 Because of this antiquity someone has begun to hunt you. Create a mortal Character. How do they almost expose you? Check a Skill or lose a Resource.
 
 The mortal Character hunter corners you. You become the embodiment of one of your Checked Skills to defeat them. Take a Mark.
-
-## PDF Page 70
 
 You bond with an ancient enemy Character over your shared past, finding in it something more comprehensible than this modern world. Check a Skill. You become friends. Share a Resource and gain a Resource that is shared with you.
 
@@ -556,15 +416,11 @@ You and your friend retire to a hidden place. There you share real pleasure for 
 
 You and your friend concoct a fantastic plan and bring it to fruition. Check a Skill. What is it? Do you conquer the world? Raise the dead? You may end the game now, if appropriate.
 
-## PDF Page 71
-
 Mortals are cruel and work in ways outside your understanding. How were you mocked or victimized? Why was your response ineffectual and costly? Check a Skill.
 
 An important Memory is tainted by your exposure to the psychological tricks of contemporary society. Modify a Memory to make it less special. Lose an unchecked anti-social Skill.
 
 Lose a Memory. Record an Experience driven by a desire for contemporary prestige items. Lose two Resources, gain one prestigious Resource.
-
-## PDF Page 72
 
 An immortal Character has been destroyed by mortals. How did you come to find out about this? What did you lose? Create a Skill based on a Memory. Create an immortal Character if necessary.
 
@@ -572,43 +428,23 @@ How were you unintentionally responsible for this killing? What minor benefit di
 
 Create a false Experience about an immortal Character, which helps you make peace with your memories of them.
 
-## PDF Page 73
-
 You are caught outside and destroyed. What happened? The game is over.
-
-## PDF Page 74
 
 You achieve a position of absolute stability that might sustain you, unchanging, until the Sun dies. What does this mean? The game is over.
 
-## PDF Page 75
-
 You are physically trapped in a place from which you will never be rescued. What do you think about for the first thousand years? The game is over.
-
-## PDF Page 76
 
 An old friend or foe murders you in your sleep. What do you see in those seconds between dream and non-existence? The game is over.
 
-## PDF Page 77
-
 A government captures you, knowing you for what you are. What do they do with you? The game is over.
-
-## PDF Page 78
 
 Your body finally wears out. You cannot carry out your feeding patterns. What happens? The game is over.
 
-## PDF Page 79
-
 Creatures like yourself have taken over the Earth. What is your position in this new world? The game is over.
-
-## PDF Page 80
 
 You discover a way to become mortal. Do you take it? How will this go wrong? The game is over.
 
-## PDF Page 81
-
 You translate yourself into a higher plane. What does this mean? The game is over.
-
-## PDF Page 82
 
 •
 
@@ -617,8 +453,6 @@ Appendix I Alternate Promptß
 •To be enjoyed in place of regular Prompts •
 
 • Save your original Prompt page and use one of these in place of that number • • Not all of these have multiple entries! • • These aren’t in any particular chronological order, proceed with caution •
-
-## PDF Page 83
 
 1. 1. 2. You are compelled to make a vow that is nearly impossible to keep. Why are you being made to do this? What penalty will you pay for breaking your word? Create a Resource The Vow I Keep.
 
@@ -640,8 +474,6 @@ People begin to investigate the strange spread of this disease. Who is it? Scien
 
 Those you've infected with your disease become something... else. What are they? This has far-reaching effects as carriers spread across the globe, infecting others. The geopolitical landscape itself is permanently altered. Lose a Resource to these changing times. Gain a Skill which helps you thrive in this new world. Create a mortal who rises to prominence.
 
-## PDF Page 84
-
 7. At what contest does a mortal best you? What boon must you grant? Check a Skill or lose a Resource as appropriate. Create a mortal Character.
 
 8. A temple or monument is dedicated to some mortal you knew long ago. How do you react when you learn of this? Is it appropriate? If you still remember the mortal gain one Resource. If you possess something that belonged to the mortal you may trade it for two Resources.
@@ -657,8 +489,6 @@ Those you've infected with your disease become something... else. What are they?
 You meet another haunter of the dark, a ghoul who feeds on rotting corpse flesh. They are wary but not unfriendly. What marvels do they show you in their underground world? What secrets do you learn? Create an immortal ghoul Character.
 
 Here among the glowing grave slabs and miasmic corpse pits you find someone you thought long dead. They've abandoned their humanity and are a necrophagous ghoul-thing like they who brought you here. You are told a story which involves two other Characters you once knew. This lost Character gifts you with either an arcane and mysterious Resource or with a revelation about your own past (represented by a Skill). Will you stay here forever or return to the surface? Will this rediscovered Character join you? This may be an appropriate time to end the game.
-
-## PDF Page 85
 
 13. How did you come to be a guest of these rich and powerful people? Check a Skill. Gain a related Skill. Create two thoughtlessly wealthy mortal Characters.
 
@@ -677,8 +507,6 @@ A Character of whom you are fond is seriously injured. You rush them to a medica
 Your stories prove popular. The writer pays you with a small Resource and pressures you for more. You begin to fabricate new stories and in the doing confuse yourself about the truth. Take any two Experiences and merge them into one new memory which makes you seem heroic.
 
 You visit the writer. Terrified and pale, they push a manuscript at you. It's your true story, supported by irrefutable evidence. They know what you are. How do you stop them from publishing this book?
-
-## PDF Page 86
 
 16. What superstitions have been created about you? How do you hear of them? Create a Skill that capitalizes on these fears.
 
@@ -708,8 +536,6 @@ Some very specific gesture or item within a religious tradition causes you debil
 
 One religious tradition in particular proves to be irrefutably true. How does this affect your world view? How did you come to learn of the truth of this belief? Create a Skill.
 
-## PDF Page 87
-
 24. You discover a technological principle or invention far before its time. How do you capitalize on this knowledge? Create a Resource.
 
 Over decades the technological breakthrough you made becomes common knowledge in your region. How does it change society? What advantage do you lose? Check a Skill.
@@ -734,8 +560,6 @@ You are haunted by the last words of the traveler. What good deed had they faile
 
 Complete the traveler's good deed. Check a Skill or lose a Resource. Your heart rests easier now; create a Skill which reflects this. How do you explain the traveler's death to the person you aided?
 
-## PDF Page 88
-
 29. You creep through the waste areas, howling at the edge of the firelight. Mortal eyes shine in fear. Snatch up those who wander in darkness. Check a Skill. Gain a Skill.
 
 30. A mortal child is born in a nearby community bearing one of your Marks. Create a mortal Character.
@@ -755,8 +579,6 @@ After feeding on a mortal you have dreams of their lost future and you see all y
 Your vampire foresees their own end, though you the player do not know what it is. Create a Mark about knowing your own destruction. When your vampire is finally destroyed reflect on the fact that they knew exactly what was going to happen, even if you didn’t.
 
 36. Your marks are discovered and you are heralded as a saint. Check a Skill. Gain a Skill and a Resource gifted by or taken from religious practitioners who believe in you.
-
-## PDF Page 89
 
 37. You have a brief reprieve from the forces which harass you—a year of quiet. Work on a project you've long set aside. Lose one Resource by improving it into two separate Resources. Create a mortal Character who is divisive.
 
@@ -778,8 +600,6 @@ Why, other people share this interest! Remarkable! Create a mortal Character who
 
 You’ve lost focus and everything burns. Flee for a new land. Lose all stationary Resources.
 
-## PDF Page 90
-
 Additional Prompts by Jessie Rainbow
 
 41. A beloved mortal Character confesses their romantic interest in you. How do you react? How do you hide your monstrous side from them? Create a mortal Character if necessary.
@@ -798,8 +618,6 @@ Your yearning for the immortal grows, they’re all you can think about. Whether
 
 Courting rituals have changed since you first learned them. As the mortal continues to attempt to catch your eye, how do you mistake their machinations? Check a Skill.
 
-## PDF Page 91
-
 44. You cross paths with a mortal Character from long ago. Old feelings of romantic love stir within you. Take the Skill Hopeless Romantic.
 
 The aging mortal returns your affections. Your May to December romance sweeps you off your feet. You’re so caught up in it you abandon your usual feeding routines. How does your beloved react when they see your resolve weaken with hunger? Check a Skill.
@@ -811,8 +629,6 @@ Years slip past without you realizing. The mortal grows older, frailer, and soon
 You receive pages from your diary along with a note asking you to meet with the mysterious author. What surprises you about them at the rendezvous? Do they fully understand your immortal nature? Regain two Memories from the lost diary, add them to your current Diary. If necessary the current diary can expand to hold up to six entries.
 
 Through trickery you are revealed publicly as the author of the popular work. People see you as a romantic guru and they clamor for advice; some seek your guidance in a more intimate setting. How does this change your feeding patterns? Gain the Resource Devotees. Add a Skill you learn while entertaining these people.
-
-## PDF Page 92
 
 Additional Prompts by Elizabeth Bellisario and Amber Autumn Faebrooke
 
@@ -826,8 +642,6 @@ Your body flies out of your control by a power you did not understand and you ar
 
 You spend years training and experimenting with your body to gain as much control over it as possible. Gain a weakness (as a Mark), a Skill, a Resource, and a helpful Mark, all related to maximizing the potential of your vampiric form.
 
-## PDF Page 93
-
 46. A Character from your past spreads rumors about you, which become half-true legends. Who does this? How do you find out? Create a Resource Reputation. Next to it, write 2 memories, current or forgotten, in as much detail as you, the player, can remember without looking. Your vampire is considered to “know” these things about themself through this secondhand account. Like the Diary, if this Resource is lost, so are those memories.
 
 You begin to lose track of what is reality and what is fiction. Do not write down an Experience for this entry; instead, if you have the Resource Reputation, swap one Memory your vampire has with one Memory from the Reputation, and if you do not have that Resource, forget one Memory.
@@ -837,8 +651,6 @@ The legends of you grow so outrageous that a professional vampire hunter comes f
 47. Your hiding place is plundered and your things are scattered through the world. Lose one Resource. Turn to any three Prompts in this book and write down a treasure or magical Resource in each Prompt. If you reach that Prompt at any point, you have found your lost treasure; gain that Resource.
 
 A mortal in your life finds out about you and begs you to make them like you. How do they get you to say yes? It seems, as far as you can tell, that your feeding doesn’t work. Strike out one mortal Character (create a Character if necessary). Turn to any two Prompts in this book and write that Character’s name there. If you reach that Prompt at any point, you discover that the process did work; unstrike that Character and make them immortal.
-
-## PDF Page 94
 
 48. While reading, you find records of a person you’re sure is you from ages past, conducting your affairs with people you can’t remember. Create two mortal Characters from your past. Strike them both out immediately.
 
@@ -854,8 +666,6 @@ You and that Character spend a lifetime together. If you are feuding, check a Sk
 
 Generations pass; you and that Character encounter one another again, and again they have forgotten you. How do you treat them now? Strike out all mortal Characters. If you and the immortal Character had feuded before, gain the Skill Ancient Grudge and one other Skill. If you had been companions, gain the Resource Binding Heirloom and one other Resource.
 
-## PDF Page 95
-
 51. You do battle, and some great injury addles your brain. Who did you fight? Mark one Memory slot “hazy”—from now on, the only words you may write in that Memory slot are verbs and adjectives. Your wounds make you weak, and a perfectly ordinary illness arrives to ravish your body for years. Lose one Resource. You emerge from your delirium having mixed events up in your brain. You may combine two memories into one Memory slot, even if it exceeds three Experiences in that Memory slot, but you must rewrite the first and last Experiences so that they seem to connect, though they didn’t at the time. You find that your body and mind recover from the sickness more monstrous and powerful than before. Gain a Mark. Mark your “hazy” Memory slot as “vast”—you may now fit two additional
 
 52. Experiences in that Memory slot. You begin to feel that your body no longer matches the person you are, and you go to great lengths to permanently change your body to match. What do you do? Gain a Mark.
@@ -867,8 +677,6 @@ You and that mortal Character (or their descendant, create one if necessary) hav
 You spend decades apart, but again encounter that mortal (or their descendant). They still remember you. Do you still remember what they, or their ancestor, did for you? If yes, give away a Resource. If not, gain the Skill Let Everyone Down.
 
 54. A group of mortals discover you and treats you like a god. How do you fail them?
-
-## PDF Page 96
 
 55. You and another immortal Character attempt to use one another as a food source. Create a new Character if necessary. How does this affect your relationship? How does it make your body both better and worse? Gain a Skill related to these bodily changes. On your next roll, reverse the dice, subtracting the d10 from the d6.
 
@@ -888,8 +696,6 @@ You spend a lifetime traveling and gain a new sense of perspective. It’s peace
 
 You spend another lifetime living in the most secluded place you can find. The rest of the world falls away from you. You are happy. Lose either your earliest Memory or three other Memories.
 
-## PDF Page 97
-
 58. You enter into a demonic pact with a powerful immortal being; choose an existing Character or create a new one. Tribute a Resource of great personal significance. Gain the Resource Accursed Strings. For as long as you have this Resource, whenever you land on a Prompt, you may strike out X checked Skills, where X = the number of times you have previously landed on this page +1, to instead land on the Prompt on the previous page.
 
 The being you made the deal with comes to collect. If you don’t still have the Resource Accursed Strings they kill a friendly immortal Character (or all mortal Characters, if unable). If you do still have the Accursed Strings they take your soul for their own. What use is your soul to them? The game is over.
@@ -905,8 +711,6 @@ You lose your Diary to global turmoil beyond your control. Either lose your Diar
 The pleasures of mortal delights consume you for some time, but eventually your body rejects them. Who is witness to this? Create an enemy mortal Character, or change an existing mortal Character to an enemy.
 
 Your final encounter with one of these delights ruins it for you forever. Create a Mark that reflects your unwillingness or inability to engage with it again.
-
-## PDF Page 98
 
 61. The first still-living Character you’ve met comes to fulfill a promise they made to you long ago. Do you remember them? What was the promise? Create a Skill derived from your relationship.
 
@@ -926,8 +730,6 @@ Your confinement ends due to the intervention of a mortal you do not know. How d
 
 Your rescuer threatens to expose your existence, knowingly or unknowingly. How do you deal with this threat? Lose a Resource or check a Skill.
 
-## PDF Page 99
-
 64. You find a substitute for your current food source. How is a change in sustenance expressed in your physical appearance? Gain a Mark and a Resource.
 
 Your previous food source becomes unavailable, though the substitute wasn’t meant to be permanent. What do you lose from this besides food? Check a Skill or lose a Resource.
@@ -945,8 +747,6 @@ You are sheltered from danger by a family of your descendants for a time. Create
 Your child grows old and dies, leaving you with a healthy lineage. Strike off your child; gain the Resource Arcane Lineage. For as long as you have this Resource, every time you create an immortal Character, roll your d10; if it is a 1, that Character is your descendant, whether you remember that or not.
 
 You strike a powerful magical being and they place a curse on you and your descendants. Create an immortal Character or use an existing one. Lose any Resources which refer to your lineage and immediately strike out any Characters who are descended from you.
-
-## PDF Page 100
 
 67. You try to build something that will outlast you. What is it? What do you sacrifice for it? Lose a Resource.
 
@@ -966,8 +766,6 @@ You spend some years living among the animals instead of among the humans. How i
 
 You awaken one day and realize you can’t tell how long you’ve been living among the animals. You return, but you are different. Mark whichever Memory slot you place this Experience in “primal.” From now on, Experiences you place in that slot do not contain the “what happened” sentence clause, only the “how I felt about it” clause.
 
-## PDF Page 101
-
 70. You enslave a mortal to be your thrall as a food source, but soon you and the mortal become involved. Create a mortal Character.
 
 The mortal begins to take advantage of the relationship, and you find yourself under their thumb, but still caring for them deeply. What do they have you doing for them? Check a Skill.
@@ -986,8 +784,6 @@ You, too, become ensconced in the goings-on of the powerful. Your name and face 
 
 Someone of power equal to yours recognizes your eccentric behavior for what it really is, and threatens to expose you. How do you escape when nations know your name and face? Gain a Mark in your attempts to withdraw incognito.
 
-## PDF Page 102
-
 73. The next fresh blood you drink makes you horribly ill without a cause that you can find. Check a Skill to avoid being caught off guard.
 
 The next few feedings make you ill as well, and you make plans to leave the area. Check a Skill to avoid being ill enough to botch one of the feedings; otherwise, create an enemy immortal Character.
@@ -1000,8 +796,6 @@ You go to great lengths to prepare yourself for this future event. Gain a Skill 
 
 You find yourself caught up in parallel events in the real world, and these wrack your nightmares now. Either remove an unchecked Skill from this page or forget any memories with Experiences taken from this page.
 
-## PDF Page 103
-
 You intentionally withdraw to a place so secluded no one will ever find you. You stay there so long, you forget that humanity exists. What occupies your time? The game is over.
 
 Though your body continues, a perfect machine, your mind takes in all it can and slowly crumbles to dust. What do you leave behind? The game is over.
@@ -1011,8 +805,6 @@ The mortal world thoroughly destroys itself and you remain, a powerful figure st
 You forget so much that you even forget why you never go into the sunlight. What causes you to try? How do you feel as you realize what’s happening? The game is over.
 
 You live for another 1,000 years. For now, though, you find, for a time, true peace and stability. Gain three additional permanent Memory slots, two mortal Characters, two Resources, and two Skills. Whenever you feel excited to return to the game, play with the same Character starting at Prompt 0. Any Prompts which are filled in now stay filled in for this second “season.” As you enter the future, try not to worry too much about science fiction or worldbuilding - invent as it comes up and assume people remain fundamentally the same throughout.
-
-## PDF Page 104
 
 Additional Prompts by Jackson Tegu
 
@@ -1026,8 +818,6 @@ Trying to sniff out the long-dead traitor, your research leads you to a library 
 
 You find a book written by someone who knew you, detailing a part of your existence you may have largely forgotten, but regardless feel connection to. This book counts as an extra Diary which holds only that Memory. Write a new Memory which bears strong resemblance to a previous memory of yours, whether forgotten or yet remembered, to reflect the contents of the new volume. (This is in addition to the Experience from this Prompt).
 
-## PDF Page 105
-
 76. You overhear some mortals theorizing about human origins, about where they all come from. Given the information you can glean from your body, Skills, Memories, and Resources, where do you think you come from, since you may have forgotten your actual origins? Create a Skill about self-reflection or self-definition.
 
 As you continue to think about your origins, you develop a theory. How does your clarified outlook on who or what you are change how you behave night to night? Create a Skill about a code of conduct befitting your new understanding of yourself.
@@ -1037,8 +827,6 @@ As you continue to think about your origins, you develop a theory. How does your
 78. A rare opportunity presents itself and you take it, catching an immortal unawares and dining upon them. What do they scream as you destroy and make a meal of them? Strike out an immortal Character if one is available, or give a name to the being you’ve now devoured. Create a Mark which makes you more alike to them, create a Skill foreign to anything you’ve ever encountered, and create as a Resource a potent, beautiful, frightening object they carried.
 
 79. Disguised within a crowd, you hear a beautiful song from a tuneful mortal, telling the tale of something you did long ago. Something you still remember. Choose a Memory and create a Skill about finding peace or purpose with it.
-
-## PDF Page 106
 
 OBJECT
 
@@ -1058,8 +846,6 @@ OBJECT
 
 87. You give one of your objects to a beggar. Create a Character. Why do they stand out to you? What do you hope they’ll do with this? Lose a Resource which is an object. If you don’t have an appropriate Resource, instead give the beggar something you habitually wear.
 
-## PDF Page 107
-
 ART
 
 88. An artistic pursuit attracts your attention. What is it? Years pass as you casually dedicate yourself to mastering it. Strike out two or more mortal Characters who die of old age in the interim. Create a Skill about creating art.
@@ -1073,8 +859,6 @@ Your workshop is full of strong personalities and ambitions. Which of your stude
 The artistic style is utilized by a mortal autocratic government to make their terrible messages more palatable. The workshop is seized. If you yet retain it as a Resource, strike it out now. Create a Skill about seeing people as they are.
 
 You purchase at an auction one of your early works in that once-popular artistic style. Gain a Resource.
-
-## PDF Page 108
 
 BODY
 
@@ -1092,8 +876,6 @@ You’re less than a foot tall. Strike the previous Mark about your stature and 
 
 93. One night while feasting, you suddenly realize you are wearing a mask, one which you’ve long mistaken for your face. You remove the mask. What do you look like underneath it? Where else have you seen the face beneath your mask? Gain the mask as a Resource. What do you do with it?
 
-## PDF Page 109
-
 94. You’ve created a nest using regurgitated wood pulp and saliva. You deeply feel that it is durable and safe. Take it as a stationary Resource. What have you decorated it with?
 
 The time comes to lay your eggs. How do you do so? What do they look like? How large are they? How do you safeguard them? Take Your Unhatched Eggs as a Resource.
@@ -1106,8 +888,6 @@ Returning to your eggs, you see that most have hatched and their inhabitants hav
 
 97. Boredom leads you to crave novelty. You experiment with feeding on mortals in new and bizarre ways, some quite inconvenient. You find a method which vastly increases your enjoyment. Create a Skill to reflect this discovered method.
 
-## PDF Page 110
-
 DOOM
 
 98. After a meal which tasted strange, you discover you carry a disease which slowly kills mortals. Create a Mark to reflect this. Whenever you interact with a mortal Character, place a dot near their name. Each dot halves their remaining life expectancy.
@@ -1117,8 +897,6 @@ DOOM
 100. The mortals here are doing something which endangers their environment, perhaps inadvertently poisoning the water or soil. You recognize that you will suffer with them, and so undertake to stop this foolishness. Check a Skill.
 
 101. You half-convince yourself you’re no longer endangered by something which has caused you harm and vexation in times past. What causes this suspicion? You wish to experiment. Lose a Resource in the doing. Are you still endangered by that old source of harm?
-
-## PDF Page 111
 
 WEIRD PLACE
 
@@ -1131,8 +909,6 @@ You return to the elderly hermit’s mountain sanctuary but they’re no longer 
 At some point the large, beautiful tree which you were drawn to begins to talk with you. You talk about things long gone. Create a stationary immortal Character. What else do you talk about? Check a Skill as you provide something the tree desires. What does the tree give you? Create a Resource to reflect its gift.
 
 In your absence, some mortals have settled in the area and chopped down the tree for lumber. Of the tree they have built a large structure. What is the structure? The mortals can’t hear the tree. What does the tree talk about now? Check a Skill as you influence the mortals to appropriate behavior regarding their intelligent structure.
-
-## PDF Page 112
 
 104. Attached to a cavern or sewer system familiar to you, you find a newly made room full of mortal children with a foreign look. They are sick and fearful, most sleep. A small group approaches you. Make three mortal Characters. Check a Skill as you interact with them.
 
@@ -1148,8 +924,6 @@ You while away years in your nest. It’s blissful. Create three Skills. Strike 
 
 You are awoken as your nest is destroyed around you. You barely escape. Lose your named nest Resource. Lose any Resources contained within it that are too large to carry. You’re crushed by the loneliness and sadness rushing back in and it affects your identity. Change your Name to the name you had given your nest or a close approximation thereof.
 
-## PDF Page 113
-
 LEGEND
 
 107. On a clear, bright, night in a broad field, a small group of mortals mistake you for an otherworldly being. How do they address you? What do they ask of you? What do you do for them? Create a Skill.
@@ -1162,15 +936,11 @@ After fruitless searching for the unsubtle beast you decide to abandon civility,
 
 In a small village central to the unsubtle beast’s territory, you capture a mortal who claims to have seen the beast’s lair. Create a mortal Character. At your cruel insistence, the mortal takes you to the lair, a place grim and in disrepair, forgotten, abandoned these long many years since you yourself took refuge there. There is no beast. Just mortals’ tales, and you. Unstrike or create a Lair stationary Resource.
 
-## PDF Page 114
-
 109. Awakening one evening, you find a terrified mortal bound and left by other mortals for you to feast upon. Create a mortal Character. What kind of devil do you suppose they think you are? This behavior obviously can’t be rewarded, so you unbind the mortal and ask after their captors. Check a Skill as you hunt and consume those who bound your new ward.
 
 110. You become a butler for a family of bears who live in a cave in the woods. Create five mortal bear Characters: Brambly, Tuck, Tim, Dobkin, and Sharamaya-yasha. What do they love about you? Create a Skill about butling.
 
 The family of bears hosts a pie-eating competition. They ask you to be the master of ceremonies, and then at the last moment to join the competition, which you then win. What do you say to the crowd as you award yourself the blue ribbon? Create a Resource.
-
-## PDF Page 115
 
 MARKS AND WEIRDOS
 
@@ -1186,8 +956,6 @@ Your puppet reappears after a span of being uncontactable. They inform you out o
 
 If your puppet is still alive, they are now old. They make, or you now recall them making, one request of you. What is it? Are you capable of granting it? Do you want to? Do you? Check a Skill.
 
-## PDF Page 116
-
 113. A mortal somehow catches you unawares and, brandishing a knife, asks “what’s life worth to you?” How do you confront this philosophical question, and this fool of bad judgment? Create a Skill.
 
 114. Of late, as you draw near, animals have begun to start with fright, pitch dramatically, or flee. Which animal’s actions made this clear to you? Take the Mark Animals Fear Me.
@@ -1202,8 +970,6 @@ Preparing to read, you take a taper to the hearth with which to light your candl
 
 118. A colleague or acquaintance thinks you are an impostor without the Mark cured by the natural spring. If you don’t have an appropriate acquaintance, create a mortal Character whom you’ve known for half a decade and momentarily forgot. How do you demonstrate you are yourself? Create a Skill.
 
-## PDF Page 117
-
 HUNTERS
 
 119. A group of self-described “vampire hunters” invade your home while they presume you asleep. Make two mortal Characters and note that they are members of this group. Choose a Character whom you already knew and note that they too are a member of this group. What other trick is up their sleeve? How do you escape? Check a Skill. Lose a Resource.
@@ -1215,8 +981,6 @@ One of the so-called “vampire hunters” underestimates you, and you catch the
 121. You’ve seen enough ages of humankind coming and going that you can feel them like changes in the weather. How would you describe the age that is now ending? How about the next one beginning? Create a Skill.
 
 122. You notice gradually repeating patterns in how fire burns wood, how snow falls. The world is only so complicated, only so random. Create a Skill.
-
-## PDF Page 118
 
 123. A harsh storm season changes the shape of the human settlement you reside in. How does it change? How does the change impact your habits? Create a Skill.
 
@@ -1236,8 +1000,6 @@ You and the immortal Character whose funeral you attended together attend anothe
 
 126. You find yourself attending a very fancy ball, masked. There are people and things on display there too beautiful not to claim as your own. Create a Character. Create a Resource. Who was this person up until tonight? How do they become yours? And what does the object you take mean to its previous owners?
 
-## PDF Page 119
-
 127. You have grown despondent in your workings. Lose a Skill. Though you are sloppy and careless, fate conspires to keep you alive. How does your unlife nearly end, and how are you saved? If you’re feeling spiritual, create a voiceless, formless, imperceptible immortal Character. If you’re not feeling spiritual, chock it up to luck.
 
 128. Something that used to be difficult is extremely easy for you now. You do it without thinking at all. What is it? Create a Skill for this incredible unthinking proficiency.
@@ -1252,8 +1014,6 @@ If one or both die, you quietly attend the funeral. If they lived, you quietly a
 
 132. You gradually realize that someone who has long been part of your existence is a figment of your imagination. Perhaps they died long ago, or perhaps they never existed. You’ll never know for sure. Choose a Character or make one. Even though you realize this, they still show up where you usually see them & talk with you. How do you take this realization? What do you say to them?
 
-## PDF Page 120
-
 133. A solitary vermin starts living in your body. You feel glad for its presence, its tiny sounds. It cuts through the loneliness. What is it? Where does it live in you? Make a mortal Character.
 
 You can feel yourself making choices to make the vermin’s life easier, even when those choices make your own life more difficult. Check a Skill. What choices do you make?
@@ -1264,13 +1024,9 @@ One day while you’re walking across a room the vermin takes control of your bo
 
 135. One night you find yourself seized with the desire to communicate to mortals how it feels to exist like this, to be pulled helplessly through time, passions long extinguished, constantly witnessing everything wilting. Come up with a sketch for an activity or reference that might communicate to a mortal how immortality grinds one’s selfhood to flour. Create a Resource. Leave the sketch incomplete.
 
-## PDF Page 126
-
 -3 0 3 -4 0 -1 0 -2 8
 
 4 2 6 4 4 0 4 -1
-
-## PDF Page 127
 
 Appendix Three
 
@@ -1328,8 +1084,6 @@ didn’t already know?
 
 not everyone’s will be. Try to notice didn’t already know?
 
-## PDF Page 130
-
 Appendix Four
 
 Five Or So Questions About
@@ -1353,8 +1107,6 @@ me quietly alarmed at myself. I’ve worked on this game diµerently
 an interview by Brie Sheldon for Thoughty
 
 than other games, with the biggest diµerence being that a reaching back
-
-## PDF Page 131
 
 tell you about my character” kind
 
@@ -1405,8 +1157,6 @@ questions and give horrific answers. 130 And the solo play echoes the subject of
 a vampire who sees everything they love turn to dust. Your character is alone, you are alone, the two
 
 states echo each other. One play
-
-## PDF Page 132
 
 style of bloody, horrifying, naturalist
 
@@ -1464,8 +1214,6 @@ corners polished up. With TYOV I had to figure out a way to progress through the
 
 as to maximize replayability. (You,
 
-## PDF Page 133
-
 The tiered prompt system naturally
 
 evolved into a mini-story arc system. I can make the player introduce a
@@ -1513,8 +1261,6 @@ Freemarket to Thousand Year Old Vampire. Writing good Beliefs in Burning Wheel i
 Freemarket has Belief-like-ish Memories, which are something that have game mechanical eµects AND can be manipulated as part of play.
 
 Both of these mechanics had outsized influence on the way I thought about
-
-## PDF Page 134
 
 forced to forget things to make room
 
@@ -1572,8 +1318,6 @@ extruded, sanitized perfect thing;
 
 instead I have, like an artwork, a
 
-## PDF Page 135
-
 identities. Over the centuries
 
 the vampire will be reinventing
@@ -1618,8 +1362,6 @@ said it happened “at work.” I learned that I had to keep these worlds very, 
 
 Mekas telling a story about how no one in his Brooklyn neighborhood
 
-## PDF Page 136
-
 Thousand Year Old Vampire Arises
 
 Tim Hutchings is putting out a game about playing a Thousand Year Old Vampire called, ironically enough, Thousand Year Old Vampire. EN World talked to Tim about his history of
@@ -1663,8 +1405,6 @@ moving forward? TH: The Golden Cobra Challenge is a themed game design get-toget
 with help from Emily Care Boss,
 
 Whitney “Strix” Beltrán, Kat Jones,
-
-## PDF Page 137
 
 of a good vibe. The whole thing is
 
@@ -1729,8 +1469,6 @@ by Ben Passmore, a comic in Now 3 (a comic compilation). I was like,
 oh heck, this is exactly the feel I want; the subject is a vampire and not dreadful European iron-fearing
 
 fairies. SH: The design cycle for TYOV seems pretty quick? What is the inspiration for such a quick turn around?
-
-## PDF Page 138
 
 but the flaws became a portrait of the making. Thousand Year Old Vampire
 
@@ -1808,8 +1546,6 @@ to think about as most of my games Memories force existing Memories
 
 are about channels of communication out of your head; you can write a few
 
-## PDF Page 139
-
 down in a Diary but even
 
 that will fill up. “What will you choose to forget?” becomes a major
@@ -1864,8 +1600,6 @@ themselves. There will be a shared
 
 pool of NPCs that all the Characters interact with. Actual direct PC to
 
-## PDF Page 140
-
 The Prompts drag these NPCs into your vampire’s life in interesting
 
 ways, allowing them to boomerang
@@ -1907,8 +1641,6 @@ an interesting probability spread because you’ll only seldom encounter
 a third tier Prompt entry. This means that third tier entries can
 
 be gigantic and outrageous and change the story or the world
-
-## PDF Page 141
 
 TH: I’m 100% a “Quick” player. I think that comes out of years of writing succinct Burning Wheel Beliefs. My main playtester is 100% in the other camp, though, and she’s smart as heck so I’m not going to make
 
@@ -1964,8 +1696,6 @@ devolved over generations into
 
 banditry on the Russian steppes.
 
-## PDF Page 142
-
 Wherever he went a supernatural thundercloud cast a shadow over the region, letting him go about during the day. He negotiates a title by marrying a daughter of the Tsar who then betrays the vampire and tries to have him
 
 murdered. He and his new bride flee
@@ -1997,8 +1727,6 @@ talked to Tim about his history of game design and Thousand Year Old Vampire its
 Sean Hillman (SH): Tim, before we get into Thousand Year Old Vampire, can you tell folks about how you
 
 got into gaming and
-
-## PDF Page 143
 
 Suggestions for Group Play Appendix Five
 
@@ -2035,8 +1763,6 @@ remaining players make two or three rolls
 while they catch up to the character who has
 
 fallen asleep for a hundred years. Quick Games Take
-
-## PDF Page 144
 
 If someone rolls a Prompt that has already
 
@@ -2084,8 +1810,6 @@ Any Character, regardless of who created them, can be tapped by any player to sa
 
 Prompt. Characters aren’t owned by any
 
-## PDF Page 145
-
 Example One
 
 I think I want to create a vampire in early Eastern Europe, so I look up names and choose Ada. Next, I decide Ada is a Slav living in the region that will later become Poland. I start her first Memory with one Experience that encapsulates Ada’s existence up to this point: I am Ada, a Slavic woman living on the edge of the wild Tatra Mountains.
@@ -2101,8 +1825,6 @@ Resources: Ornate Walking Staff Large Flock of Sheep Sack of Silver Coins
 Then I combine these Traits to create three new Memories, each containing one Experience.
 
 All day, Mother Róża sits quietly by the beer vat; she says it sings sweet songs to her, and she carves what she hears onto a magnificent ash walking stick. Piotr was orphaned during a bandit raid; I hold his family’s silver coin until he comes of age–in the meantime he works with the sheep. Hania complains when I walk my sheep through the stream, but she never says no to the mutton I gift her.
-
-## PDF Page 146
 
 Next I create another Character: the vampire who will cast Ada into
 
@@ -2146,8 +1868,6 @@ installs himself in an outbuilding and
 
 makes intricate masks out of river clay.
 
-## PDF Page 147
-
 Example Two
 
 Soo-ae is a Korean-born vampire three Experiences each, and their who we find in 1855 living on a Diary is also full with four whaling station in Greenland. Memories containing three Soo-ae is currently at Prompt Experiences each. I strike out a 56 and they have had many, Memory from Soo-ae’s Diary many things happen during their about traveling the Silk Road
@@ -2156,19 +1876,13 @@ long existence; all five of their with their father five hundred Memories are fu
 
 current Memories into the Rolling a 1, Soo-ae progresses to book. Soo-ae no longer has any
 
-## PDF Page 148
-
 • Appendix V II • What iß a Role-playing Game?
 
 The single most crucial thing
 
 of St. Augustine were only the in the understanding of games precursor to later events.
 
-## PDF Page 149
-
 Let me break that down: Roleplaying games are self-evidently about playing a role. Playing a role is about making choices as if you were the character. Therefore, in order for a game to be a roleplaying game (and not just a game where you happen to play a role), the mechanics of the game have to be about making and resolving choices as if you were the character. If the mechanics of the game require you to make choices which aren’t associated to the choices made by the character, then the mechanics of the game aren’t about roleplaying
-
-## PDF Page 151
 
 Appendix Nine
 
@@ -2186,17 +1900,11 @@ Do with it what you will.
 
 A dedicated character sheet does
 
-## PDF Page 152
-
 (Five Memories made of up to three Experiences each)
 
 (Four Memories may be marked with a D for Diary)
 
-## PDF Page 153
-
 (Five Memories made of up to three Experiences each) 152(Five Memories made of up to three Experiences each)
-
-## PDF Page 154
 
 ===Designer’s Notes===
 
@@ -2238,8 +1946,6 @@ debt to Burning Wheel’s Beliefs and Freemarket’s memory system. The storytel
 
 being solo war games that allow for emergent storytelling—games like B-17 and a NASA simulator from the 80s. These are games I’ve never
 
-## PDF Page 155
-
 calendar year to get to print. I ran a
 
 Kickstarter campaign intending
@@ -2273,8 +1979,6 @@ to share this space, but I’m glad I
 did—their contributions are rich and wonderful.
 
 My name is Tim Hutchings and
-
-## PDF Page 156
 
 ===Designer’s Notes===
 

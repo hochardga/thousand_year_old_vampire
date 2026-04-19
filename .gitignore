@@ -1,5 +1,5 @@
 # Keep the large source PDFs out of Git history.
-docs/source_material/
+docs/source_material/*.pdf
 
 # Local editor and OS clutter.
 .DS_Store
