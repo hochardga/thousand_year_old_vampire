@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "createdAt": "2026-04-19T20:04:34Z",
+    "updatedAt": "2026-04-19T20:04:34Z",
+    "version": "1.0",
+    "plaidVersion": "1.0"
+  },
+  "creator": {
+    "name": "Gerg",
+    "expertise": "Software engineer with more than 20 years of experience building enterprise tools, now making a first released creative project.",
+    "background": "I know how to ship software that solves practical problems, but I haven't yet made something creative that feels like mine. This adaptation is a deliberate shift: using everything I've learned as an engineer to build an experience that is atmospheric, literary, and emotionally durable."
+  },
+  "purpose": {
+    "whoYouHelp": "People who are intrigued by reflective narrative games but bounce off physical journaling, handwriting, or manual bookkeeping, and want a digital experience that invites them in instead of intimidating them.",
+    "problemYouSolve": "They are curious about solo journaling games, but the act of handwriting, managing notes, and tracking rules feels like homework. The friction arrives before the magic does, so they never get far enough to feel the game's emotional payoff.",
+    "desiredTransformation": "Players move from rules friction and bookkeeping to a guided gothic ritual where the system handles the scaffolding and they stay focused on story and feeling.",
+    "whyYou": "I know how to reduce friction in complex systems without stripping away their depth. That matters here because the challenge is translating a dense, manual game into something that feels effortless without becoming shallow."
+  },
+  "product": {
+    "name": "Thousand Year Old Vampire: Digital Edition",
+    "oneLiner": "Thousand Year Old Vampire: Digital Edition helps curious solo players experience gothic journaling play through guided digital ritual.",
+    "howItWorks": "The player begins with a guided becoming-undead sequence that helps them create their mortal past, first memories, relationships, and curse without ever feeling buried in rules. Once play starts, the app presents each prompt as a dramatic beat, handles rolls and state changes behind the scenes, and turns the player's writing into a living memory archive that visibly decays and evolves over time.",
+    "keyCapabilities": [
+      "Guided vampire creation and onboarding",
+      "Cinematic prompt-by-prompt play",
+      "Automatic memory and trait management",
+      "Archival journal presentation",
+      "Session recaps that make long gaps easy to return from"
+    ],
+    "platform": "cross-platform",
+    "marketDifferentiation": "Unlike broader narrative game apps that streamline everything into clean choice flows, Thousand Year Old Vampire: Digital Edition is built to keep the literary, solitary, and unsettling character of the game intact while quietly supporting the player underneath.",
+    "magicMoment": "During setup, the player moves from 'I'm learning a complicated solo game' to 'I'm already inside a vampire's life' within minutes. The transition is so smooth and atmospheric that the rules disappear before the mood does."
+  },
+  "audience": {
+    "primaryUser": "Jules, 35, is a creatively curious player who wants solitary, emotionally rich experiences they can return to at their own pace. They don't mind writing, but they want structure, mood, and continuity built into the product so they can stay in the story instead of managing it.",
+    "secondaryUsers": [
+      "Existing fans of the tabletop game who want a faithful digital adaptation for convenience, portability, and rereading their chronicles more easily."
+    ],
+    "currentAlternatives": "The physical book and handwritten journaling, plain text docs or Notes apps, Notion or Obsidian setups, and sometimes just not starting because the analog overhead feels too high.",
+    "frustrations": "The original analog form is powerful, but for this audience the setup and manual tracking create enough friction that they never fully enter the experience. What should feel intimate starts feeling procedural."
+  },
+  "business": {
+    "revenueModel": "free",
+    "initialGoal": "Release a public version that feels authored rather than prototype-like, with a handful of players actively returning across sessions, and enough signal to decide whether this should remain an artful free project or evolve into something commercial.",
+    "sixMonthVision": "It is a respected niche adaptation with a small but devoted player base, strong word of mouth among narrative-game fans, and a product quality level that feels worthy as a first released creative work.",
+    "constraints": "The real constraint is not backend complexity but resisting over-engineering. The first version needs to preserve tone, pacing, and literary feeling inside a manageable production scope.",
+    "goToMarket": "Build in public for creative credibility: post regular progress notes, design thoughts, and small archival screenshots on social platforms, then release to narrative-game communities once it feels aesthetically distinctive."
+  },
+  "feeling": {
+    "brandPersonality": "A graceful guide through darkness: gentle, intimate, emotionally serious, and never theatrical for its own sake.",
+    "visualMood": "A quiet nocturne: deep charcoal, ash, faded gold, restrained ornament, and spacious layouts that feel intimate, literary, and nocturnal without becoming visually cluttered.",
+    "toneOfVoice": "Gentle ritual guide — calm, intimate, and supportive, helping the player stay inside the experience without sounding like software. Example CTA: 'Take up the next prompt.' Example error: 'There's no room left in memory. Something must be set aside.'",
+    "antiPatterns": "Never like a dense rules tool: no spreadsheet energy, no forms-heavy setup, and no obvious state-management UI that makes the player feel like they're operating a system instead of inhabiting a life."
+  },
+  "techStack": {
+    "appType": "cross-platform",
+    "frontend": {
+      "choice": "Next.js",
+      "rationale": "Best ecosystem for a solo build with strong routing, rendering options, and support for a polished web product that works well across desktop and mobile browsers."
+    },
+    "backend": {
+      "choice": "Supabase",
+      "rationale": "A conventional backend platform with auth, storage, and SQL-backed data that keeps the chronicle model explicit and durable without forcing custom backend plumbing."
+    },
+    "database": {
+      "choice": "Supabase Database (PostgreSQL)",
+      "rationale": "The natural fit for Supabase, with a clear relational model for chronicles, memories, prompts, traits, and session history."
+    },
+    "auth": {
+      "choice": "Supabase Auth",
+      "rationale": "Keeps authentication aligned with the chosen backend and supports private cross-device chronicles with row-level security."
+    },
+    "payments": {
+      "choice": "",
+      "rationale": ""
+    }
+  },
+  "tooling": {
+    "codingAgent": "other",
+    "codingAgentName": "Codex"
+  }
+}
