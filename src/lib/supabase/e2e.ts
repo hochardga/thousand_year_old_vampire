@@ -78,6 +78,41 @@ type InsertBuilder<T> = {
   };
 };
 
+type SelectExecutionResult =
+  | {
+      count: number;
+      data: null;
+      error: null;
+    }
+  | {
+      data: Record<string, unknown>[];
+      error: null;
+    };
+
+type SelectBuilder<T extends Record<string, unknown>> = {
+  eq: (column: string, value: number | string) => SelectBuilder<T>;
+  maybeSingle: () => Promise<{
+    data: Record<string, unknown> | null;
+    error: null;
+  }>;
+  order: (
+    column: string,
+    options?: { ascending?: boolean },
+  ) => SelectBuilder<T>;
+  single: () => Promise<{
+    data: Record<string, unknown> | null;
+    error: { message: string } | null;
+  }>;
+  then: <TResult1 = SelectExecutionResult, TResult2 = never>(
+    onFulfilled?:
+      | ((value: SelectExecutionResult) => TResult1 | PromiseLike<TResult1>)
+      | null,
+    onRejected?:
+      | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
+      | null,
+  ) => Promise<TResult1 | TResult2>;
+};
+
 const promptCatalogSeed: PromptCatalogRow[] = [
   {
     encounter_index: 1,
@@ -187,7 +222,7 @@ function createSelectBuilder<T extends Record<string, unknown>>(
     });
   }
 
-  const builder = {
+  const builder: SelectBuilder<T> = {
     eq(column: string, value: number | string) {
       filters.push({ column, value });
       return builder;
@@ -215,7 +250,7 @@ function createSelectBuilder<T extends Record<string, unknown>>(
         error: row ? null : { message: "Not found" },
       });
     },
-    then(onFulfilled: (value: unknown) => unknown, onRejected?: (reason: unknown) => unknown) {
+    then(onFulfilled, onRejected) {
       return execute().then(onFulfilled, onRejected);
     },
   };
@@ -396,6 +431,20 @@ export function getE2EAuthCookieName() {
 export function createE2EServerSupabaseClient(isAuthenticated: boolean) {
   return {
     auth: {
+      async exchangeCodeForSession() {
+        return {
+          data: {
+            session: null,
+            user: isAuthenticated
+              ? {
+                  email: "e2e@example.com",
+                  id: E2E_USER_ID,
+                }
+              : null,
+          },
+          error: null,
+        };
+      },
       async getUser() {
         return {
           data: {
@@ -406,6 +455,16 @@ export function createE2EServerSupabaseClient(isAuthenticated: boolean) {
                 }
               : null,
           },
+          error: null,
+        };
+      },
+      async signInWithOtp() {
+        return {
+          data: {
+            session: null,
+            user: null,
+          },
+          error: null,
         };
       },
     },
@@ -424,6 +483,16 @@ export function createE2EServerSupabaseClient(isAuthenticated: boolean) {
             columns,
             options,
           );
+        },
+        async upsert() {
+          if (table === "profiles") {
+            return {
+              data: null,
+              error: null,
+            };
+          }
+
+          throw new Error(`Unsupported e2e upsert table: ${table}`);
         },
       };
     },

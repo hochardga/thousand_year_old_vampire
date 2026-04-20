@@ -20,6 +20,20 @@ type ChronicleRecord = {
   vampire_name: string | null;
 };
 
+type ChronicleListClient = {
+  from: (table: "chronicles") => {
+    select: (columns: string) => {
+      order: (
+        column: string,
+        options?: { ascending?: boolean },
+      ) => Promise<{
+        data: ChronicleRecord[] | null;
+        error: { message: string } | null;
+      }>;
+    };
+  };
+};
+
 function resolveChronicleHref(chronicle: ChronicleRecord) {
   if (chronicle.status === "draft") {
     return `/chronicles/${chronicle.id}/setup`;
@@ -49,7 +63,7 @@ export default async function ChroniclesPage({
     redirect("/sign-in?next=%2Fchronicles");
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as unknown as ChronicleListClient)
     .from("chronicles")
     .select("id, title, status, vampire_name, created_at, last_played_at")
     .order("updated_at", { ascending: false });

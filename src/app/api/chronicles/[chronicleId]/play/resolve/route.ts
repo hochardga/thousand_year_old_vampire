@@ -11,13 +11,13 @@ type ResolveRouteContext = {
 
 function validationErrorResponse(issues: {
   message: string;
-  path: (string | number)[];
+  path: PropertyKey[];
 }[]) {
   return NextResponse.json(
     {
       details: issues.map((issue) => ({
         message: issue.message,
-        path: issue.path.join("."),
+        path: issue.path.map(String).join("."),
       })),
       error: "Validation failed",
     },

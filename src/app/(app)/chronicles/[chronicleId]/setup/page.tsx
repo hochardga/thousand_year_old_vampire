@@ -10,6 +10,25 @@ type SetupPageProps = {
   }>;
 };
 
+type SetupChronicleRecord = {
+  id: string;
+  status: "draft" | "active" | "completed" | "archived";
+  title: string;
+};
+
+type SetupChronicleClient = {
+  from: (table: "chronicles") => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        single: () => Promise<{
+          data: SetupChronicleRecord | null;
+          error: { message: string } | null;
+        }>;
+      };
+    };
+  };
+};
+
 export default async function ChronicleSetupPage({
   params,
 }: SetupPageProps) {
@@ -23,7 +42,9 @@ export default async function ChronicleSetupPage({
     redirect(`/sign-in?next=${encodeURIComponent(`/chronicles/${chronicleId}/setup`)}`);
   }
 
-  const { data: chronicle, error } = await supabase
+  const { data: chronicle, error } = await (
+    supabase as unknown as SetupChronicleClient
+  )
     .from("chronicles")
     .select("id, title, status")
     .eq("id", chronicleId)
