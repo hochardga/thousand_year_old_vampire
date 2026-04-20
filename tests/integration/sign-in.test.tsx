@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const createServerSupabaseClient = vi.hoisted(() => vi.fn());
+const createAdminSupabaseClient = vi.hoisted(() => vi.fn());
 const redirect = vi.hoisted(() =>
   vi.fn((url: string) => {
     throw Object.assign(new Error("NEXT_REDIRECT"), { url });
@@ -10,6 +11,10 @@ const redirect = vi.hoisted(() =>
 
 vi.mock("@/lib/supabase/server", () => ({
   createServerSupabaseClient,
+}));
+
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminSupabaseClient,
 }));
 
 vi.mock("next/navigation", () => ({
@@ -67,6 +72,7 @@ async function captureRedirectUrl(action: Promise<unknown>) {
 
 beforeEach(() => {
   createServerSupabaseClient.mockReset();
+  createAdminSupabaseClient.mockReset();
   redirect.mockClear();
   restoreEnv();
 });
@@ -144,6 +150,56 @@ describe("testing-only password sign-in action", () => {
       .toBe("/chronicles");
   });
 
+  it("provisions the canonical preview test user and retries once when the password user does not exist yet", async () => {
+    process.env.ENABLE_TEST_AUTH = "1";
+    process.env.NODE_ENV = "production";
+    process.env.VERCEL_ENV = "preview";
+
+    const signInWithPassword = vi
+      .fn()
+      .mockResolvedValueOnce({
+        error: {
+          code: "invalid_credentials",
+          message: "Invalid login credentials",
+        },
+      })
+      .mockResolvedValueOnce({
+        error: null,
+      });
+
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        signInWithPassword,
+      },
+    });
+    createAdminSupabaseClient.mockReturnValue({
+      auth: {
+        admin: {
+          createUser: vi.fn().mockResolvedValue({
+            data: { user: { id: "user-1" } },
+            error: null,
+          }),
+          listUsers: vi.fn().mockResolvedValue({
+            data: { users: [] },
+            error: null,
+          }),
+          updateUserById: vi.fn(),
+        },
+      },
+    });
+
+    const { requestTestPasswordSignIn } = await loadSignInModule();
+    const formData = new FormData();
+    formData.set("email", "e2e@example.com");
+    formData.set("password", "nightfall");
+    formData.set("next", "/chronicles");
+
+    await expect(captureRedirectUrl(requestTestPasswordSignIn(formData))).resolves
+      .toBe("/chronicles");
+    expect(signInWithPassword).toHaveBeenCalledTimes(2);
+    expect(createAdminSupabaseClient).toHaveBeenCalledTimes(1);
+  });
+
   it("returns to sign-in with a testing-only error when the password is rejected", async () => {
     process.env.ENABLE_TEST_AUTH = "1";
     process.env.NODE_ENV = "production";
@@ -174,6 +230,7 @@ describe("testing-only password sign-in action", () => {
     );
     expect(parsed.searchParams.get("next")).toBe("/chronicles");
     expect(parsed.searchParams.get("email")).toBe("tester@example.com");
+    expect(createAdminSupabaseClient).not.toHaveBeenCalled();
   });
 
   it("fails closed when the feature is disabled even if the action is called directly", async () => {

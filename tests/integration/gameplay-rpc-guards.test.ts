@@ -24,6 +24,12 @@ beforeEach(() => {
 });
 
 describe("gameplay RPC safety guards", () => {
+  it("uses an unambiguous setup summary parameter when the setup RPC activates a chronicle", () => {
+    const sql = readMigration();
+
+    expect(sql).toContain("mortal_summary = nullif($2, '')");
+  });
+
   it("rejects setup completion once a chronicle is no longer a draft", () => {
     const sql = readMigration();
 
@@ -43,8 +49,28 @@ describe("gameplay RPC safety guards", () => {
     );
   });
 
+  it("moves on when the next encounter for a prompt does not exist", () => {
+    const sql = readMigration();
+
+    expect(sql).toMatch(
+      /select coalesce\(max\(encounter_index\), 0\) \+ 1[\s\S]*from public\.prompt_runs[\s\S]*and prompt_number = next_prompt_number/i,
+    );
+    expect(sql).toMatch(
+      /if exists \([\s\S]*prompt_number = next_prompt_number[\s\S]*encounter_index = next_prompt_encounter[\s\S]*\) then[\s\S]*exit;[\s\S]*end if;[\s\S]*next_prompt_number := next_prompt_number \+ 1;[\s\S]*next_prompt_encounter := 1;/i,
+    );
+  });
+
   it("keeps the e2e gameplay mock aligned with the setup and active-session guards", async () => {
-    const client = createE2EServerSupabaseClient(true);
+    const client = createE2EServerSupabaseClient({
+      get(name) {
+        if (name === "tyov-e2e-auth") {
+          return { value: "1" };
+        }
+
+        return undefined;
+      },
+      set() {},
+    });
     const inserted = await client
       .from("chronicles")
       .insert({ title: "The Long Night" })
