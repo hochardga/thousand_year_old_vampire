@@ -30,6 +30,7 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.redirect(
       buildSignInRedirectUrl(new URL("/chronicles", requestUrl.origin)),
+      303,
     );
   }
 

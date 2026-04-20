@@ -33,6 +33,7 @@ describe("chronicle creation route", () => {
     expect(response.headers.get("location")).toBe(
       "http://localhost/sign-in?next=%2Fchronicles",
     );
+    expect(response.status).toBe(303);
   });
 
   it("creates a draft chronicle for authenticated users", async () => {
