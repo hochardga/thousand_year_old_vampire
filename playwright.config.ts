@@ -13,7 +13,7 @@ export default defineConfig({
   },
   webServer: {
     command:
-      "ENABLE_TEST_AUTH=1 TYOV_E2E_MOCKS=1 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=e2e-anon-key npm run dev -- --hostname 127.0.0.1",
+      "ENABLE_TEST_AUTH=1 TYOV_E2E_MOCKS=1 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=e2e-anon-key npm run dev -- --hostname localhost",
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
