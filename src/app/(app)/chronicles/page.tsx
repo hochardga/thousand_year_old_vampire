@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { PageShell } from "@/components/ui/PageShell";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import { ChronicleCard } from "@/components/ritual/ChronicleCard";
+import { ensureProfile } from "@/lib/profiles/ensureProfile";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type ChroniclesPageProps = {
@@ -61,6 +62,23 @@ export default async function ChroniclesPage({
 
   if (!user) {
     redirect("/sign-in?next=%2Fchronicles");
+  }
+
+  try {
+    await ensureProfile(supabase as never, {
+      email: user.email,
+      id: user.id,
+    });
+  } catch {
+    return (
+      <PageShell className="gap-6 py-8">
+        <SurfacePanel className="border-error/20 bg-error/10 px-5 py-4">
+          <p className="text-sm text-ink">
+            We signed you in, but your profile could not be loaded yet.
+          </p>
+        </SurfacePanel>
+      </PageShell>
+    );
   }
 
   const { data, error } = await (supabase as unknown as ChronicleListClient)

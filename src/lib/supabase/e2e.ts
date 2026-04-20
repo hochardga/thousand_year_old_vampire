@@ -49,6 +49,11 @@ type PromptCatalogRow = {
   prompt_version: string;
 };
 
+type ProfileRow = {
+  display_name: string;
+  id: string;
+};
+
 type E2EState = {
   characters: Array<Record<string, unknown>>;
   chronicles: ChronicleRow[];
@@ -57,6 +62,7 @@ type E2EState = {
   memories: MemoryRow[];
   prompt_catalog: PromptCatalogRow[];
   prompt_runs: Array<Record<string, unknown>>;
+  profiles: ProfileRow[];
   resources: Array<Record<string, unknown>>;
   sessions: SessionRow[];
   skills: Array<Record<string, unknown>>;
@@ -144,6 +150,7 @@ function getState() {
       memories: [],
       prompt_catalog: [...promptCatalogSeed],
       prompt_runs: [],
+      profiles: [],
       resources: [],
       sessions: [],
       skills: [],
@@ -294,6 +301,38 @@ function createChronicleInsertBuilder(
   };
 }
 
+function createProfileInsertBuilder(
+  payload: Partial<ProfileRow>,
+): InsertBuilder<ProfileRow> {
+  const state = getState();
+  const createdProfile: ProfileRow = {
+    display_name: payload.display_name || "Unnamed Vampire",
+    id: payload.id || E2E_USER_ID,
+  };
+  const existingProfileIndex = state.profiles.findIndex(
+    (profile) => profile.id === createdProfile.id,
+  );
+
+  if (existingProfileIndex >= 0) {
+    state.profiles[existingProfileIndex] = createdProfile;
+  } else {
+    state.profiles.push(createdProfile);
+  }
+
+  return {
+    select(columns: string) {
+      return {
+        single() {
+          return Promise.resolve({
+            data: pickColumns(createdProfile, columns),
+            error: null,
+          });
+        },
+      };
+    },
+  };
+}
+
 function selectRowsForTable(table: string) {
   const state = getState();
 
@@ -306,6 +345,8 @@ function selectRowsForTable(table: string) {
       return state.memories;
     case "prompt_catalog":
       return state.prompt_catalog;
+    case "profiles":
+      return state.profiles;
     default:
       return [];
   }
@@ -473,6 +514,10 @@ export function createE2EServerSupabaseClient(isAuthenticated: boolean) {
         insert(payload: Partial<ChronicleRow>) {
           if (table === "chronicles") {
             return createChronicleInsertBuilder(payload);
+          }
+
+          if (table === "profiles") {
+            return createProfileInsertBuilder(payload as Partial<ProfileRow>);
           }
 
           throw new Error(`Unsupported e2e insert table: ${table}`);

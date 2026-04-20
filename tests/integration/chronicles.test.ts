@@ -1,3 +1,4 @@
+import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const createServerSupabaseClient = vi.hoisted(() => vi.fn());
@@ -37,6 +38,23 @@ describe("chronicle creation route", () => {
   });
 
   it("creates a draft chronicle for authenticated users", async () => {
+    const profileMaybeSingle = vi.fn().mockResolvedValue({
+      data: null,
+      error: null,
+    });
+    const profileEq = vi.fn(() => ({ maybeSingle: profileMaybeSingle }));
+    const profileSelect = vi.fn(() => ({ eq: profileEq }));
+    const profileInsert = vi.fn().mockReturnValue({
+      select: vi.fn(() => ({
+        single: vi.fn().mockResolvedValue({
+          data: {
+            display_name: "User 1",
+            id: "user-1",
+          },
+          error: null,
+        }),
+      })),
+    });
     const single = vi
       .fn()
       .mockResolvedValue({ data: { id: "chronicle-1" }, error: null });
@@ -46,10 +64,19 @@ describe("chronicle creation route", () => {
     createServerSupabaseClient.mockResolvedValue({
       auth: {
         getUser: vi.fn().mockResolvedValue({
-          data: { user: { id: "user-1" } },
+          data: { user: { email: "user-1@example.com", id: "user-1" } },
         }),
       },
-      from: vi.fn(() => ({ insert })),
+      from: vi.fn((table: string) => {
+        if (table === "profiles") {
+          return {
+            insert: profileInsert,
+            select: profileSelect,
+          };
+        }
+
+        return { insert };
+      }),
     });
 
     const formData = new URLSearchParams();
@@ -69,5 +96,83 @@ describe("chronicle creation route", () => {
     expect(response.headers.get("location")).toBe(
       "http://localhost/chronicles/chronicle-1/setup?created=1",
     );
+    expect(profileInsert).toHaveBeenCalledWith({
+      display_name: "User 1",
+      id: "user-1",
+    });
+  });
+});
+
+describe("chronicles page", () => {
+  beforeEach(() => {
+    createServerSupabaseClient.mockReset();
+    vi.resetModules();
+  });
+
+  it("repairs a missing profile on the first authenticated page load", async () => {
+    const profileMaybeSingle = vi.fn().mockResolvedValue({
+      data: null,
+      error: null,
+    });
+    const profileEq = vi.fn(() => ({ maybeSingle: profileMaybeSingle }));
+    const profileSelect = vi.fn(() => ({ eq: profileEq }));
+    const profileInsert = vi.fn().mockReturnValue({
+      select: vi.fn(() => ({
+        single: vi.fn().mockResolvedValue({
+          data: {
+            display_name: "Gregory",
+            id: "user-1",
+          },
+          error: null,
+        }),
+      })),
+    });
+    const chroniclesOrder = vi.fn().mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    const chroniclesSelect = vi.fn(() => ({ order: chroniclesOrder }));
+
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: {
+            user: {
+              email: "gregory@example.com",
+              id: "user-1",
+            },
+          },
+        }),
+      },
+      from: vi.fn((table: string) => {
+        if (table === "profiles") {
+          return {
+            insert: profileInsert,
+            select: profileSelect,
+          };
+        }
+
+        return {
+          select: chroniclesSelect,
+        };
+      }),
+    });
+
+    const { default: ChroniclesPage } = await import("@/app/(app)/chronicles/page");
+    const view = await ChroniclesPage({
+      searchParams: Promise.resolve({}),
+    } as never);
+
+    render(view);
+
+    expect(profileInsert).toHaveBeenCalledWith({
+      display_name: "Gregory",
+      id: "user-1",
+    });
+    expect(
+      screen.getByRole("heading", {
+        name: "No chronicle has been opened yet.",
+      }),
+    ).toBeInTheDocument();
   });
 });

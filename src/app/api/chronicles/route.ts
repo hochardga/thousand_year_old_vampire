@@ -4,6 +4,7 @@ import {
   getE2EAuthCookieName,
   isE2EMockMode,
 } from "@/lib/supabase/e2e";
+import { ensureProfile } from "@/lib/profiles/ensureProfile";
 import { buildSignInRedirectUrl } from "@/lib/supabase/middleware";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -36,6 +37,21 @@ export async function POST(request: Request) {
       buildSignInRedirectUrl(new URL("/chronicles", requestUrl.origin)),
       303,
     );
+  }
+
+  try {
+    await ensureProfile(supabase as never, {
+      email: user.email,
+      id: user.id,
+    });
+  } catch {
+    const redirectUrl = new URL("/chronicles", requestUrl.origin);
+    redirectUrl.searchParams.set(
+      "error",
+      "We signed you in, but your profile could not be loaded yet.",
+    );
+
+    return NextResponse.redirect(redirectUrl, 303);
   }
 
   const formData = await request.formData();
