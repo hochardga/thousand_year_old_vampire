@@ -41,7 +41,7 @@
   Notes: Add color, spacing, font, radius, shadow, and motion tokens from docs/product-vision.md § Design Tokens. Load `Cormorant Garamond`, `Newsreader`, and `IBM Plex Mono` with `next/font/google`. Verify: the app shell renders tokenized typography and colors.
 
 - [x] **TASK-004** — Configure Supabase server/client helpers, auth middleware, and environment variable handling.
-  Files: `src/lib/supabase/browser.ts`, `src/lib/supabase/server.ts`, `src/middleware.ts`, `.env.example`
+  Files: `src/lib/supabase/browser.ts`, `src/lib/supabase/server.ts`, `src/proxy.ts`, `.env.example`
   Notes: Follow docs/prd.md § Stack Integration Guide and § Auth Implementation. Support destination-aware redirects for protected routes. Verify: unauthenticated access to a protected route redirects to sign-in.
 
 - [x] **TASK-005** — Create the first Supabase migration for `profiles` and `chronicles`, with row-level security and helper policies.
