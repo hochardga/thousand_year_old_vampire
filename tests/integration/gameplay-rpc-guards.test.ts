@@ -53,10 +53,10 @@ describe("gameplay RPC safety guards", () => {
     const sql = readMigration();
 
     expect(sql).toMatch(
-      /select coalesce\(max\(encounter_index\), 0\) \+ 1[\s\S]*from public\.prompt_runs[\s\S]*and prompt_number = next_prompt_number/i,
+      /select coalesce\(max\(encounter_index\), 0\) \+ 1[\s\S]*from public\.prompt_runs[\s\S]*and prompt_number = candidate_prompt_number/i,
     );
     expect(sql).toMatch(
-      /if exists \([\s\S]*prompt_number = next_prompt_number[\s\S]*encounter_index = next_prompt_encounter[\s\S]*\) then[\s\S]*exit;[\s\S]*end if;[\s\S]*next_prompt_number := next_prompt_number \+ 1;[\s\S]*next_prompt_encounter := 1;/i,
+      /if exists \([\s\S]*prompt_number = candidate_prompt_number[\s\S]*encounter_index = next_prompt_encounter[\s\S]*\) then[\s\S]*exit;[\s\S]*end if;[\s\S]*candidate_prompt_number := candidate_prompt_number \+ 1;[\s\S]*next_prompt_encounter := 1;/i,
     );
   });
 
