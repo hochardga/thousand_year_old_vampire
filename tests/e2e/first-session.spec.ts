@@ -1,25 +1,6 @@
-import { expect, test, type BrowserContext, type Page } from "@playwright/test";
-
-async function continueWithMockSession(page: Page, context: BrowserContext) {
-  const currentUrl = new URL(page.url());
-  const nextPath = currentUrl.searchParams.get("next");
-
-  if (!currentUrl.pathname.startsWith("/sign-in") || !nextPath) {
-    return;
-  }
-
-  await context.addCookies([
-    {
-      name: "tyov-e2e-auth",
-      url: page.url(),
-      value: "1",
-    },
-  ]);
-  await page.goto(nextPath);
-}
+import { expect, test } from "@playwright/test";
 
 test("sign-in to first resolved prompt stays inside the ritual flow", async ({
-  context,
   page,
 }) => {
   await page.goto("/sign-in");
@@ -30,18 +11,23 @@ test("sign-in to first resolved prompt stays inside the ritual flow", async ({
     }),
   ).toBeVisible();
 
-  await context.addCookies([
-    {
-      name: "tyov-e2e-auth",
-      url: page.url(),
-      value: "1",
-    },
-  ]);
+  await page.getByLabel("Testing email address").fill("e2e@example.com");
+  await page.getByLabel("Testing password").fill("nightfall");
+  await page
+    .getByRole("button", { name: "Enter Through Test Sign-In" })
+    .click();
 
-  await page.goto("/chronicles");
+  await expect(page).toHaveURL("/chronicles");
+  await page.waitForLoadState("networkidle");
+  await expect
+    .poll(async () => {
+      const cookies = await page.context().cookies();
+
+      return cookies.find(({ name }) => name === "tyov-e2e-auth")?.value;
+    })
+    .toBe("1");
   await page.getByPlaceholder("The Long Night").fill("The Long Night");
   await page.getByRole("button", { name: "Begin a New Chronicle" }).click();
-  await continueWithMockSession(page, context);
 
   await expect(page).toHaveURL(/\/chronicles\/.+\/setup/);
 
@@ -53,6 +39,11 @@ test("sign-in to first resolved prompt stays inside the ritual flow", async ({
   await page
     .getByRole("button", { name: "Continue to the next threshold" })
     .click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Name what you can still carry into the night.",
+    }),
+  ).toBeVisible();
 
   await page.getByLabel("First skill").fill("Quiet Devotion");
   await page
@@ -65,6 +56,11 @@ test("sign-in to first resolved prompt stays inside the ritual flow", async ({
   await page
     .getByRole("button", { name: "Continue to the next threshold" })
     .click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Record who stood beside you, and who changed you.",
+    }),
+  ).toBeVisible();
 
   await page.getByLabel("A mortal character").fill("Marta");
   await page
@@ -77,6 +73,11 @@ test("sign-in to first resolved prompt stays inside the ritual flow", async ({
   await page
     .getByRole("button", { name: "Continue to the next threshold" })
     .click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Write the mark the night left upon you.",
+    }),
+  ).toBeVisible();
 
   await page.getByLabel("The mark").fill("Unsteady Reflection");
   await page
@@ -85,15 +86,33 @@ test("sign-in to first resolved prompt stays inside the ritual flow", async ({
   await page
     .getByRole("button", { name: "Continue to the next threshold" })
     .click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Gather the first memory fragments you refuse to lose.",
+    }),
+  ).toBeVisible();
 
   await page.getByLabel("First memory title").fill("My vigil by the sickbed");
-  await page
-    .getByLabel("First memory entry")
-    .fill("I kept watch outside the sickroom and learned patience.");
-  await page.getByRole("button", { name: "Enter the first prompt" }).click();
-  await continueWithMockSession(page, context);
+  const firstMemoryEntry = page.getByLabel("First memory entry");
+  await firstMemoryEntry.fill(
+    "I kept watch outside the sickroom and learned patience.",
+  );
+  await expect(firstMemoryEntry).toHaveValue(
+    "I kept watch outside the sickroom and learned patience.",
+  );
+  await firstMemoryEntry.press("Tab");
 
-  await expect(page).toHaveURL(/\/chronicles\/.+\/play/);
+  const setupCompletionResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/setup/complete") &&
+      response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "Enter the first prompt" }).click();
+  const setupCompletionResponse = await setupCompletionResponsePromise;
+
+  expect(setupCompletionResponse.ok()).toBeTruthy();
+
+  await page.waitForURL(/\/chronicles\/.+\/play/, { timeout: 15_000 });
   await expect(
     page.getByRole("heading", {
       name: "Prompt 1",
