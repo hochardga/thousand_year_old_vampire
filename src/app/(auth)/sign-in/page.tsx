@@ -10,7 +10,9 @@ import {
 import {
   assertTestAuthEnabled,
   isTestAuthEnabled,
+  usesPreviewTestAuthCredentials,
 } from "@/lib/auth/testAuth";
+import { ensurePreviewTestAuthUser } from "@/lib/auth/provisionTestAuthUser";
 import {
   getE2EAuthCookieName,
   isE2EMockMode,
@@ -152,12 +154,31 @@ export async function requestTestPasswordSignIn(formData: FormData) {
   }
 
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.auth.signInWithPassword({
+  let signInResult = await supabase.auth.signInWithPassword({
     email: parsed.data.email,
     password: parsed.data.password,
   });
 
-  if (error) {
+  if (
+    signInResult.error &&
+    signInResult.error.message === "Invalid login credentials" &&
+    usesPreviewTestAuthCredentials(parsed.data)
+  ) {
+    try {
+      await ensurePreviewTestAuthUser({
+        email: parsed.data.email,
+        password: parsed.data.password,
+      });
+      signInResult = await supabase.auth.signInWithPassword({
+        email: parsed.data.email,
+        password: parsed.data.password,
+      });
+    } catch (error) {
+      console.error("Preview test-auth provisioning failed.", error);
+    }
+  }
+
+  if (signInResult.error) {
     redirect(
       buildSignInRedirectUrl({
         email: parsed.data.email,

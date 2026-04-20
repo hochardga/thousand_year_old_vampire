@@ -569,7 +569,7 @@ begin
     current_prompt_encounter = 1,
     current_session_id = new_session_id,
     last_played_at = now(),
-    mortal_summary = nullif(mortal_summary, ''),
+    mortal_summary = nullif($2, ''),
     prompt_version = 'base',
     status = 'active',
     vampire_name = coalesce(nullif(immortal_character->>'name', ''), vampire_name)
@@ -629,6 +629,7 @@ declare
   new_prompt_run_id uuid;
   d10_roll integer := floor(random() * 10 + 1)::integer;
   d6_roll integer := floor(random() * 6 + 1)::integer;
+  candidate_prompt_number integer;
   movement integer;
   next_prompt_number integer;
   next_prompt_encounter integer := 1;
@@ -689,20 +690,41 @@ begin
   end if;
 
   movement := d10_roll - d6_roll;
-  next_prompt_number := greatest(1, chronicle_record.current_prompt_number + movement);
+  candidate_prompt_number := greatest(1, chronicle_record.current_prompt_number + movement);
+  loop
+    select greatest(
+      coalesce(max(encounter_index), 0),
+      case
+        when candidate_prompt_number = chronicle_record.current_prompt_number
+          then chronicle_record.current_prompt_encounter
+        else 0
+      end
+    ) + 1
+    into next_prompt_encounter
+    from public.prompt_runs
+    where chronicle_id = target_chronicle_id
+      and prompt_number = candidate_prompt_number
+      and prompt_version = chronicle_record.prompt_version;
 
-  if movement = 0 and exists (
-    select 1
-    from public.prompt_catalog
-    where prompt_number = chronicle_record.current_prompt_number
-      and encounter_index = chronicle_record.current_prompt_encounter + 1
-      and prompt_version = chronicle_record.prompt_version
-  ) then
-    next_prompt_number := chronicle_record.current_prompt_number;
-    next_prompt_encounter := chronicle_record.current_prompt_encounter + 1;
-  else
+    if exists (
+      select 1
+      from public.prompt_catalog
+      where prompt_number = candidate_prompt_number
+        and encounter_index = next_prompt_encounter
+        and prompt_version = chronicle_record.prompt_version
+    ) then
+      next_prompt_number := candidate_prompt_number;
+      exit;
+    end if;
+
+    candidate_prompt_number := candidate_prompt_number + 1;
     next_prompt_encounter := 1;
-  end if;
+
+    if candidate_prompt_number > 500 then
+      raise exception 'The next prompt could not be found.'
+        using errcode = 'P0001';
+    end if;
+  end loop;
 
   insert into public.prompt_runs (
     chronicle_id,

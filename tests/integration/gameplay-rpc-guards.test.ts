@@ -6,9 +6,17 @@ const migrationPath = path.join(
   process.cwd(),
   "supabase/migrations/0002_core_gameplay_schema.sql",
 );
+const samePromptEncounterHotfixPath = path.join(
+  process.cwd(),
+  "supabase/migrations/0006_fix_same_prompt_encounter_progression.sql",
+);
 
 function readMigration() {
   return fs.readFileSync(migrationPath, "utf8");
+}
+
+function readSamePromptEncounterHotfix() {
+  return fs.readFileSync(samePromptEncounterHotfixPath, "utf8");
 }
 
 function resetE2EState() {
@@ -24,6 +32,12 @@ beforeEach(() => {
 });
 
 describe("gameplay RPC safety guards", () => {
+  it("uses an unambiguous setup summary parameter when the setup RPC activates a chronicle", () => {
+    const sql = readMigration();
+
+    expect(sql).toContain("mortal_summary = nullif($2, '')");
+  });
+
   it("rejects setup completion once a chronicle is no longer a draft", () => {
     const sql = readMigration();
 
@@ -43,8 +57,36 @@ describe("gameplay RPC safety guards", () => {
     );
   });
 
+  it("moves on when the next encounter for a prompt does not exist", () => {
+    const sql = readMigration();
+
+    expect(sql).toMatch(
+      /candidate_prompt_number = chronicle_record\.current_prompt_number[\s\S]*chronicle_record\.current_prompt_encounter/i,
+    );
+    expect(sql).toMatch(
+      /if exists \([\s\S]*prompt_number = candidate_prompt_number[\s\S]*encounter_index = next_prompt_encounter[\s\S]*\) then[\s\S]*exit;[\s\S]*end if;[\s\S]*candidate_prompt_number := candidate_prompt_number \+ 1;[\s\S]*next_prompt_encounter := 1;/i,
+    );
+  });
+
+  it("keeps the current-encounter safeguard in the linked-environment hotfix migration", () => {
+    const sql = readSamePromptEncounterHotfix();
+
+    expect(sql).toMatch(
+      /candidate_prompt_number = chronicle_record\.current_prompt_number[\s\S]*chronicle_record\.current_prompt_encounter/i,
+    );
+  });
+
   it("keeps the e2e gameplay mock aligned with the setup and active-session guards", async () => {
-    const client = createE2EServerSupabaseClient(true);
+    const client = createE2EServerSupabaseClient({
+      get(name) {
+        if (name === "tyov-e2e-auth") {
+          return { value: "1" };
+        }
+
+        return undefined;
+      },
+      set() {},
+    });
     const inserted = await client
       .from("chronicles")
       .insert({ title: "The Long Night" })
