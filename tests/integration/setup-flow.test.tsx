@@ -1,0 +1,569 @@
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { SetupStepper } from "@/components/ritual/SetupStepper";
+
+const createServerSupabaseClient = vi.hoisted(() => vi.fn());
+const completeChronicleSetup = vi.hoisted(() => vi.fn());
+const getPromptByPosition = vi.hoisted(() => vi.fn());
+const resolvePrompt = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/supabase/server", () => ({
+  createServerSupabaseClient,
+}));
+
+vi.mock("@/lib/chronicles/setup", () => ({
+  completeChronicleSetup,
+}));
+
+vi.mock("@/lib/chronicles/resolvePrompt", () => ({
+  resolvePrompt,
+}));
+
+vi.mock("@/lib/prompts/catalog", () => ({
+  getPromptByPosition,
+}));
+
+describe("guided setup flow", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    createServerSupabaseClient.mockReset();
+    completeChronicleSetup.mockReset();
+    getPromptByPosition.mockReset();
+    resolvePrompt.mockReset();
+    vi.resetModules();
+  });
+
+  it("renders editorial setup steps and hydrates saved draft state", () => {
+    window.localStorage.setItem(
+      "tyov.setup.chronicle-1",
+      JSON.stringify({
+        immortalCharacter: {
+          description: "",
+          kind: "immortal",
+          name: "",
+        },
+        initialCharacters: [],
+        initialResources: [],
+        initialSkills: [],
+        mark: {
+          description: "",
+          isConcealed: true,
+          label: "",
+        },
+        mortalSummary:
+          "I kept the ledgers for a household that believed order could save it.",
+        setupMemories: [],
+      }),
+    );
+
+    render(
+      <SetupStepper
+        chronicleId="chronicle-1"
+        chronicleTitle="The Long Night"
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Begin with the life you had before.",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("The life you had before")).toBeInTheDocument();
+    expect(screen.getByLabelText("Mortal summary")).toHaveValue(
+      "I kept the ledgers for a household that believed order could save it.",
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+
+    expect(screen.getByText("What you can still carry")).toBeInTheDocument();
+  });
+
+  it("submits a valid setup payload through the completion route", async () => {
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user-1" } },
+        }),
+      },
+    });
+    completeChronicleSetup.mockResolvedValue({
+      chronicleId: "chronicle-1",
+      createdEntities: {
+        characters: 2,
+        memories: 1,
+        resources: 1,
+        skills: 1,
+      },
+      currentPromptNumber: 1,
+      nextRoute: "/chronicles/chronicle-1/play",
+    });
+
+    const { POST } = await import(
+      "@/app/api/chronicles/[chronicleId]/setup/complete/route"
+    );
+    const response = await POST(
+      new Request("http://localhost/api/chronicles/chronicle-1/setup/complete", {
+        body: JSON.stringify({
+          immortalCharacter: {
+            description: "The one who remade me.",
+            kind: "immortal",
+            name: "Aurelia",
+          },
+          initialCharacters: [
+            {
+              description: "My sister kept watch at the window.",
+              kind: "mortal",
+              name: "Marta",
+            },
+          ],
+          initialResources: [
+            {
+              description: "A shuttered estate above the marsh.",
+              isStationary: true,
+              label: "The Marsh House",
+            },
+          ],
+          initialSkills: [
+            {
+              description: "I knew how to listen before I knew how to survive.",
+              label: "Quiet Devotion",
+            },
+          ],
+          mark: {
+            description: "My reflection trembles before it vanishes.",
+            isConcealed: true,
+            label: "Unsteady Reflection",
+          },
+          mortalSummary:
+            "I had a life of service, habit, and private longing before the night opened.",
+          setupMemories: [
+            {
+              entryText: "I kept watch outside the sickroom and learned patience.",
+              title: "My vigil by the sickbed",
+            },
+          ],
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      }),
+      {
+        params: Promise.resolve({ chronicleId: "chronicle-1" }),
+      } as never,
+    );
+
+    expect(response.status).toBe(200);
+    expect(completeChronicleSetup).toHaveBeenCalledWith(
+      expect.anything(),
+      "chronicle-1",
+      expect.objectContaining({
+        mortalSummary:
+          "I had a life of service, habit, and private longing before the night opened.",
+      }),
+    );
+    await expect(response.json()).resolves.toMatchObject({
+      chronicleId: "chronicle-1",
+      currentPromptNumber: 1,
+      nextRoute: "/chronicles/chronicle-1/play",
+    });
+  });
+
+  it("rejects an invalid setup payload with the standard error shape", async () => {
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user-1" } },
+        }),
+      },
+    });
+
+    const { POST } = await import(
+      "@/app/api/chronicles/[chronicleId]/setup/complete/route"
+    );
+    const response = await POST(
+      new Request("http://localhost/api/chronicles/chronicle-1/setup/complete", {
+        body: JSON.stringify({
+          immortalCharacter: {
+            description: "The one who remade me.",
+            kind: "mortal",
+            name: "Aurelia",
+          },
+          initialCharacters: [],
+          initialResources: [],
+          initialSkills: [],
+          mark: {
+            description: "",
+            isConcealed: true,
+            label: "",
+          },
+          mortalSummary: "",
+          setupMemories: [],
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      }),
+      {
+        params: Promise.resolve({ chronicleId: "chronicle-1" }),
+      } as never,
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      details: expect.any(Array),
+      error: "Validation failed",
+    });
+    expect(completeChronicleSetup).not.toHaveBeenCalled();
+  });
+
+  it("renders the first prompt and compact memory summary on the play route", async () => {
+    const chronicleSingle = vi.fn().mockResolvedValue({
+        data: {
+          current_prompt_encounter: 1,
+          current_prompt_number: 1,
+          current_session_id: "session-1",
+          id: "chronicle-1",
+          prompt_version: "base",
+          status: "active",
+          title: "The Long Night",
+        },
+        error: null,
+      });
+    const chronicleEq = vi.fn(() => ({ single: chronicleSingle }));
+    const chronicleSelect = vi.fn(() => ({ eq: chronicleEq }));
+    const memoriesEqLocation = vi.fn().mockResolvedValue({
+      count: 1,
+      data: null,
+      error: null,
+    });
+    const memoriesEqChronicle = vi.fn(() => ({ eq: memoriesEqLocation }));
+    const memoriesSelect = vi.fn(() => ({ eq: memoriesEqChronicle }));
+    const diariesEqStatus = vi.fn().mockResolvedValue({
+      count: 1,
+      data: null,
+      error: null,
+    });
+    const diariesEqChronicle = vi.fn(() => ({ eq: diariesEqStatus }));
+    const diariesSelect = vi.fn(() => ({ eq: diariesEqChronicle }));
+    const from = vi.fn((table: string) => {
+      if (table === "chronicles") {
+        return { select: chronicleSelect };
+      }
+
+      if (table === "memories") {
+        return { select: memoriesSelect };
+      }
+
+      return { select: diariesSelect };
+    });
+
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user-1" } },
+        }),
+      },
+      from,
+    });
+    getPromptByPosition.mockResolvedValue({
+      encounter_index: 1,
+      prompt_markdown:
+        "In your blood-hunger you destroy someone close to you. Kill a mortal Character.",
+      prompt_number: 1,
+      prompt_version: "base",
+    });
+
+    const { default: PlayPage } = await import(
+      "@/app/(app)/chronicles/[chronicleId]/play/page"
+    );
+    const view = await PlayPage({
+      params: Promise.resolve({ chronicleId: "chronicle-1" }),
+    } as never);
+
+    render(view);
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Prompt 1",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "In your blood-hunger you destroy someone close to you. Kill a mortal Character.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("1 memory held in mind")).toBeInTheDocument();
+    expect(screen.getByText("Diary present")).toBeInTheDocument();
+  });
+
+  it("submits a valid prompt resolution payload through the resolve route", async () => {
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user-1" } },
+        }),
+      },
+    });
+    resolvePrompt.mockResolvedValue({
+      archiveEvents: [
+        {
+          eventType: "prompt_resolved",
+          summary: "The entry has been set into memory.",
+        },
+      ],
+      nextPrompt: {
+        encounterIndex: 1,
+        promptNumber: 4,
+      },
+      promptRunId: "run-1",
+      rolled: {
+        d10: 7,
+        d6: 4,
+        movement: 3,
+      },
+    });
+
+    const { POST } = await import(
+      "@/app/api/chronicles/[chronicleId]/play/resolve/route"
+    );
+    const response = await POST(
+      new Request("http://localhost/api/chronicles/chronicle-1/play/resolve", {
+        body: JSON.stringify({
+          experienceText:
+            "I left the chapel with blood under my nails and a prayer I could not finish.",
+          memoryDecision: {
+            mode: "append-existing",
+            targetMemoryId: "9b3a25d0-89de-4c6f-b0fd-f719f99c4f6b",
+          },
+          playerEntry:
+            "I answered the bells by dragging the sexton into the thawing graveyard.",
+          sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+          traitMutations: {
+            characters: [],
+            marks: [],
+            resources: [],
+            skills: [],
+          },
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      }),
+      {
+        params: Promise.resolve({ chronicleId: "chronicle-1" }),
+      } as never,
+    );
+
+    expect(response.status).toBe(200);
+    expect(resolvePrompt).toHaveBeenCalledWith(
+      expect.anything(),
+      "chronicle-1",
+      expect.objectContaining({
+        sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+      }),
+    );
+    await expect(response.json()).resolves.toMatchObject({
+      nextPrompt: {
+        encounterIndex: 1,
+        promptNumber: 4,
+      },
+      promptRunId: "run-1",
+      rolled: {
+        d10: 7,
+        d6: 4,
+        movement: 3,
+      },
+    });
+  });
+
+  it("rejects an invalid prompt resolution payload with the standard error shape", async () => {
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user-1" } },
+        }),
+      },
+    });
+
+    const { POST } = await import(
+      "@/app/api/chronicles/[chronicleId]/play/resolve/route"
+    );
+    const response = await POST(
+      new Request("http://localhost/api/chronicles/chronicle-1/play/resolve", {
+        body: JSON.stringify({
+          experienceText: "",
+          memoryDecision: {
+            memoryId: "not-a-uuid",
+            mode: "keep-everything",
+          },
+          playerEntry: "",
+          sessionId: "not-a-uuid",
+          traitMutations: {
+            characters: [],
+          },
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      }),
+      {
+        params: Promise.resolve({ chronicleId: "chronicle-1" }),
+      } as never,
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      details: expect.any(Array),
+      error: "Validation failed",
+    });
+    expect(resolvePrompt).not.toHaveBeenCalled();
+  });
+
+  it("shows quiet consequence feedback after a successful prompt resolution", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            archiveEvents: [
+              {
+                eventType: "prompt_resolved",
+                summary: "The entry has been set into memory.",
+              },
+            ],
+            nextPrompt: {
+              encounterIndex: 1,
+              promptNumber: 4,
+            },
+            promptRunId: "run-1",
+            rolled: {
+              d10: 7,
+              d6: 4,
+              movement: 3,
+            },
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            status: 200,
+          },
+        ),
+      );
+
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: {
+        value: "I answered the bells by dragging the sexton into the thawing graveyard.",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: {
+        value:
+          "I left the chapel with blood under my nails and a prayer I could not finish.",
+      },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("The entry has been set into memory."),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.getByRole("link", {
+        name: "Continue to prompt 4",
+      }),
+    ).toHaveAttribute("href", "/chronicles/chronicle-1/play");
+
+    fetchMock.mockRestore();
+  });
+
+  it("preserves the unsent prompt draft after a failed submission", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: "The prompt could not be resolved.",
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            status: 500,
+          },
+        ),
+      );
+
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    const view = render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: {
+        value: "I answered the bells by dragging the sexton into the thawing graveyard.",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: {
+        value:
+          "I left the chapel with blood under my nails and a prayer I could not finish.",
+      },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("The prompt could not be resolved."),
+      ).toBeInTheDocument();
+    });
+
+    view.unmount();
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        initialSessionId="session-1"
+      />,
+    );
+
+    expect(screen.getByLabelText("Player entry")).toHaveValue(
+      "I answered the bells by dragging the sexton into the thawing graveyard.",
+    );
+    expect(screen.getByLabelText("Experience text")).toHaveValue(
+      "I left the chapel with blood under my nails and a prayer I could not finish.",
+    );
+
+    fetchMock.mockRestore();
+  });
+});

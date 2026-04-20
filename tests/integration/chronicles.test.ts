@@ -67,7 +67,7 @@ describe("chronicle creation route", () => {
     );
 
     expect(response.headers.get("location")).toBe(
-      "http://localhost/chronicles?created=chronicle-1",
+      "http://localhost/chronicles/chronicle-1/setup?created=1",
     );
   });
 });

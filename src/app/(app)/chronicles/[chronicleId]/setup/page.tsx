@@ -1,0 +1,58 @@
+import { redirect } from "next/navigation";
+import { SetupStepper } from "@/components/ritual/SetupStepper";
+import { PageShell } from "@/components/ui/PageShell";
+import { SurfacePanel } from "@/components/ui/SurfacePanel";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+
+type SetupPageProps = {
+  params: Promise<{
+    chronicleId: string;
+  }>;
+};
+
+export default async function ChronicleSetupPage({
+  params,
+}: SetupPageProps) {
+  const { chronicleId } = await params;
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(`/sign-in?next=${encodeURIComponent(`/chronicles/${chronicleId}/setup`)}`);
+  }
+
+  const { data: chronicle, error } = await supabase
+    .from("chronicles")
+    .select("id, title, status")
+    .eq("id", chronicleId)
+    .single();
+
+  if (error || !chronicle) {
+    redirect("/chronicles?error=That%20chronicle%20could%20not%20be%20opened.");
+  }
+
+  if (chronicle.status !== "draft") {
+    redirect(`/chronicles/${chronicleId}/play`);
+  }
+
+  return (
+    <PageShell className="gap-6 py-8">
+      <SurfacePanel className="max-w-reading px-6 py-7 sm:px-8">
+        <p className="font-mono text-xs uppercase tracking-[0.22em] text-ink-muted">
+          Guided setup
+        </p>
+        <h1 className="mt-3 font-heading text-5xl leading-[1.08] text-ink sm:text-6xl">
+          We will begin with the life you had before.
+        </h1>
+        <p className="mt-4 text-lg leading-relaxed text-ink-muted">
+          Move one threshold at a time. What you set down here should feel like
+          the beginning of a life, not the filling of a form.
+        </p>
+      </SurfacePanel>
+
+      <SetupStepper chronicleId={chronicle.id} chronicleTitle={chronicle.title} />
+    </PageShell>
+  );
+}

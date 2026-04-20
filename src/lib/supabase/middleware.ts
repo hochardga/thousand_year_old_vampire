@@ -1,6 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseEnv } from "@/lib/supabase/config";
+import {
+  getE2EAuthCookieName,
+  isE2EAuthenticatedCookieValue,
+  isE2EMockMode,
+} from "@/lib/supabase/e2e";
 
 const PROTECTED_PREFIXES = ["/chronicles"];
 
@@ -36,6 +41,19 @@ function nextResponseFor(request: NextRequest) {
 }
 
 export async function updateSession(request: NextRequest) {
+  if (isE2EMockMode()) {
+    if (
+      isProtectedAppPath(request.nextUrl.pathname) &&
+      !isE2EAuthenticatedCookieValue(
+        request.cookies.get(getE2EAuthCookieName())?.value,
+      )
+    ) {
+      return NextResponse.redirect(buildSignInRedirectUrl(request.nextUrl));
+    }
+
+    return nextResponseFor(request);
+  }
+
   if (
     isProtectedAppPath(request.nextUrl.pathname) &&
     !hasSupabaseAuthCookie(request)

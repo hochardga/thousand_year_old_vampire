@@ -20,6 +20,22 @@ type ChronicleRecord = {
   vampire_name: string | null;
 };
 
+function resolveChronicleHref(chronicle: ChronicleRecord) {
+  if (chronicle.status === "draft") {
+    return `/chronicles/${chronicle.id}/setup`;
+  }
+
+  return `/chronicles/${chronicle.id}/play`;
+}
+
+function resolveChronicleActionLabel(chronicle: ChronicleRecord) {
+  if (chronicle.status === "draft") {
+    return "Continue the becoming-undead sequence";
+  }
+
+  return "Return to the current prompt";
+}
+
 export default async function ChroniclesPage({
   searchParams,
 }: ChroniclesPageProps) {
@@ -125,8 +141,10 @@ export default async function ChroniclesPage({
         <div className="grid gap-4">
           {chronicles.map((chronicle) => (
             <ChronicleCard
+              actionLabel={resolveChronicleActionLabel(chronicle)}
               key={chronicle.id}
               createdAt={chronicle.created_at}
+              href={resolveChronicleHref(chronicle)}
               highlight={params.created === chronicle.id}
               lastPlayedAt={chronicle.last_played_at}
               status={chronicle.status}
