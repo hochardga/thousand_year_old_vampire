@@ -2,8 +2,6 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import {
   createE2EServerSupabaseClient,
-  getE2EAuthCookieName,
-  isE2EAuthenticatedCookieValue,
   isE2EMockMode,
 } from "@/lib/supabase/e2e";
 import { getSupabaseEnv } from "@/lib/supabase/config";
@@ -16,11 +14,7 @@ export async function createServerSupabaseClient(
   const resolvedCookieStore = cookieStore ?? (await cookies());
 
   if (isE2EMockMode()) {
-    return createE2EServerSupabaseClient(
-      isE2EAuthenticatedCookieValue(
-        resolvedCookieStore.get(getE2EAuthCookieName())?.value,
-      ),
-    );
+    return createE2EServerSupabaseClient(resolvedCookieStore);
   }
 
   const { url, anonKey } = getSupabaseEnv();

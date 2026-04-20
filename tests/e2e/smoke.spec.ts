@@ -19,4 +19,7 @@ test("landing page renders and protected routes redirect to sign-in", async ({
       name: "We will send a private link to the address you choose.",
     }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Enter Through Test Sign-In" }),
+  ).toBeVisible();
 });

@@ -68,6 +68,17 @@ type E2EState = {
   skills: Array<Record<string, unknown>>;
 };
 
+type CookieStoreLike = {
+  get: (name: string) => { value?: string } | undefined;
+  set: (
+    name: string,
+    value: string,
+    options?: {
+      path?: string;
+    },
+  ) => void;
+};
+
 type QueryOptions = {
   count?: "exact";
   head?: boolean;
@@ -500,14 +511,18 @@ export function getE2EAuthCookieName() {
   return E2E_AUTH_COOKIE;
 }
 
-export function createE2EServerSupabaseClient(isAuthenticated: boolean) {
+function isAuthenticatedCookieValue(cookieStore: CookieStoreLike) {
+  return isE2EAuthenticatedCookieValue(cookieStore.get(E2E_AUTH_COOKIE)?.value);
+}
+
+export function createE2EServerSupabaseClient(cookieStore: CookieStoreLike) {
   return {
     auth: {
       async exchangeCodeForSession() {
         return {
           data: {
             session: null,
-            user: isAuthenticated
+            user: isAuthenticatedCookieValue(cookieStore)
               ? {
                   email: "e2e@example.com",
                   id: E2E_USER_ID,
@@ -520,7 +535,7 @@ export function createE2EServerSupabaseClient(isAuthenticated: boolean) {
       async getUser() {
         return {
           data: {
-            user: isAuthenticated
+            user: isAuthenticatedCookieValue(cookieStore)
               ? {
                   email: "e2e@example.com",
                   id: E2E_USER_ID,
@@ -535,6 +550,24 @@ export function createE2EServerSupabaseClient(isAuthenticated: boolean) {
           data: {
             session: null,
             user: null,
+          },
+          error: null,
+        };
+      },
+      async signInWithPassword() {
+        cookieStore.set(E2E_AUTH_COOKIE, "1", {
+          path: "/",
+        });
+
+        return {
+          data: {
+            session: {
+              access_token: "e2e-access-token",
+            },
+            user: {
+              email: "e2e@example.com",
+              id: E2E_USER_ID,
+            },
           },
           error: null,
         };
@@ -573,7 +606,7 @@ export function createE2EServerSupabaseClient(isAuthenticated: boolean) {
       };
     },
     async rpc(fn: string, args: Record<string, unknown>) {
-      if (!isAuthenticated) {
+      if (!isAuthenticatedCookieValue(cookieStore)) {
         return {
           data: null,
           error: { message: "Authentication required" },
