@@ -200,6 +200,103 @@ describe("testing-only password sign-in action", () => {
     expect(createAdminSupabaseClient).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps paging through auth users before deciding the preview test user is missing", async () => {
+    process.env.ENABLE_TEST_AUTH = "1";
+    process.env.NODE_ENV = "production";
+    process.env.VERCEL_ENV = "preview";
+
+    const signInWithPassword = vi
+      .fn()
+      .mockResolvedValueOnce({
+        error: {
+          code: "invalid_credentials",
+          message: "Invalid login credentials",
+        },
+      })
+      .mockResolvedValueOnce({
+        error: null,
+      });
+    const listUsers = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: {
+          lastPage: 2,
+          nextPage: 2,
+          total: 201,
+          users: [],
+        },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: {
+          lastPage: 2,
+          nextPage: null,
+          total: 201,
+          users: [
+            {
+              email: "e2e@example.com",
+              id: "user-201",
+            },
+          ],
+        },
+        error: null,
+      });
+    const updateUserById = vi.fn().mockResolvedValue({
+      data: { user: { id: "user-201" } },
+      error: null,
+    });
+    const createUser = vi.fn().mockResolvedValue({
+      data: null,
+      error: {
+        message: "User already registered",
+      },
+    });
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        signInWithPassword,
+      },
+    });
+    createAdminSupabaseClient.mockReturnValue({
+      auth: {
+        admin: {
+          createUser,
+          listUsers,
+          updateUserById,
+        },
+      },
+    });
+
+    const { requestTestPasswordSignIn } = await loadSignInModule();
+    const formData = new FormData();
+    formData.set("email", "e2e@example.com");
+    formData.set("password", "nightfall");
+    formData.set("next", "/chronicles");
+
+    await expect(captureRedirectUrl(requestTestPasswordSignIn(formData))).resolves
+      .toBe("/chronicles");
+
+    expect(listUsers).toHaveBeenCalledTimes(2);
+    expect(listUsers).toHaveBeenNthCalledWith(1, {
+      page: 1,
+      perPage: 200,
+    });
+    expect(listUsers).toHaveBeenNthCalledWith(2, {
+      page: 2,
+      perPage: 200,
+    });
+    expect(updateUserById).toHaveBeenCalledWith("user-201", {
+      email_confirm: true,
+      password: "nightfall",
+    });
+    expect(createUser).not.toHaveBeenCalled();
+
+    consoleError.mockRestore();
+  });
+
   it("returns to sign-in with a testing-only error when the password is rejected", async () => {
     process.env.ENABLE_TEST_AUTH = "1";
     process.env.NODE_ENV = "production";

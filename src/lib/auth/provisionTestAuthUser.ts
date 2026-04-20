@@ -9,33 +9,39 @@ export async function ensurePreviewTestAuthUser({
 }) {
   const admin = createAdminSupabaseClient();
   const normalizedEmail = email.trim().toLowerCase();
-  const { data, error } = await admin.auth.admin.listUsers({
-    page: 1,
-    perPage: 200,
-  });
+  let page = 1;
 
-  if (error) {
-    throw error;
-  }
+  while (page) {
+    const { data, error } = await admin.auth.admin.listUsers({
+      page,
+      perPage: 200,
+    });
 
-  const existingUser = data.users.find(
-    (user) => user.email?.trim().toLowerCase() === normalizedEmail,
-  );
-
-  if (existingUser) {
-    const { error: updateError } = await admin.auth.admin.updateUserById(
-      existingUser.id,
-      {
-        email_confirm: true,
-        password,
-      },
-    );
-
-    if (updateError) {
-      throw updateError;
+    if (error) {
+      throw error;
     }
 
-    return;
+    const existingUser = data.users.find(
+      (user) => user.email?.trim().toLowerCase() === normalizedEmail,
+    );
+
+    if (existingUser) {
+      const { error: updateError } = await admin.auth.admin.updateUserById(
+        existingUser.id,
+        {
+          email_confirm: true,
+          password,
+        },
+      );
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      return;
+    }
+
+    page = data.nextPage ?? 0;
   }
 
   const { error: createError } = await admin.auth.admin.createUser({

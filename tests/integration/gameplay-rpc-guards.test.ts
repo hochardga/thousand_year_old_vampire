@@ -6,9 +6,17 @@ const migrationPath = path.join(
   process.cwd(),
   "supabase/migrations/0002_core_gameplay_schema.sql",
 );
+const samePromptEncounterHotfixPath = path.join(
+  process.cwd(),
+  "supabase/migrations/0006_fix_same_prompt_encounter_progression.sql",
+);
 
 function readMigration() {
   return fs.readFileSync(migrationPath, "utf8");
+}
+
+function readSamePromptEncounterHotfix() {
+  return fs.readFileSync(samePromptEncounterHotfixPath, "utf8");
 }
 
 function resetE2EState() {
@@ -53,10 +61,18 @@ describe("gameplay RPC safety guards", () => {
     const sql = readMigration();
 
     expect(sql).toMatch(
-      /select coalesce\(max\(encounter_index\), 0\) \+ 1[\s\S]*from public\.prompt_runs[\s\S]*and prompt_number = candidate_prompt_number/i,
+      /candidate_prompt_number = chronicle_record\.current_prompt_number[\s\S]*chronicle_record\.current_prompt_encounter/i,
     );
     expect(sql).toMatch(
       /if exists \([\s\S]*prompt_number = candidate_prompt_number[\s\S]*encounter_index = next_prompt_encounter[\s\S]*\) then[\s\S]*exit;[\s\S]*end if;[\s\S]*candidate_prompt_number := candidate_prompt_number \+ 1;[\s\S]*next_prompt_encounter := 1;/i,
+    );
+  });
+
+  it("keeps the current-encounter safeguard in the linked-environment hotfix migration", () => {
+    const sql = readSamePromptEncounterHotfix();
+
+    expect(sql).toMatch(
+      /candidate_prompt_number = chronicle_record\.current_prompt_number[\s\S]*chronicle_record\.current_prompt_encounter/i,
     );
   });
 

@@ -80,7 +80,14 @@ begin
   candidate_prompt_number := greatest(1, chronicle_record.current_prompt_number + movement);
 
   loop
-    select coalesce(max(encounter_index), 0) + 1
+    select greatest(
+      coalesce(max(encounter_index), 0),
+      case
+        when candidate_prompt_number = chronicle_record.current_prompt_number
+          then chronicle_record.current_prompt_encounter
+        else 0
+      end
+    ) + 1
     into next_prompt_encounter
     from public.prompt_runs
     where chronicle_id = target_chronicle_id
