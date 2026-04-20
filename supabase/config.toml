@@ -1,8 +1,19 @@
-project_id = "thousand-year-old-vampire"
+project_id = "hadxpatimfbuqwwvgbzw"
 
 [auth]
-site_url = "http://127.0.0.1:3000"
+site_url = "https://thousand-year-old-vampire.vercel.app"
 additional_redirect_urls = [
-  "http://localhost:3000/auth/callback",
-  "http://127.0.0.1:3000/auth/callback",
+  "http://localhost:3000/**",
+  "http://127.0.0.1:3000/**",
+  "https://thousand-year-old-vampire.vercel.app/auth/callback",
+  "https://*-hochardga-1048s-projects.vercel.app/**",
 ]
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[auth.email]
+enable_confirmations = true
+max_frequency = "1m0s"
+otp_length = 8

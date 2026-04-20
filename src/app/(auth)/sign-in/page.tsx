@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { PageShell } from "@/components/ui/PageShell";
 import { AuthForm } from "@/components/ui/AuthForm";
+import { normalizeReturnPath, resolveSiteUrl } from "@/lib/auth/redirects";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { normalizeReturnPath } from "@/lib/auth/redirects";
 
 const magicLinkSchema = z.object({
   email: z.string().trim().email(),
@@ -24,7 +24,7 @@ export default async function SignInPage({
 }: SignInPageProps) {
   const params = await searchParams;
   const next = normalizeReturnPath(params.next);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const siteUrl = resolveSiteUrl();
 
   async function requestMagicLink(formData: FormData) {
     "use server";
