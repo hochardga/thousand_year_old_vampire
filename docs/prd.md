@@ -117,7 +117,7 @@ project-root/
 │   ├── types/
 │   │   ├── database.ts
 │   │   └── chronicle.ts
-│   └── middleware.ts
+│   └── proxy.ts
 ├── supabase/
 │   ├── config.toml
 │   ├── migrations/

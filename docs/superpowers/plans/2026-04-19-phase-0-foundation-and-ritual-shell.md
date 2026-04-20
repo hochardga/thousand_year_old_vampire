@@ -16,7 +16,7 @@
 - Create: `src/app/layout.tsx`, `src/app/globals.css`, `src/app/(marketing)/layout.tsx`, `src/app/(marketing)/page.tsx`, `src/app/(auth)/sign-in/page.tsx`, `src/app/auth/callback/route.ts`, `src/app/(app)/chronicles/page.tsx`, `src/app/api/chronicles/route.ts`
 - Create: `src/components/marketing/HeroPanel.tsx`, `src/components/ui/AuthForm.tsx`, `src/components/ui/PageShell.tsx`, `src/components/ui/SurfacePanel.tsx`, `src/components/ritual/ChronicleCard.tsx`
 - Create: `src/lib/supabase/browser.ts`, `src/lib/supabase/server.ts`, `src/lib/supabase/middleware.ts`, `src/lib/utils.ts`
-- Create: `src/middleware.ts`, `src/test/setup.ts`, `vitest.config.ts`, `playwright.config.ts`, `tests/integration/chronicles.test.ts`, `tests/e2e/smoke.spec.ts`
+- Create: `src/proxy.ts`, `src/test/setup.ts`, `vitest.config.ts`, `playwright.config.ts`, `tests/integration/chronicles.test.ts`, `tests/e2e/smoke.spec.ts`
 - Create: `supabase/config.toml`, `supabase/migrations/0001_initial_profiles_chronicles.sql`, `.env.example`
 - Modify: `docs/product-roadmap.md`
 
@@ -99,7 +99,7 @@ Expected: exit status zero
 ### Task 4: `TASK-004` Supabase helpers, env handling, and middleware
 
 **Files:**
-- Create: `src/lib/supabase/browser.ts`, `src/lib/supabase/server.ts`, `src/lib/supabase/middleware.ts`, `src/middleware.ts`, `.env.example`
+- Create: `src/lib/supabase/browser.ts`, `src/lib/supabase/server.ts`, `src/lib/supabase/middleware.ts`, `src/proxy.ts`, `.env.example`
 
 - [ ] **Step 1: Write a failing auth-protection test**
 

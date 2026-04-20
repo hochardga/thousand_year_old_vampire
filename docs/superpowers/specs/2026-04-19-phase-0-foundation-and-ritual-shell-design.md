@@ -30,7 +30,7 @@ The runtime stack should center on:
 
 - global layout and tokenized visual foundation in `src/app/layout.tsx` and `src/app/globals.css`
 - Supabase browser/server helpers in `src/lib/supabase/`
-- middleware-based auth refresh and route protection in `src/middleware.ts`
+- proxy-based auth refresh and route protection in `src/proxy.ts`
 - route-handler writes for chronicle creation and auth side effects
 
 The core request flow is:
