@@ -47,3 +47,6 @@ next-env.d.ts
 
 # Keep the large source PDFs out of Git history.
 docs/source_material/*.pdf
+
+# local Supabase CLI link metadata
+supabase/.temp/
