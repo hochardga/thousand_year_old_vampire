@@ -362,6 +362,13 @@ function applySetupCompletion(args: Record<string, unknown>) {
     return { data: null, error: { message: "Chronicle not found." } };
   }
 
+  if (chronicle.status !== "draft") {
+    return {
+      data: null,
+      error: { message: "Chronicle setup has already been completed." },
+    };
+  }
+
   const now = timestamp();
   const sessionId = randomUUID();
   chronicle.current_prompt_encounter = 1;
@@ -427,6 +434,30 @@ function applyPromptResolution(args: Record<string, unknown>) {
 
   if (!chronicle) {
     return { data: null, error: { message: "Chronicle not found." } };
+  }
+
+  const session = state.sessions.find(
+    (row) =>
+      row.id === args.target_session_id &&
+      row.chronicle_id === args.target_chronicle_id,
+  );
+
+  if (!session) {
+    return { data: null, error: { message: "Session not found." } };
+  }
+
+  if (chronicle.current_session_id !== args.target_session_id) {
+    return {
+      data: null,
+      error: { message: "The active session no longer matches this request." },
+    };
+  }
+
+  if (session.status !== "in_progress") {
+    return {
+      data: null,
+      error: { message: "Session is not active." },
+    };
   }
 
   chronicle.current_prompt_number = 4;

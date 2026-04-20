@@ -423,6 +423,11 @@ begin
       using errcode = 'P0001';
   end if;
 
+  if chronicle_record.status <> 'draft' then
+    raise exception 'Chronicle setup has already been completed.'
+      using errcode = 'P0001';
+  end if;
+
   insert into public.sessions (chronicle_id, status, snapshot_json)
   values (
     target_chronicle_id,
@@ -658,6 +663,16 @@ begin
 
   if not found then
     raise exception 'Session not found.'
+      using errcode = 'P0001';
+  end if;
+
+  if chronicle_record.current_session_id is distinct from target_session_id then
+    raise exception 'The active session no longer matches this request.'
+      using errcode = 'P0001';
+  end if;
+
+  if session_record.status <> 'in_progress' then
+    raise exception 'Session is not active.'
       using errcode = 'P0001';
   end if;
 
