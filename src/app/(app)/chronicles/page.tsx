@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { PageShell } from "@/components/ui/PageShell";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import { ChronicleCard } from "@/components/ritual/ChronicleCard";
+import { ensureProfile } from "@/lib/profiles/ensureProfile";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type ChroniclesPageProps = {
@@ -20,6 +21,36 @@ type ChronicleRecord = {
   vampire_name: string | null;
 };
 
+type ChronicleListClient = {
+  from: (table: "chronicles") => {
+    select: (columns: string) => {
+      order: (
+        column: string,
+        options?: { ascending?: boolean },
+      ) => Promise<{
+        data: ChronicleRecord[] | null;
+        error: { message: string } | null;
+      }>;
+    };
+  };
+};
+
+function resolveChronicleHref(chronicle: ChronicleRecord) {
+  if (chronicle.status === "draft") {
+    return `/chronicles/${chronicle.id}/setup`;
+  }
+
+  return `/chronicles/${chronicle.id}/play`;
+}
+
+function resolveChronicleActionLabel(chronicle: ChronicleRecord) {
+  if (chronicle.status === "draft") {
+    return "Continue the becoming-undead sequence";
+  }
+
+  return "Return to the current prompt";
+}
+
 export default async function ChroniclesPage({
   searchParams,
 }: ChroniclesPageProps) {
@@ -33,7 +64,24 @@ export default async function ChroniclesPage({
     redirect("/sign-in?next=%2Fchronicles");
   }
 
-  const { data, error } = await supabase
+  try {
+    await ensureProfile(supabase as never, {
+      email: user.email,
+      id: user.id,
+    });
+  } catch {
+    return (
+      <PageShell className="gap-6 py-8">
+        <SurfacePanel className="border-error/20 bg-error/10 px-5 py-4">
+          <p className="text-sm text-ink">
+            We signed you in, but your profile could not be loaded yet.
+          </p>
+        </SurfacePanel>
+      </PageShell>
+    );
+  }
+
+  const { data, error } = await (supabase as unknown as ChronicleListClient)
     .from("chronicles")
     .select("id, title, status, vampire_name, created_at, last_played_at")
     .order("updated_at", { ascending: false });
@@ -125,8 +173,10 @@ export default async function ChroniclesPage({
         <div className="grid gap-4">
           {chronicles.map((chronicle) => (
             <ChronicleCard
+              actionLabel={resolveChronicleActionLabel(chronicle)}
               key={chronicle.id}
               createdAt={chronicle.created_at}
+              href={resolveChronicleHref(chronicle)}
               highlight={params.created === chronicle.id}
               lastPlayedAt={chronicle.last_played_at}
               status={chronicle.status}

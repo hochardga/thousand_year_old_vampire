@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import {
+  getE2EAuthCookieName,
+  isE2EMockMode,
+} from "@/lib/supabase/e2e";
+import { ensureProfile } from "@/lib/profiles/ensureProfile";
 import { buildSignInRedirectUrl } from "@/lib/supabase/middleware";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -34,6 +39,21 @@ export async function POST(request: Request) {
     );
   }
 
+  try {
+    await ensureProfile(supabase as never, {
+      email: user.email,
+      id: user.id,
+    });
+  } catch {
+    const redirectUrl = new URL("/chronicles", requestUrl.origin);
+    redirectUrl.searchParams.set(
+      "error",
+      "We signed you in, but your profile could not be loaded yet.",
+    );
+
+    return NextResponse.redirect(redirectUrl, 303);
+  }
+
   const formData = await request.formData();
   const parsed = chronicleSchema.safeParse({
     title: formData.get("title"),
@@ -61,7 +81,19 @@ export async function POST(request: Request) {
     return NextResponse.redirect(redirectUrl, 303);
   }
 
-  redirectUrl.searchParams.set("created", data.id);
+  const setupRedirectUrl = new URL(
+    `/chronicles/${data.id}/setup`,
+    requestUrl.origin,
+  );
+  setupRedirectUrl.searchParams.set("created", "1");
 
-  return NextResponse.redirect(redirectUrl, 303);
+  const response = NextResponse.redirect(setupRedirectUrl, 303);
+
+  if (isE2EMockMode()) {
+    response.cookies.set(getE2EAuthCookieName(), "1", {
+      path: "/",
+    });
+  }
+
+  return response;
 }

@@ -2,17 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { normalizeReturnPath } from "@/lib/auth/redirects";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-function deriveDisplayName(email?: string | null) {
-  if (!email) {
-    return "Unnamed Vampire";
-  }
-
-  const [localPart] = email.split("@");
-  const cleaned = localPart.replace(/[._-]+/g, " ").trim();
-
-  return cleaned ? cleaned.replace(/\b\w/g, (char) => char.toUpperCase()) : email;
-}
-
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
@@ -47,25 +36,6 @@ export async function GET(request: NextRequest) {
 
   if (!user) {
     signInUrl.searchParams.set("error", "We could not finish signing you in.");
-
-    return NextResponse.redirect(signInUrl);
-  }
-
-  const { error: profileError } = await supabase.from("profiles").upsert(
-    {
-      id: user.id,
-      display_name: deriveDisplayName(user.email),
-    },
-    {
-      onConflict: "id",
-    },
-  );
-
-  if (profileError) {
-    signInUrl.searchParams.set(
-      "error",
-      "Your entry was opened, but your profile could not be prepared yet.",
-    );
 
     return NextResponse.redirect(signInUrl);
   }
