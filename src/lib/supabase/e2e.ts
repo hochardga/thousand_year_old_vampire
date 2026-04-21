@@ -266,11 +266,21 @@ function pickColumns<T extends Record<string, unknown>>(row: T, columns: string)
 function applyFilters<T extends Record<string, unknown>>(rows: T[], filters: Filter[]) {
   return rows.filter((row) =>
     filters.every((filter) => {
+      const rowValue = row[filter.column as keyof T];
+
       if (filter.operator === "lt") {
-        return row[filter.column] < filter.value;
+        if (typeof rowValue === "number" && typeof filter.value === "number") {
+          return rowValue < filter.value;
+        }
+
+        if (typeof rowValue === "string" && typeof filter.value === "string") {
+          return rowValue < filter.value;
+        }
+
+        return false;
       }
 
-      return row[filter.column] === filter.value;
+      return rowValue === filter.value;
     }),
   );
 }
