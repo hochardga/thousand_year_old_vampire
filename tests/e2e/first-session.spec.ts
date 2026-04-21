@@ -30,12 +30,23 @@ test("sign-in to first resolved prompt stays inside the ritual flow", async ({
   await page.getByRole("button", { name: "Begin a New Chronicle" }).click();
 
   await expect(page).toHaveURL(/\/chronicles\/.+\/setup/);
+  const chronicleId = page.url().match(/\/chronicles\/([^/]+)\//)?.[1];
 
   await page
     .getByLabel("Mortal summary")
     .fill(
       "I had a life of service, habit, and private longing before the night opened.",
     );
+  if (chronicleId) {
+    await expect
+      .poll(async () =>
+        page.evaluate(
+          (id) => window.localStorage.getItem(`tyov.setup.${id}`),
+          chronicleId,
+        ),
+      )
+      .toContain("I had a life of service, habit, and private longing before the night opened.");
+  }
   await page
     .getByRole("button", { name: "Continue to the next threshold" })
     .click();
@@ -53,6 +64,24 @@ test("sign-in to first resolved prompt stays inside the ritual flow", async ({
   await page
     .getByLabel("Why it matters")
     .fill("It was the first shelter I claimed as the hunger sharpened.");
+  if (chronicleId) {
+    await expect
+      .poll(async () =>
+        page.evaluate(
+          (id) => window.localStorage.getItem(`tyov.setup.${id}`),
+          chronicleId,
+        ),
+      )
+      .toContain("Quiet Devotion");
+    await expect
+      .poll(async () =>
+        page.evaluate(
+          (id) => window.localStorage.getItem(`tyov.setup.${id}`),
+          chronicleId,
+        ),
+      )
+      .toContain("The Marsh House");
+  }
   await page
     .getByRole("button", { name: "Continue to the next threshold" })
     .click();
@@ -70,6 +99,24 @@ test("sign-in to first resolved prompt stays inside the ritual flow", async ({
   await page
     .getByLabel("How they changed you")
     .fill("She remade my hunger and called it a gift.");
+  if (chronicleId) {
+    await expect
+      .poll(async () =>
+        page.evaluate(
+          (id) => window.localStorage.getItem(`tyov.setup.${id}`),
+          chronicleId,
+        ),
+      )
+      .toContain("Marta");
+    await expect
+      .poll(async () =>
+        page.evaluate(
+          (id) => window.localStorage.getItem(`tyov.setup.${id}`),
+          chronicleId,
+        ),
+      )
+      .toContain("Aurelia");
+  }
   await page
     .getByRole("button", { name: "Continue to the next threshold" })
     .click();
@@ -83,6 +130,16 @@ test("sign-in to first resolved prompt stays inside the ritual flow", async ({
   await page
     .getByLabel("How it shows itself")
     .fill("My reflection trembles before it vanishes.");
+  if (chronicleId) {
+    await expect
+      .poll(async () =>
+        page.evaluate(
+          (id) => window.localStorage.getItem(`tyov.setup.${id}`),
+          chronicleId,
+        ),
+      )
+      .toContain("Unsteady Reflection");
+  }
   await page
     .getByRole("button", { name: "Continue to the next threshold" })
     .click();
@@ -101,6 +158,16 @@ test("sign-in to first resolved prompt stays inside the ritual flow", async ({
     "I kept watch outside the sickroom and learned patience.",
   );
   await firstMemoryEntry.press("Tab");
+  if (chronicleId) {
+    await expect
+      .poll(async () =>
+        page.evaluate(
+          (id) => window.localStorage.getItem(`tyov.setup.${id}`),
+          chronicleId,
+        ),
+      )
+      .toContain("My vigil by the sickbed");
+  }
 
   const setupCompletionResponsePromise = page.waitForResponse(
     (response) =>
@@ -113,6 +180,7 @@ test("sign-in to first resolved prompt stays inside the ritual flow", async ({
   expect(setupCompletionResponse.ok()).toBeTruthy();
 
   await page.waitForURL(/\/chronicles\/.+\/play/, { timeout: 15_000 });
+  await page.waitForLoadState("networkidle");
   await expect(
     page.getByRole("heading", {
       name: "Prompt 1",
@@ -129,9 +197,31 @@ test("sign-in to first resolved prompt stays inside the ritual flow", async ({
     .fill(
       "I left the chapel with blood under my nails and a prayer I could not finish.",
     );
+  if (chronicleId) {
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(
+            (id) => window.localStorage.getItem(`tyov.prompt.${id}`),
+            chronicleId,
+          ),
+        {
+          timeout: 10_000,
+        },
+      )
+      .toContain("I answered the bells by dragging the sexton into the thawing graveyard.");
+  }
+  const resolveResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/play/resolve") &&
+      response.request().method() === "POST",
+  );
   await page
     .getByRole("button", { name: "Set the entry into memory" })
     .click();
+  const resolveResponse = await resolveResponsePromise;
+
+  expect(resolveResponse.ok()).toBeTruthy();
 
   await expect(
     page.getByText("The entry has been set into memory."),

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PageShell } from "@/components/ui/PageShell";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
@@ -40,7 +41,7 @@ function resolveChronicleHref(chronicle: ChronicleRecord) {
     return `/chronicles/${chronicle.id}/setup`;
   }
 
-  return `/chronicles/${chronicle.id}/play`;
+  return `/chronicles/${chronicle.id}/recap`;
 }
 
 function resolveChronicleActionLabel(chronicle: ChronicleRecord) {
@@ -48,7 +49,7 @@ function resolveChronicleActionLabel(chronicle: ChronicleRecord) {
     return "Continue the becoming-undead sequence";
   }
 
-  return "Return to the current prompt";
+  return "Resume through recap";
 }
 
 export default async function ChroniclesPage({
@@ -87,6 +88,9 @@ export default async function ChroniclesPage({
     .order("updated_at", { ascending: false });
 
   const chronicles = (data ?? []) as ChronicleRecord[];
+  const mostRecentActiveChronicle = chronicles.find(
+    (chronicle) => chronicle.status === "active",
+  );
 
   return (
     <PageShell className="gap-6 py-8">
@@ -104,6 +108,14 @@ export default async function ChroniclesPage({
           Start a new draft quietly, or return to a life already lengthening
           through the centuries.
         </p>
+        {mostRecentActiveChronicle ? (
+          <Link
+            href={`/chronicles/${mostRecentActiveChronicle.id}/recap`}
+            className="mt-6 inline-flex min-h-11 items-center justify-center rounded-soft bg-surface px-5 py-3 text-sm font-medium text-nocturne transition-colors duration-160 ease-ritual hover:bg-surface-muted"
+          >
+            Resume the last active chronicle
+          </Link>
+        ) : null}
       </SurfacePanel>
 
       <SurfacePanel className="px-6 py-6 sm:px-8">

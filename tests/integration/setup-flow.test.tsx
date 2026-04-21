@@ -5,6 +5,7 @@ import { SetupStepper } from "@/components/ritual/SetupStepper";
 const createServerSupabaseClient = vi.hoisted(() => vi.fn());
 const completeChronicleSetup = vi.hoisted(() => vi.fn());
 const getPromptByPosition = vi.hoisted(() => vi.fn());
+const refreshSessionSnapshot = vi.hoisted(() => vi.fn());
 const resolvePrompt = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -19,6 +20,10 @@ vi.mock("@/lib/chronicles/resolvePrompt", () => ({
   resolvePrompt,
 }));
 
+vi.mock("@/lib/chronicles/sessionSnapshots", () => ({
+  refreshSessionSnapshot,
+}));
+
 vi.mock("@/lib/prompts/catalog", () => ({
   getPromptByPosition,
 }));
@@ -29,6 +34,7 @@ describe("guided setup flow", () => {
     createServerSupabaseClient.mockReset();
     completeChronicleSetup.mockReset();
     getPromptByPosition.mockReset();
+    refreshSessionSnapshot.mockReset();
     resolvePrompt.mockReset();
     vi.resetModules();
   });
@@ -237,12 +243,16 @@ describe("guided setup flow", () => {
       });
     const chronicleEq = vi.fn(() => ({ single: chronicleSingle }));
     const chronicleSelect = vi.fn(() => ({ eq: chronicleEq }));
-    const memoriesEqLocation = vi.fn().mockResolvedValue({
-      count: 1,
-      data: null,
+    const memoriesEqChronicle = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: "memory-1",
+          slot_index: 1,
+          title: "Winter bells",
+        },
+      ],
       error: null,
     });
-    const memoriesEqChronicle = vi.fn(() => ({ eq: memoriesEqLocation }));
     const memoriesSelect = vi.fn(() => ({ eq: memoriesEqChronicle }));
     const diariesEqStatus = vi.fn().mockResolvedValue({
       count: 1,
@@ -366,6 +376,13 @@ describe("guided setup flow", () => {
       expect.anything(),
       "chronicle-1",
       expect.objectContaining({
+        sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+      }),
+    );
+    expect(refreshSessionSnapshot).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        chronicleId: "chronicle-1",
         sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
       }),
     );
@@ -495,6 +512,108 @@ describe("guided setup flow", () => {
         name: "Continue to prompt 4",
       }),
     ).toHaveAttribute("href", "/chronicles/chronicle-1/play");
+
+    fetchMock.mockRestore();
+  });
+
+  it("shows the memory overflow panel in play and submits a legal overflow decision", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            archiveEvents: [
+              {
+                eventType: "memory_moved_to_diary",
+                summary: "A memory has been placed into the diary.",
+              },
+            ],
+            nextPrompt: {
+              encounterIndex: 1,
+              promptNumber: 4,
+            },
+            promptRunId: "run-1",
+            rolled: {
+              d10: 7,
+              d6: 4,
+              movement: 3,
+            },
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            status: 200,
+          },
+        ),
+      );
+
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        hasActiveDiary={false}
+        initialSessionId="session-1"
+        mindMemories={[
+          { id: "memory-1", slotIndex: 1, title: "Winter bells" },
+          { id: "memory-2", slotIndex: 2, title: "The nameless face" },
+          { id: "memory-3", slotIndex: 3, title: "A flooded chapel" },
+          { id: "memory-4", slotIndex: 4, title: "The black carriage" },
+          { id: "memory-5", slotIndex: 5, title: "A ruined oath" },
+        ]}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        "The mind is full. Choose which memory to forget or press into the diary before this new one can settle.",
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: {
+        value: "I answered the bells by dragging the sexton into the thawing graveyard.",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: {
+        value:
+          "I left the chapel with blood under my nails and a prayer I could not finish.",
+      },
+    });
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: /Move one memory into a new diary/i,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: /Slot 1: Winter bells/i,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const payload = JSON.parse(String(request.body)) as {
+      memoryDecision: {
+        memoryId: string;
+        mode: string;
+      };
+    };
+
+    expect(payload.memoryDecision).toEqual({
+      memoryId: "memory-1",
+      mode: "move-to-diary",
+    });
 
     fetchMock.mockRestore();
   });

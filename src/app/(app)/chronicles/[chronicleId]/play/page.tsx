@@ -13,8 +13,14 @@ type PlayPageProps = {
   }>;
 };
 
-type CountResult = {
+type DiaryCountResult = {
   count: number | null;
+};
+
+type MindMemoryRecord = {
+  id: string;
+  slot_index: number | null;
+  title: string;
 };
 
 type ChroniclePlayRecord = {
@@ -40,14 +46,27 @@ type ChronicleLookupClient = {
   };
 };
 
-type CountLookupClient = {
-  from: (table: "memories" | "diaries") => {
+type MemoryLookupClient = {
+  from: (table: "memories") => {
+    select: (
+      columns: string,
+    ) => {
+      eq: (column: string, value: string) => Promise<{
+        data: MindMemoryRecord[] | null;
+        error: { message: string } | null;
+      }>;
+    };
+  };
+};
+
+type DiaryCountLookupClient = {
+  from: (table: "diaries") => {
     select: (
       columns: string,
       options: { count: "exact"; head: true },
     ) => {
       eq: (column: string, value: string) => {
-        eq: (column: string, value: string) => Promise<CountResult>;
+        eq: (column: string, value: string) => Promise<DiaryCountResult>;
       };
     };
   };
@@ -82,15 +101,15 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
     redirect(`/chronicles/${chronicleId}/setup`);
   }
 
-  const countClient = supabase as unknown as CountLookupClient;
+  const memoryClient = supabase as unknown as MemoryLookupClient;
+  const diaryCountClient = supabase as unknown as DiaryCountLookupClient;
 
-  const [memoriesResult, diaryResult, prompt] = (await Promise.all([
-    countClient
+  const [mindMemoriesResult, diaryResult, prompt] = (await Promise.all([
+    memoryClient
       .from("memories")
-      .select("id", { count: "exact", head: true })
-      .eq("chronicle_id", chronicleId)
-      .eq("location", "mind"),
-    countClient
+      .select("id, title, slot_index")
+      .eq("chronicle_id", chronicleId),
+    diaryCountClient
       .from("diaries")
       .select("id", { count: "exact", head: true })
       .eq("chronicle_id", chronicleId)
@@ -102,24 +121,30 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
       chronicle.prompt_version,
     ),
   ] as const)) as [
-    CountResult,
-    CountResult,
+    {
+      data: MindMemoryRecord[] | null;
+      error: { message: string } | null;
+    },
+    DiaryCountResult,
     Awaited<ReturnType<typeof getPromptByPosition>>,
   ];
 
-  const memoriesInMind = memoriesResult.count ?? 0;
+  const mindMemories =
+    (mindMemoriesResult.data ?? []).filter((memory) => memory.slot_index !== null) ??
+    [];
+  const memoriesInMind = mindMemories.length;
   const diaryCount = diaryResult.count ?? 0;
 
   return (
     <PageShell className="gap-6 py-8">
-      <SurfacePanel tone="nocturne" className="px-6 py-7 sm:px-8">
+      <SurfacePanel tone="nocturne" className="px-5 py-6 sm:px-8 sm:py-7">
         <p className="font-mono text-xs uppercase tracking-[0.24em] text-gold/80">
           Active chronicle
         </p>
-        <h1 className="mt-4 font-heading text-5xl leading-[1.08] text-surface sm:text-6xl">
+        <h1 className="mt-4 font-heading text-4xl leading-[1.08] text-surface sm:text-5xl lg:text-6xl">
           {chronicle.title}
         </h1>
-        <p className="mt-4 max-w-reading text-lg leading-relaxed text-surface/76">
+        <p className="mt-4 max-w-reading text-base leading-relaxed text-surface/76 sm:text-lg">
           Stay with the prompt, write what the night asks of you, and let the
           system keep the burden of continuity.
         </p>
@@ -142,7 +167,13 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
         <PlaySurface
           chronicleId={chronicleId}
+          hasActiveDiary={diaryCount > 0}
           initialSessionId={chronicle.current_session_id}
+          mindMemories={mindMemories.map((memory) => ({
+            id: memory.id,
+            slotIndex: memory.slot_index,
+            title: memory.title,
+          }))}
         />
 
         <MemoryMeter

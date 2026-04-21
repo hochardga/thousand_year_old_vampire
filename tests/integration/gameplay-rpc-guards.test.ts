@@ -6,6 +6,10 @@ const migrationPath = path.join(
   process.cwd(),
   "supabase/migrations/0002_core_gameplay_schema.sql",
 );
+const memoryRuleMigrationPath = path.join(
+  process.cwd(),
+  "supabase/migrations/0007_memory_rule_helpers.sql",
+);
 const samePromptEncounterHotfixPath = path.join(
   process.cwd(),
   "supabase/migrations/0006_fix_same_prompt_encounter_progression.sql",
@@ -13,6 +17,10 @@ const samePromptEncounterHotfixPath = path.join(
 
 function readMigration() {
   return fs.readFileSync(migrationPath, "utf8");
+}
+
+function readMemoryRuleMigration() {
+  return fs.readFileSync(memoryRuleMigrationPath, "utf8");
 }
 
 function readSamePromptEncounterHotfix() {
@@ -74,6 +82,50 @@ describe("gameplay RPC safety guards", () => {
     expect(sql).toMatch(
       /candidate_prompt_number = chronicle_record\.current_prompt_number[\s\S]*chronicle_record\.current_prompt_encounter/i,
     );
+  });
+
+  it("defines dedicated helper functions for memory legality and overflow handling", () => {
+    const sql = readMemoryRuleMigration();
+
+    expect(sql).toMatch(
+      /create or replace function public\.require_in_mind_memory/i,
+    );
+    expect(sql).toMatch(
+      /create or replace function public\.memory_entry_count/i,
+    );
+    expect(sql).toMatch(
+      /create or replace function public\.ensure_active_diary/i,
+    );
+    expect(sql).toMatch(
+      /create or replace function public\.apply_memory_overflow/i,
+    );
+    expect(sql).toMatch(
+      /create or replace function public\.next_open_memory_slot/i,
+    );
+  });
+
+  it("guards append and overflow branches with the new memory helper error messages", () => {
+    const sql = readMemoryRuleMigration();
+
+    expect(sql).toMatch(
+      /raise exception 'Only memories still held in mind can accept new entries\.'/i,
+    );
+    expect(sql).toMatch(
+      /raise exception 'That memory is already full\.'/i,
+    );
+    expect(sql).toMatch(
+      /raise exception 'A memory decision is required when the mind is full\.'/i,
+    );
+  });
+
+  it("routes resolve_prompt_run through the helper layer instead of keeping all memory logic inline", () => {
+    const sql = readMemoryRuleMigration();
+
+    expect(sql).toMatch(/public\.require_in_mind_memory/i);
+    expect(sql).toMatch(/public\.memory_entry_count/i);
+    expect(sql).toMatch(/public\.apply_memory_overflow/i);
+    expect(sql).toMatch(/public\.next_open_memory_slot/i);
+    expect(sql).toMatch(/public\.ensure_active_diary/i);
   });
 
   it("keeps the e2e gameplay mock aligned with the setup and active-session guards", async () => {
