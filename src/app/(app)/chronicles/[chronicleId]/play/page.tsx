@@ -3,6 +3,7 @@ import { MemoryMeter } from "@/components/ritual/MemoryMeter";
 import { PlaySurface } from "@/components/ritual/PlaySurface";
 import { PromptCard } from "@/components/ritual/PromptCard";
 import { PageShell } from "@/components/ui/PageShell";
+import { QuietAlert } from "@/components/ui/QuietAlert";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import { getPromptByPosition } from "@/lib/prompts/catalog";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -156,12 +157,11 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
           promptNumber={prompt.prompt_number}
         />
       ) : (
-        <SurfacePanel className="border-error/20 bg-error/10 px-6 py-5">
-          <p className="text-sm text-ink">
-            The prompt could not be found just now. Return when the chronicle is
-            ready.
-          </p>
-        </SurfacePanel>
+        <QuietAlert
+          title="The prompt could not be found just now."
+          body="Return when the chronicle is ready."
+          tone="error"
+        />
       )}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">

@@ -1,3 +1,4 @@
+import { EmptyState } from "@/components/ui/EmptyState";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import { HeroPanel } from "@/components/marketing/HeroPanel";
 
@@ -37,6 +38,16 @@ export default function MarketingPage() {
             </p>
           </SurfacePanel>
         ))}
+      </div>
+      <div className="mx-auto max-w-shell px-4 sm:px-6 lg:px-10">
+        <EmptyState
+          eyebrow="Begin when ready"
+          title="Open the first chronicle when the night feels close."
+          body="Sign in to begin a draft, keep the ledger within reach, and let the archive hold what the centuries refuse to keep."
+          actionHref="/sign-in"
+          actionLabel="Begin the Chronicle"
+          className="mx-auto"
+        />
       </div>
     </main>
   );

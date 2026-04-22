@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { RecapBlock } from "@/components/ritual/RecapBlock";
 import { PageShell } from "@/components/ui/PageShell";
+import { QuietAlert } from "@/components/ui/QuietAlert";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import { refreshSessionSnapshot } from "@/lib/chronicles/sessionSnapshots";
 import { buildRecap } from "@/lib/recap/buildRecap";
@@ -110,6 +111,14 @@ export default async function ChronicleRecapPage({ params }: RecapPageProps) {
         recapMarkdown={recapMarkdown}
         resumeHref={`/chronicles/${chronicleId}/play`}
       />
+
+      {latestEventsResult.error ? (
+        <QuietAlert
+          title="The latest archive echoes could not be gathered just now."
+          body="The recap is still here. Return to the archive when you are ready."
+          tone="info"
+        />
+      ) : null}
     </PageShell>
   );
 }

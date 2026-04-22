@@ -174,6 +174,11 @@ describe("chronicles page", () => {
         name: "No chronicle has been opened yet.",
       }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Begin the first one when you are ready. The ledger will keep the life for you once it starts.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("routes returning players through recap for the last active chronicle", async () => {
@@ -238,5 +243,60 @@ describe("chronicles page", () => {
     expect(
       screen.getByText("Resume through recap"),
     ).toBeInTheDocument();
+  });
+
+  it("keeps chronicle-list failures on route-safe copy", async () => {
+    const profileMaybeSingle = vi.fn().mockResolvedValue({
+      data: {
+        display_name: "Gregory",
+        id: "user-1",
+      },
+      error: null,
+    });
+    const profileEq = vi.fn(() => ({ maybeSingle: profileMaybeSingle }));
+    const profileSelect = vi.fn(() => ({ eq: profileEq }));
+    const chroniclesOrder = vi.fn().mockResolvedValue({
+      data: null,
+      error: { message: "database timeout while reading chronicles" },
+    });
+    const chroniclesSelect = vi.fn(() => ({ order: chroniclesOrder }));
+
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: {
+            user: {
+              email: "gregory@example.com",
+              id: "user-1",
+            },
+          },
+        }),
+      },
+      from: vi.fn((table: string) => {
+        if (table === "profiles") {
+          return {
+            select: profileSelect,
+          };
+        }
+
+        return {
+          select: chroniclesSelect,
+        };
+      }),
+    });
+
+    const { default: ChroniclesPage } = await import("@/app/(app)/chronicles/page");
+    const view = await ChroniclesPage({
+      searchParams: Promise.resolve({}),
+    } as never);
+
+    render(view);
+
+    expect(
+      screen.getByText("The chronicle ledger could not be read just now."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("database timeout while reading chronicles"),
+    ).not.toBeInTheDocument();
   });
 });

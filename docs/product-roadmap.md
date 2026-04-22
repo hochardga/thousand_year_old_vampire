@@ -174,7 +174,7 @@
 **Phase prompt — give this to your coding agent:**
 > "Read docs/product-roadmap.md and find Phase 3. Then read only the Reference sections listed above from docs/prd.md, docs/product-vision.md, and docs/gtm.md. Continue from the first unchecked task. After each task, mark it complete in the roadmap. When all tasks are done, create a branch `phase-3/polish-and-launch-prep`, commit, push, and open a PR for review."
 
-- [ ] **TASK-029** — Add consistent empty, loading, and error states across landing, chronicle list, setup, play, archive, ledger, and recap screens.
+- [x] **TASK-029** — Add consistent empty, loading, and error states across landing, chronicle list, setup, play, archive, ledger, and recap screens.
   Files: `src/components/ui/EmptyState.tsx`, `src/components/ui/QuietAlert.tsx`, `src/components/ui/SkeletonBlock.tsx`
   Notes: Match the voice rules in docs/product-vision.md § Voice & Tone Guide. Verify: every major route has all four UI states covered.
 

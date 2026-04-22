@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { PageShell } from "@/components/ui/PageShell";
+import { QuietAlert } from "@/components/ui/QuietAlert";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import { ChronicleCard } from "@/components/ritual/ChronicleCard";
 import { ensureProfile } from "@/lib/profiles/ensureProfile";
@@ -73,11 +75,10 @@ export default async function ChroniclesPage({
   } catch {
     return (
       <PageShell className="gap-6 py-8">
-        <SurfacePanel className="border-error/20 bg-error/10 px-5 py-4">
-          <p className="text-sm text-ink">
-            We signed you in, but your profile could not be loaded yet.
-          </p>
-        </SurfacePanel>
+        <QuietAlert
+          title="Your profile could not be prepared just now."
+          body="We signed you in, but the chronicle shell needs another moment."
+        />
       </PageShell>
     );
   }
@@ -155,32 +156,27 @@ export default async function ChroniclesPage({
       </SurfacePanel>
 
       {params.error ? (
-        <SurfacePanel className="border-error/20 bg-error/10 px-5 py-4">
-          <p className="text-sm text-ink">{params.error}</p>
-        </SurfacePanel>
+        <QuietAlert
+          title="The chronicle could not be opened just now."
+          body={params.error}
+          tone="error"
+        />
       ) : null}
 
       {error ? (
-        <SurfacePanel className="border-error/20 bg-error/10 px-5 py-4">
-          <p className="text-sm text-ink">
-            The chronicle ledger could not be read just now.
-          </p>
-        </SurfacePanel>
+        <QuietAlert
+          title="The chronicle ledger could not be read just now."
+          body="Try again when you are ready."
+          tone="error"
+        />
       ) : null}
 
       {chronicles.length === 0 ? (
-        <SurfacePanel className="max-w-reading px-6 py-8 sm:px-8">
-          <p className="font-mono text-xs uppercase tracking-[0.22em] text-ink-muted">
-            Empty state
-          </p>
-          <h2 className="mt-3 font-heading text-3xl text-ink">
-            No chronicle has been opened yet.
-          </h2>
-          <p className="mt-3 text-base leading-relaxed text-ink-muted">
-            Begin the first one when you are ready. The ledger will keep the
-            life for you once it starts.
-          </p>
-        </SurfacePanel>
+        <EmptyState
+          eyebrow="Empty state"
+          title="No chronicle has been opened yet."
+          body="Begin the first one when you are ready. The ledger will keep the life for you once it starts."
+        />
       ) : (
         <div className="grid gap-4">
           {chronicles.map((chronicle) => (

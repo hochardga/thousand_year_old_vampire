@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { EventTimeline } from "@/components/archive/EventTimeline";
 import { MemoryCard } from "@/components/archive/MemoryCard";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { PageShell } from "@/components/ui/PageShell";
+import { QuietAlert } from "@/components/ui/QuietAlert";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import { cn } from "@/lib/utils";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -279,13 +281,16 @@ export default async function ChronicleArchivePage({
         description="The memories still borne in mind, alongside the ones already given over to forgetting."
       >
         {memoriesResult.error ? (
-          <p className="rounded-soft border border-error/20 bg-error/10 px-4 py-3 text-sm text-ink">
-            The memory stack could not be read just now.
-          </p>
+          <QuietAlert
+            title="The memory stack could not be read just now."
+            body="Return when the archive is ready."
+          />
         ) : memoryStack.length === 0 ? (
-          <p className="text-sm leading-relaxed text-ink-muted">
-            The archive has only the first faint traces so far.
-          </p>
+          <EmptyState
+            eyebrow="Archive state"
+            title="The archive has only the first faint traces so far."
+            body="Memories carried in mind or surrendered to forgetting will gather here."
+          />
         ) : (
           <div className="space-y-4">
             {memoryStack.map((memory) => (
@@ -308,9 +313,10 @@ export default async function ChronicleArchivePage({
         description="The memories written down so they can survive the thinning of the mind."
       >
         {diaryResult.error ? (
-          <p className="rounded-soft border border-error/20 bg-error/10 px-4 py-3 text-sm text-ink">
-            The diary could not be opened just now.
-          </p>
+          <QuietAlert
+            title="The diary could not be opened just now."
+            body="Return when the chronicle is ready."
+          />
         ) : activeDiary ? (
           <div className="space-y-4">
             <div className="rounded-panel border border-ink/10 bg-bg/55 px-5 py-4">
@@ -328,9 +334,11 @@ export default async function ChronicleArchivePage({
             </div>
 
             {diaryMemories.length === 0 ? (
-              <p className="text-sm leading-relaxed text-ink-muted">
-                The diary exists, but no memories have been pressed into it yet.
-              </p>
+              <EmptyState
+                eyebrow="Archive state"
+                title="The diary exists, but no memories have been pressed into it yet."
+                body="When the chronicle shelters a memory in writing, it will appear here."
+              />
             ) : (
               diaryMemories.map((memory) => (
                 <MemoryCard
@@ -346,9 +354,11 @@ export default async function ChronicleArchivePage({
             )}
           </div>
         ) : (
-          <p className="text-sm leading-relaxed text-ink-muted">
-            No diary has been opened against forgetting yet.
-          </p>
+          <EmptyState
+            eyebrow="Archive state"
+            title="No diary has been opened against forgetting yet."
+            body="Once the chronicle chooses to shelter memories in writing, the diary will appear here."
+          />
         )}
       </ArchiveSection>
 
@@ -357,13 +367,16 @@ export default async function ChronicleArchivePage({
         description="The prompt-by-prompt movement of the chronicle, kept close to the writing that made it."
       >
         {promptRunsResult.error ? (
-          <p className="rounded-soft border border-error/20 bg-error/10 px-4 py-3 text-sm text-ink">
-            Prompt history could not be gathered just now.
-          </p>
+          <QuietAlert
+            title="Prompt history could not be gathered just now."
+            body="Return when the chronicle is ready."
+          />
         ) : promptPage.visibleRows.length === 0 ? (
-          <p className="text-sm leading-relaxed text-ink-muted">
-            No prompt has been resolved yet.
-          </p>
+          <EmptyState
+            eyebrow="Archive state"
+            title="No prompt has been resolved yet."
+            body="Prompt history will gather here once the first entry has been set into the archive."
+          />
         ) : (
           <div className="space-y-4">
             <ol className="space-y-4">
@@ -421,9 +434,10 @@ export default async function ChronicleArchivePage({
         description="The sharper consequences that shaped the archive beyond the prompt text itself."
       >
         {archiveEventsResult.error ? (
-          <p className="rounded-soft border border-error/20 bg-error/10 px-4 py-3 text-sm text-ink">
-            The event timeline could not be gathered just now.
-          </p>
+          <QuietAlert
+            title="The event timeline could not be gathered just now."
+            body="Return when the chronicle is ready."
+          />
         ) : (
           <div className="space-y-4">
             <EventTimeline events={eventPage.visibleRows} />
