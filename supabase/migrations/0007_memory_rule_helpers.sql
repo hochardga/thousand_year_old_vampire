@@ -469,20 +469,24 @@ begin
     summary,
     metadata
   )
-  values (
+  select
     target_chronicle_id,
     target_session_id,
-    'prompt_resolved',
-    'The entry has been set into memory.',
-    jsonb_build_object(
-      'd10', d10_roll,
-      'd6', d6_roll,
-      'movement', movement,
-      'nextPromptEncounter', next_prompt_encounter,
-      'nextPromptNumber', next_prompt_number,
-      'promptRunId', new_prompt_run_id
-    )
-  );
+    event_row.value->>'eventType',
+    event_row.value->>'summary',
+    case
+      when event_row.value->>'eventType' = 'prompt_resolved' then
+        jsonb_build_object(
+          'd10', d10_roll,
+          'd6', d6_roll,
+          'movement', movement,
+          'nextPromptEncounter', next_prompt_encounter,
+          'nextPromptNumber', next_prompt_number,
+          'promptRunId', new_prompt_run_id
+        )
+      else '{}'::jsonb
+    end
+  from jsonb_array_elements(event_payload) as event_row(value);
 
   update public.sessions
   set snapshot_json = jsonb_build_object(

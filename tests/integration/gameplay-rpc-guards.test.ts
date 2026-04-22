@@ -128,6 +128,16 @@ describe("gameplay RPC safety guards", () => {
     expect(sql).toMatch(/public\.ensure_active_diary/i);
   });
 
+  it("persists every archive event generated during prompt resolution", () => {
+    const sql = readMemoryRuleMigration();
+
+    expect(sql).toMatch(
+      /insert into public\.archive_events[\s\S]*select[\s\S]*from jsonb_array_elements\(event_payload\) as event_row\(value\)/i,
+    );
+    expect(sql).toMatch(/event_row\.value->>'eventType'/i);
+    expect(sql).toMatch(/event_row\.value->>'summary'/i);
+  });
+
   it("keeps the e2e gameplay mock aligned with the setup and active-session guards", async () => {
     const client = createE2EServerSupabaseClient({
       get(name) {
