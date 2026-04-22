@@ -1,3 +1,4 @@
+import { render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const capture = vi.fn();
@@ -14,6 +15,7 @@ describe("posthog helpers", () => {
   beforeEach(() => {
     capture.mockReset();
     init.mockReset();
+    window.sessionStorage.clear();
     delete process.env.NEXT_PUBLIC_POSTHOG_KEY;
     delete process.env.NEXT_PUBLIC_POSTHOG_HOST;
   });
@@ -43,6 +45,45 @@ describe("posthog helpers", () => {
     expect(capture).toHaveBeenCalledWith("chronicle_created", {
       chronicleId: "chronicle-1",
       source: "chronicle-list",
+    });
+  });
+
+  it("dedupes TrackEventOnMount by onceKey within the same session", async () => {
+    process.env.NEXT_PUBLIC_POSTHOG_KEY = "phc_test";
+    process.env.NEXT_PUBLIC_POSTHOG_HOST = "https://us.i.posthog.com";
+
+    const { TrackEventOnMount } = await import(
+      "@/components/analytics/TrackEventOnMount"
+    );
+
+    const { unmount } = render(
+      <TrackEventOnMount
+        event="archive_opened"
+        onceKey="archive-opened:chronicle-1"
+        properties={{
+          chronicleId: "chronicle-1",
+          source: "archive",
+        }}
+      />,
+    );
+
+    unmount();
+
+    render(
+      <TrackEventOnMount
+        event="archive_opened"
+        onceKey="archive-opened:chronicle-1"
+        properties={{
+          chronicleId: "chronicle-1",
+          source: "archive",
+        }}
+      />,
+    );
+
+    expect(capture).toHaveBeenCalledTimes(1);
+    expect(capture).toHaveBeenCalledWith("archive_opened", {
+      chronicleId: "chronicle-1",
+      source: "archive",
     });
   });
 });

@@ -12,7 +12,7 @@ type RecapPageProps = {
   params: Promise<{
     chronicleId: string;
   }>;
-  searchParams: Promise<{
+  searchParams?: Promise<{
     returned?: string;
   }>;
 };
@@ -22,7 +22,9 @@ export default async function ChronicleRecapPage({
   searchParams,
 }: RecapPageProps) {
   const { chronicleId } = await params;
-  const recapParams = await searchParams;
+  const recapParams: { returned?: string } = await (
+    searchParams ?? Promise.resolve({})
+  );
   const supabase = await createServerSupabaseClient();
   const recapClient = supabase as any;
   const {
