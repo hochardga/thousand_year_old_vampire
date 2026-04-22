@@ -73,11 +73,15 @@ export function RecapBlock({
         <button
           type="button"
           onClick={() => setIsFeedbackOpen((value) => !value)}
+          aria-controls="beta-feedback-panel"
+          aria-expanded={isFeedbackOpen}
           className="inline-flex min-h-11 items-center justify-center rounded-soft border border-ink/10 bg-bg/70 px-5 py-3 text-sm font-medium text-ink transition-colors duration-160 ease-ritual hover:border-gold/40"
         >
           Share beta feedback
         </button>
-        {isFeedbackOpen ? <FeedbackForm chronicleId={chronicleId} /> : null}
+        <div id="beta-feedback-panel" hidden={!isFeedbackOpen}>
+          {isFeedbackOpen ? <FeedbackForm chronicleId={chronicleId} /> : null}
+        </div>
       </SurfacePanel>
 
       <SurfacePanel className="space-y-4 px-6 py-6 sm:px-8">

@@ -47,7 +47,7 @@ export async function POST(request: Request) {
   }
 
   const { body, category, chronicleId, source } = parsed.data;
-  const { data, error } = await (supabase as any)
+  const { error } = await (supabase as any)
     .from("feedback_submissions")
     .insert({
       body,
@@ -55,11 +55,9 @@ export async function POST(request: Request) {
       chronicle_id: chronicleId ?? null,
       source,
       user_id: user.id,
-    })
-    .select("id")
-    .single();
+    });
 
-  if (error || !data) {
+  if (error) {
     return NextResponse.json(
       {
         error: "The feedback could not be saved.",

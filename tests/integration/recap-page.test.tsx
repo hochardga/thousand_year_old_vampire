@@ -129,7 +129,10 @@ describe("recap page", () => {
     ).toHaveAttribute("href", "/chronicles/chronicle-1/play");
     expect(
       screen.getByRole("button", { name: "Share beta feedback" }),
-    ).toBeInTheDocument();
+    ).toHaveAttribute("aria-expanded", "false");
+    expect(
+      screen.getByRole("button", { name: "Share beta feedback" }),
+    ).toHaveAttribute("aria-controls", "beta-feedback-panel");
     expect(refreshSessionSnapshot).not.toHaveBeenCalled();
     expect(redirect).not.toHaveBeenCalled();
     expect(TrackEventOnMount).toHaveBeenCalledWith(
