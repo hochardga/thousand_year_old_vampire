@@ -48,5 +48,14 @@ describe("marketing shell", () => {
         "This release is a private beta focused on onboarding, prompt flow, archive return, and product tone while licensing posture remains explicit.",
       ),
     ).toBeInTheDocument();
+    expect(
+      screen.getByAltText("The active prompt writing surface"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByAltText("The archive route with memory cards and event timeline"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByAltText("The recap route leading back into the current prompt"),
+    ).toBeInTheDocument();
   });
 });

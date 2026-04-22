@@ -24,7 +24,7 @@ const featureBands = [
 
 export function FeatureBand() {
   return (
-    <section className="mx-auto grid max-w-shell gap-4 px-4 pb-12 sm:px-6 lg:grid-cols-3 lg:px-10">
+    <div className="mx-auto grid max-w-shell gap-4 px-4 pb-12 sm:px-6 lg:grid-cols-3 lg:px-10">
       {featureBands.map((feature) => (
         <SurfacePanel
           key={feature.title}
@@ -47,6 +47,6 @@ export function FeatureBand() {
           </p>
         </SurfacePanel>
       ))}
-    </section>
+    </div>
   );
 }
