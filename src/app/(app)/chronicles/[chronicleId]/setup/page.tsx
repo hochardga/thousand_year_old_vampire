@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { TrackEventOnMount } from "@/components/analytics/TrackEventOnMount";
 import { SetupStepper } from "@/components/ritual/SetupStepper";
 import { PageShell } from "@/components/ui/PageShell";
 import { QuietAlert } from "@/components/ui/QuietAlert";
@@ -80,11 +81,21 @@ export default async function ChronicleSetupPage({
       </SurfacePanel>
 
       {setupParams.created === "1" ? (
-        <QuietAlert
-          title="The draft chronicle has been opened."
-          body="The becoming-undead sequence is ready when you are."
-          tone="info"
-        />
+        <>
+          <TrackEventOnMount
+            event="chronicle_created"
+            onceKey={`chronicle-created:${chronicleId}`}
+            properties={{
+              chronicleId,
+              source: "setup",
+            }}
+          />
+          <QuietAlert
+            title="The draft chronicle has been opened."
+            body="The becoming-undead sequence is ready when you are."
+            tone="info"
+          />
+        </>
       ) : null}
 
       <SetupStepper chronicleId={chronicle.id} chronicleTitle={chronicle.title} />

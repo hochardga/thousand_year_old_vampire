@@ -167,6 +167,7 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
         <PlaySurface
           chronicleId={chronicleId}
+          currentPromptNumber={chronicle.current_prompt_number}
           hasActiveDiary={diaryCount > 0}
           initialSessionId={chronicle.current_session_id}
           mindMemories={mindMemories.map((memory) => ({

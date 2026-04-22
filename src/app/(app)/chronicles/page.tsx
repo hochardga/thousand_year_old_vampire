@@ -43,7 +43,7 @@ function resolveChronicleHref(chronicle: ChronicleRecord) {
     return `/chronicles/${chronicle.id}/setup`;
   }
 
-  return `/chronicles/${chronicle.id}/recap`;
+  return `/chronicles/${chronicle.id}/recap?returned=1`;
 }
 
 function resolveChronicleActionLabel(chronicle: ChronicleRecord) {
@@ -111,7 +111,7 @@ export default async function ChroniclesPage({
         </p>
         {mostRecentActiveChronicle ? (
           <Link
-            href={`/chronicles/${mostRecentActiveChronicle.id}/recap`}
+            href={`/chronicles/${mostRecentActiveChronicle.id}/recap?returned=1`}
             className="mt-6 inline-flex min-h-11 items-center justify-center rounded-soft bg-surface px-5 py-3 text-sm font-medium text-nocturne transition-colors duration-160 ease-ritual hover:bg-surface-muted"
           >
             Resume the last active chronicle

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
+import { TrackEventOnMount } from "@/components/analytics/TrackEventOnMount";
 import { EventTimeline } from "@/components/archive/EventTimeline";
 import { MemoryCard } from "@/components/archive/MemoryCard";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -251,6 +252,14 @@ export default async function ChronicleArchivePage({
 
   return (
     <PageShell className="gap-6 py-8">
+      <TrackEventOnMount
+        event="archive_opened"
+        onceKey={`archive-opened:${chronicleId}`}
+        properties={{
+          chronicleId,
+          source: "archive",
+        }}
+      />
       <SurfacePanel tone="nocturne" className="px-5 py-6 sm:px-8 sm:py-7">
         <p className="font-mono text-xs uppercase tracking-[0.24em] text-gold/80">
           Chronicle archive

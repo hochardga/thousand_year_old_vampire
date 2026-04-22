@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { trackAnalyticsEvent } from "@/lib/analytics/posthog";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import {
   clearSetupDraft,
@@ -211,6 +212,10 @@ export function SetupStepper({
         return;
       }
 
+      trackAnalyticsEvent("setup_completed", {
+        chronicleId,
+        source: "setup",
+      });
       clearSetupDraft(chronicleId);
       window.location.assign(payload.nextRoute);
     } catch {

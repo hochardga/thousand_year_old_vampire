@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import { trackAnalyticsEvent } from "@/lib/analytics/posthog";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 
 type AuthFormProps = {
@@ -43,9 +44,15 @@ export function AuthForm({
   testAuthEnabled = false,
   testAuthError,
 }: AuthFormProps) {
+  function handleSignInSubmit() {
+    trackAnalyticsEvent("sign_in_requested", {
+      source: "sign-in",
+    });
+  }
+
   return (
     <SurfacePanel className="w-full max-w-reading px-6 py-6 sm:px-8 sm:py-8">
-      <form action={action} className="space-y-5">
+      <form action={action} onSubmit={handleSignInSubmit} className="space-y-5">
         <div>
           <label
             htmlFor="magic-link-email"
@@ -105,7 +112,11 @@ export function AuthForm({
             </p>
           </div>
 
-          <form action={testAuthAction} className="mt-5 space-y-5">
+          <form
+            action={testAuthAction}
+            onSubmit={handleSignInSubmit}
+            className="mt-5 space-y-5"
+          >
             <div>
               <label
                 htmlFor="test-auth-email"

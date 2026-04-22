@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { TrackEventOnMount } from "@/components/analytics/TrackEventOnMount";
 import { RecapBlock } from "@/components/ritual/RecapBlock";
 import { PageShell } from "@/components/ui/PageShell";
 import { QuietAlert } from "@/components/ui/QuietAlert";
@@ -11,10 +12,17 @@ type RecapPageProps = {
   params: Promise<{
     chronicleId: string;
   }>;
+  searchParams: Promise<{
+    returned?: string;
+  }>;
 };
 
-export default async function ChronicleRecapPage({ params }: RecapPageProps) {
+export default async function ChronicleRecapPage({
+  params,
+  searchParams,
+}: RecapPageProps) {
   const { chronicleId } = await params;
+  const recapParams = await searchParams;
   const supabase = await createServerSupabaseClient();
   const recapClient = supabase as any;
   const {
@@ -91,6 +99,24 @@ export default async function ChronicleRecapPage({ params }: RecapPageProps) {
 
   return (
     <PageShell className="gap-6 py-8">
+      <TrackEventOnMount
+        event="recap_opened"
+        onceKey={`recap-opened:${chronicleId}`}
+        properties={{
+          chronicleId,
+          source: "recap",
+        }}
+      />
+      {recapParams.returned === "1" ? (
+        <TrackEventOnMount
+          event="second_session_return"
+          onceKey={`second-session:${chronicleId}`}
+          properties={{
+            chronicleId,
+            source: "recap",
+          }}
+        />
+      ) : null}
       <SurfacePanel tone="nocturne" className="px-6 py-7 sm:px-8">
         <p className="font-mono text-xs uppercase tracking-[0.24em] text-gold/80">
           Chronicle return
