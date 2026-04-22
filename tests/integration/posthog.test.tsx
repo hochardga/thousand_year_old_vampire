@@ -126,4 +126,57 @@ describe("posthog helpers", () => {
       setItem.mockRestore();
     }
   });
+
+  it("still dedupes across remounts when storage remains unavailable", async () => {
+    process.env.NEXT_PUBLIC_POSTHOG_KEY = "phc_test";
+    process.env.NEXT_PUBLIC_POSTHOG_HOST = "https://us.i.posthog.com";
+
+    const getItem = vi.spyOn(Storage.prototype, "getItem").mockReturnValue(null);
+    const setItem = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {
+        throw new Error("storage blocked");
+      });
+
+    const { TrackEventOnMount } = await import(
+      "@/components/analytics/TrackEventOnMount"
+    );
+
+    try {
+      const first = render(
+        <TrackEventOnMount
+          event="archive_opened"
+          onceKey="archive-opened:chronicle-3"
+          properties={{
+            chronicleId: "chronicle-3",
+            source: "archive",
+          }}
+        />,
+      );
+
+      first.unmount();
+
+      render(
+        <TrackEventOnMount
+          event="archive_opened"
+          onceKey="archive-opened:chronicle-3"
+          properties={{
+            chronicleId: "chronicle-3",
+            source: "archive",
+          }}
+        />,
+      );
+
+      expect(capture).toHaveBeenCalledTimes(1);
+      expect(capture).toHaveBeenCalledWith("archive_opened", {
+        chronicleId: "chronicle-3",
+        source: "archive",
+      });
+      expect(getItem).toHaveBeenCalledTimes(1);
+      expect(setItem).toHaveBeenCalledTimes(1);
+    } finally {
+      getItem.mockRestore();
+      setItem.mockRestore();
+    }
+  });
 });

@@ -13,6 +13,8 @@ type TrackEventOnMountProps = {
   properties?: Partial<SafeProperties>;
 };
 
+const inMemoryOnceKeys = new Set<string>();
+
 export function TrackEventOnMount({
   event,
   onceKey,
@@ -23,8 +25,13 @@ export function TrackEventOnMount({
       return;
     }
 
+    if (inMemoryOnceKeys.has(onceKey)) {
+      return;
+    }
+
     try {
       if (window.sessionStorage.getItem(onceKey)) {
+        inMemoryOnceKeys.add(onceKey);
         return;
       }
     } catch {
@@ -32,6 +39,7 @@ export function TrackEventOnMount({
     }
 
     trackAnalyticsEvent(event, properties);
+    inMemoryOnceKeys.add(onceKey);
 
     try {
       window.sessionStorage.setItem(onceKey, "1");
