@@ -1,9 +1,9 @@
 import { render, screen } from "@testing-library/react";
-import { HeroPanel } from "@/components/marketing/HeroPanel";
+import MarketingPage from "@/app/(marketing)/page";
 
 describe("marketing shell", () => {
   it("renders the approved hero copy and primary CTA", () => {
-    render(<HeroPanel />);
+    render(<MarketingPage />);
 
     expect(
       screen.getByRole("heading", {
@@ -11,10 +11,38 @@ describe("marketing shell", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("A guided digital ritual for a solitary gothic life."),
+      screen.getByText("Private beta. Cross-device. Quietly guided."),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Begin the Chronicle" }),
+      screen.getByText(
+        "Built for players who want the literary depth of the original without the analog burden, while the launch remains deliberately small.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", {
+        name: "Begin the Chronicle",
+      }),
     ).toHaveAttribute("href", "/sign-in");
+  });
+
+  it("renders the three launch value bands and beta posture note", () => {
+    render(<MarketingPage />);
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Start quickly without losing the mood",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: "Let the archive carry the centuries",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: "Preserve authorship",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/private beta/i)).toHaveLength(2);
   });
 });

@@ -178,7 +178,7 @@
   Files: `src/components/ui/EmptyState.tsx`, `src/components/ui/QuietAlert.tsx`, `src/components/ui/SkeletonBlock.tsx`
   Notes: Match the voice rules in docs/product-vision.md § Voice & Tone Guide. Verify: every major route has all four UI states covered.
 
-- [ ] **TASK-030** — Refine the public landing page with launch-ready messaging, atmospheric screenshots, and a clean CTA hierarchy.
+- [x] **TASK-030** — Refine the public landing page with launch-ready messaging, atmospheric screenshots, and a clean CTA hierarchy.
   Files: `src/app/(marketing)/page.tsx`, `src/components/marketing/FeatureBand.tsx`, `public/og/`
   Notes: Use docs/product-vision.md § Messaging Framework and docs/gtm.md § Launch Strategy. Verify: landing page communicates the product clearly without reading like a generic SaaS site.
 
