@@ -43,7 +43,11 @@ function resolveChronicleHref(chronicle: ChronicleRecord) {
     return `/chronicles/${chronicle.id}/setup`;
   }
 
-  return `/chronicles/${chronicle.id}/recap?returned=1`;
+  if (chronicle.status === "active") {
+    return `/chronicles/${chronicle.id}/recap?returned=1`;
+  }
+
+  return `/chronicles/${chronicle.id}/recap`;
 }
 
 function resolveChronicleActionLabel(chronicle: ChronicleRecord) {
