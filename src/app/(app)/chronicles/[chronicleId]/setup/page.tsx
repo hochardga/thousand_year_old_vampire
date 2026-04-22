@@ -1,12 +1,16 @@
 import { redirect } from "next/navigation";
 import { SetupStepper } from "@/components/ritual/SetupStepper";
 import { PageShell } from "@/components/ui/PageShell";
+import { QuietAlert } from "@/components/ui/QuietAlert";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type SetupPageProps = {
   params: Promise<{
     chronicleId: string;
+  }>;
+  searchParams: Promise<{
+    created?: string;
   }>;
 };
 
@@ -31,8 +35,10 @@ type SetupChronicleClient = {
 
 export default async function ChronicleSetupPage({
   params,
+  searchParams,
 }: SetupPageProps) {
   const { chronicleId } = await params;
+  const setupParams = await searchParams;
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -72,6 +78,14 @@ export default async function ChronicleSetupPage({
           the beginning of a life, not the filling of a form.
         </p>
       </SurfacePanel>
+
+      {setupParams.created === "1" ? (
+        <QuietAlert
+          title="The draft chronicle has been opened."
+          body="The becoming-undead sequence is ready when you are."
+          tone="info"
+        />
+      ) : null}
 
       <SetupStepper chronicleId={chronicle.id} chronicleTitle={chronicle.title} />
     </PageShell>

@@ -300,3 +300,64 @@ describe("chronicles page", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe("chronicle setup page", () => {
+  beforeEach(() => {
+    createServerSupabaseClient.mockReset();
+    vi.resetModules();
+  });
+
+  it("shows a calm shared confirmation state when a new draft has just been opened", async () => {
+    const single = vi.fn().mockResolvedValue({
+      data: {
+        id: "chronicle-1",
+        status: "draft",
+        title: "The Long Night",
+      },
+      error: null,
+    });
+    const eq = vi.fn(() => ({ single }));
+    const select = vi.fn(() => ({ eq }));
+
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: {
+            user: {
+              id: "user-1",
+            },
+          },
+        }),
+      },
+      from: vi.fn(() => ({
+        select,
+      })),
+    });
+
+    const { default: ChronicleSetupPage } = await import(
+      "@/app/(app)/chronicles/[chronicleId]/setup/page"
+    );
+    const view = await ChronicleSetupPage({
+      params: Promise.resolve({ chronicleId: "chronicle-1" }),
+      searchParams: Promise.resolve({ created: "1" }),
+    } as never);
+
+    render(view);
+
+    expect(
+      screen.getByRole("heading", {
+        name: "The draft chronicle has been opened.",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "The becoming-undead sequence is ready when you are.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: "Begin with the life you had before.",
+      }),
+    ).toBeInTheDocument();
+  });
+});
