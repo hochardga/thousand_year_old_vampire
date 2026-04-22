@@ -33,6 +33,7 @@ export function QuietAlert({
         <button
           type="button"
           onClick={onAction}
+          disabled={!onAction}
           className="inline-flex min-h-11 items-center justify-center rounded-soft bg-nocturne px-4 py-2 text-sm font-medium text-surface transition-colors duration-160 ease-ritual hover:bg-nocturne/92"
         >
           {actionLabel}

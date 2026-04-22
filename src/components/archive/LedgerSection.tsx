@@ -4,16 +4,10 @@ import { SurfacePanel } from "@/components/ui/SurfacePanel";
 type LedgerSectionProps = {
   children: ReactNode;
   description: string;
-  emptyMessage?: string;
   title: string;
 };
 
-export function LedgerSection({
-  children,
-  description,
-  emptyMessage,
-  title,
-}: LedgerSectionProps) {
+export function LedgerSection({ children, description, title }: LedgerSectionProps) {
   return (
     <SurfacePanel className="px-5 py-5 sm:px-6 sm:py-6">
       <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-muted">
@@ -25,13 +19,7 @@ export function LedgerSection({
       <p className="mt-2 max-w-reading text-sm leading-relaxed text-ink-muted">
         {description}
       </p>
-      <div className="mt-5">
-        {emptyMessage ? (
-          <p className="text-sm leading-relaxed text-ink-muted">{emptyMessage}</p>
-        ) : (
-          children
-        )}
-      </div>
+      <div className="mt-5">{children}</div>
     </SurfacePanel>
   );
 }

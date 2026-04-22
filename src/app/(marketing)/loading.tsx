@@ -1,3 +1,4 @@
+import { LoadingAnnouncement } from "@/components/ui/LoadingAnnouncement";
 import { PageShell } from "@/components/ui/PageShell";
 import { SkeletonBlock } from "@/components/ui/SkeletonBlock";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
@@ -5,6 +6,7 @@ import { SurfacePanel } from "@/components/ui/SurfacePanel";
 export default function MarketingLoading() {
   return (
     <PageShell className="gap-6 py-8">
+      <LoadingAnnouncement />
       <SurfacePanel tone="nocturne" className="px-6 py-8 sm:px-8">
         <SkeletonBlock className="h-3 w-28 bg-gold/20" />
         <SkeletonBlock className="mt-4 h-16 w-full max-w-[38rem] bg-surface/20" />

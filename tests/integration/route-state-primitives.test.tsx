@@ -37,7 +37,7 @@ describe("phase 3 route-state primitives", () => {
     expect(
       screen.getByText("Try again when you are ready."),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try again" })).toBeDisabled();
   });
 
   it("marks skeleton regions as decorative placeholders", () => {
