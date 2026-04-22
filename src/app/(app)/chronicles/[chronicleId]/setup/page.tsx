@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { SetupStepper } from "@/components/ritual/SetupStepper";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { PageShell } from "@/components/ui/PageShell";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -59,8 +58,6 @@ export default async function ChronicleSetupPage({
     redirect(`/chronicles/${chronicleId}/play`);
   }
 
-  const hasChronicleTitle = chronicle.title.trim().length > 0;
-
   return (
     <PageShell className="gap-6 py-8">
       <SurfacePanel className="max-w-reading px-6 py-7 sm:px-8">
@@ -76,18 +73,7 @@ export default async function ChronicleSetupPage({
         </p>
       </SurfacePanel>
 
-      {hasChronicleTitle ? (
-        <SetupStepper
-          chronicleId={chronicle.id}
-          chronicleTitle={chronicle.title}
-        />
-      ) : (
-        <EmptyState
-          eyebrow="Setup state"
-          title="This draft still needs its first name."
-          body="Move through the opening thresholds and the chronicle will take on its shape."
-        />
-      )}
+      <SetupStepper chronicleId={chronicle.id} chronicleTitle={chronicle.title} />
     </PageShell>
   );
 }

@@ -198,6 +198,48 @@ function buildSupabaseClient() {
   };
 }
 
+function buildEmptyArchiveSupabaseClient() {
+  return {
+    auth: {
+      getUser: vi.fn().mockResolvedValue({
+        data: {
+          user: {
+            id: "user-1",
+          },
+        },
+      }),
+    },
+    from(table: string) {
+      return {
+        select() {
+          switch (table) {
+            case "archive_events":
+              return createQueryBuilder([]);
+            case "chronicles":
+              return createQueryBuilder([
+                {
+                  current_prompt_encounter: 1,
+                  current_prompt_number: 7,
+                  id: "chronicle-1",
+                  status: "active",
+                  title: "The Long Night",
+                },
+              ]);
+            case "diaries":
+              return createQueryBuilder([]);
+            case "memories":
+              return createQueryBuilder([]);
+            case "prompt_runs":
+              return createQueryBuilder([]);
+            default:
+              throw new Error(`Unsupported table in archive page test: ${table}`);
+          }
+        },
+      };
+    },
+  };
+}
+
 describe("archive page", () => {
   beforeEach(() => {
     createServerSupabaseClient.mockReset();
@@ -238,6 +280,30 @@ describe("archive page", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Read older timeline entries" }),
+    ).toBeInTheDocument();
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it("uses the shared empty state when the event timeline has not gathered any echoes yet", async () => {
+    createServerSupabaseClient.mockResolvedValue(buildEmptyArchiveSupabaseClient());
+
+    const ArchivePage = (
+      await import("@/app/(app)/chronicles/[chronicleId]/archive/page")
+    ).default;
+    render(
+      await ArchivePage({
+        params: Promise.resolve({ chronicleId: "chronicle-1" }),
+        searchParams: Promise.resolve({}),
+      } as never),
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: "The archive timeline is quiet for now.",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Events will gather here as the chronicle lengthens."),
     ).toBeInTheDocument();
     expect(redirect).not.toHaveBeenCalled();
   });
