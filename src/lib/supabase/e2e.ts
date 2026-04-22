@@ -29,17 +29,59 @@ type SessionRow = {
 
 type MemoryRow = {
   chronicle_id: string;
+  created_at: string;
+  diary_id: string | null;
+  forgotten_at: string | null;
   id: string;
   location: "mind" | "diary" | "forgotten";
   slot_index: number | null;
   title: string;
+  updated_at: string;
 };
 
 type DiaryRow = {
   chronicle_id: string;
+  created_at: string;
   id: string;
+  lost_at: string | null;
   status: "active" | "lost";
   title: string;
+};
+
+type MemoryEntryRow = {
+  created_at: string;
+  entry_text: string;
+  id: string;
+  memory_id: string;
+  position: number;
+  prompt_run_id: string | null;
+};
+
+type ArchiveEventRow = {
+  chronicle_id: string;
+  created_at: string;
+  event_type: string;
+  id: string;
+  metadata: Record<string, unknown>;
+  session_id: string | null;
+  summary: string;
+};
+
+type PromptRunRow = {
+  chronicle_id: string;
+  created_at: string;
+  d10_roll: number;
+  d6_roll: number;
+  encounter_index: number;
+  experience_text: string;
+  id: string;
+  movement: number;
+  next_prompt_encounter: number;
+  next_prompt_number: number;
+  player_entry: string;
+  prompt_markdown: string;
+  prompt_number: number;
+  session_id: string;
 };
 
 type PromptCatalogRow = {
@@ -55,13 +97,15 @@ type ProfileRow = {
 };
 
 type E2EState = {
+  archive_events: ArchiveEventRow[];
   characters: Array<Record<string, unknown>>;
   chronicles: ChronicleRow[];
   diaries: DiaryRow[];
   marks: Array<Record<string, unknown>>;
+  memory_entries: MemoryEntryRow[];
   memories: MemoryRow[];
   prompt_catalog: PromptCatalogRow[];
-  prompt_runs: Array<Record<string, unknown>>;
+  prompt_runs: PromptRunRow[];
   profiles: ProfileRow[];
   resources: Array<Record<string, unknown>>;
   sessions: SessionRow[];
@@ -86,6 +130,7 @@ type QueryOptions = {
 
 type Filter = {
   column: string;
+  operator: "eq" | "lt";
   value: number | string;
 };
 
@@ -106,8 +151,15 @@ type SelectExecutionResult =
       error: null;
     };
 
+type UpdateExecutionResult = {
+  data: null;
+  error: { message: string } | null;
+};
+
 type SelectBuilder<T extends Record<string, unknown>> = {
   eq: (column: string, value: number | string) => SelectBuilder<T>;
+  limit: (count: number) => SelectBuilder<T>;
+  lt: (column: string, value: number | string) => SelectBuilder<T>;
   maybeSingle: () => Promise<{
     data: Record<string, unknown> | null;
     error: null;
@@ -123,6 +175,24 @@ type SelectBuilder<T extends Record<string, unknown>> = {
   then: <TResult1 = SelectExecutionResult, TResult2 = never>(
     onFulfilled?:
       | ((value: SelectExecutionResult) => TResult1 | PromiseLike<TResult1>)
+      | null,
+    onRejected?:
+      | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
+      | null,
+  ) => Promise<TResult1 | TResult2>;
+};
+
+type UpdateBuilder<T extends Record<string, unknown>> = {
+  eq: (column: string, value: number | string) => UpdateBuilder<T>;
+  select: (columns: string) => {
+    single: () => Promise<{
+      data: Record<string, unknown> | null;
+      error: { message: string } | null;
+    }>;
+  };
+  then: <TResult1 = UpdateExecutionResult, TResult2 = never>(
+    onFulfilled?:
+      | ((value: UpdateExecutionResult) => TResult1 | PromiseLike<TResult1>)
       | null,
     onRejected?:
       | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
@@ -154,10 +224,12 @@ function getState() {
 
   if (!globalWithState.__tyovE2EState) {
     globalWithState.__tyovE2EState = {
+      archive_events: [],
       characters: [],
       chronicles: [],
       diaries: [],
       marks: [],
+      memory_entries: [],
       memories: [],
       prompt_catalog: [...promptCatalogSeed],
       prompt_runs: [],
@@ -193,7 +265,23 @@ function pickColumns<T extends Record<string, unknown>>(row: T, columns: string)
 
 function applyFilters<T extends Record<string, unknown>>(rows: T[], filters: Filter[]) {
   return rows.filter((row) =>
-    filters.every((filter) => row[filter.column] === filter.value),
+    filters.every((filter) => {
+      const rowValue = row[filter.column as keyof T];
+
+      if (filter.operator === "lt") {
+        if (typeof rowValue === "number" && typeof filter.value === "number") {
+          return rowValue < filter.value;
+        }
+
+        if (typeof rowValue === "string" && typeof filter.value === "string") {
+          return rowValue < filter.value;
+        }
+
+        return false;
+      }
+
+      return rowValue === filter.value;
+    }),
   );
 }
 
@@ -203,6 +291,7 @@ function createSelectBuilder<T extends Record<string, unknown>>(
   options?: QueryOptions,
 ) {
   const filters: Filter[] = [];
+  let limitCount: number | null = null;
   let orderColumn: string | null = null;
   let ascending = true;
 
@@ -226,6 +315,10 @@ function createSelectBuilder<T extends Record<string, unknown>>(
       });
     }
 
+    if (limitCount !== null) {
+      rows = rows.slice(0, limitCount);
+    }
+
     if (options?.head) {
       return Promise.resolve({
         count: rows.length,
@@ -242,7 +335,15 @@ function createSelectBuilder<T extends Record<string, unknown>>(
 
   const builder: SelectBuilder<T> = {
     eq(column: string, value: number | string) {
-      filters.push({ column, value });
+      filters.push({ column, operator: "eq", value });
+      return builder;
+    },
+    limit(count: number) {
+      limitCount = count;
+      return builder;
+    },
+    lt(column: string, value: number | string) {
+      filters.push({ column, operator: "lt", value });
       return builder;
     },
     maybeSingle() {
@@ -274,6 +375,152 @@ function createSelectBuilder<T extends Record<string, unknown>>(
   };
 
   return builder;
+}
+
+function createRpcError(message: string) {
+  return {
+    data: null,
+    error: { message },
+  };
+}
+
+function createUpdateBuilder(
+  table: string,
+  values: Record<string, unknown>,
+): UpdateBuilder<Record<string, unknown>> {
+  const filters: Filter[] = [];
+
+  function applyUpdates() {
+    const rows = applyFilters(
+      selectRowsForTable(table) as Record<string, unknown>[],
+      filters,
+    );
+
+    rows.forEach((row) => {
+      Object.assign(row, values);
+    });
+
+    return rows;
+  }
+
+  const builder: UpdateBuilder<Record<string, unknown>> = {
+    eq(column: string, value: number | string) {
+      filters.push({ column, operator: "eq", value });
+      return builder;
+    },
+    select(columns: string) {
+      return {
+        single() {
+          const rows = applyUpdates();
+          const row = rows[0];
+
+          return Promise.resolve({
+            data: row ? pickColumns(row, columns) : null,
+            error: row ? null : { message: "Not found" },
+          });
+        },
+      };
+    },
+    then(onFulfilled, onRejected) {
+      const rows = applyUpdates();
+
+      return Promise.resolve({
+        data: null,
+        error: rows.length ? null : { message: "Not found" },
+      }).then(onFulfilled, onRejected);
+    },
+  };
+
+  return builder;
+}
+
+function countMindMemories(state: E2EState, chronicleId: string) {
+  return state.memories.filter(
+    (memory) =>
+      memory.chronicle_id === chronicleId && memory.location === "mind",
+  ).length;
+}
+
+function findMemoryEntries(state: E2EState, memoryId: string) {
+  return state.memory_entries
+    .filter((entry) => entry.memory_id === memoryId)
+    .sort((left, right) => left.position - right.position);
+}
+
+function nextOpenMindSlot(state: E2EState, chronicleId: string) {
+  for (let slot = 1; slot <= 5; slot += 1) {
+    const occupied = state.memories.some(
+      (memory) =>
+        memory.chronicle_id === chronicleId &&
+        memory.location === "mind" &&
+        memory.slot_index === slot,
+    );
+
+    if (!occupied) {
+      return slot;
+    }
+  }
+
+  return null;
+}
+
+function getCurrentPrompt(
+  state: E2EState,
+  chronicle: ChronicleRow,
+): PromptCatalogRow | undefined {
+  return (
+    state.prompt_catalog.find(
+      (prompt) =>
+        prompt.prompt_number === chronicle.current_prompt_number &&
+        prompt.encounter_index === chronicle.current_prompt_encounter,
+    ) || state.prompt_catalog[0]
+  );
+}
+
+function ensureActiveDiary(
+  state: E2EState,
+  chronicleId: string,
+  now: string,
+): { created: boolean; diary: DiaryRow } {
+  const existingDiary = state.diaries.find(
+    (diary) => diary.chronicle_id === chronicleId && diary.status === "active",
+  );
+
+  if (existingDiary) {
+    return { created: false, diary: existingDiary };
+  }
+
+  const diary: DiaryRow = {
+    chronicle_id: chronicleId,
+    created_at: now,
+    id: randomUUID(),
+    lost_at: null,
+    status: "active",
+    title: "The Diary",
+  };
+  state.diaries.push(diary);
+
+  return { created: true, diary };
+}
+
+function appendArchiveEvents(
+  state: E2EState,
+  chronicleId: string,
+  sessionId: string,
+  events: Array<{ eventType: string; summary: string }>,
+  now: string,
+) {
+  state.archive_events.push(
+    ...events.map((event) => ({
+      chronicle_id: chronicleId,
+      created_at: now,
+      event_type: event.eventType,
+      id: randomUUID(),
+      metadata: {},
+      session_id: sessionId,
+      summary: event.summary,
+    })),
+  );
 }
 
 function createChronicleInsertBuilder(
@@ -348,16 +595,24 @@ function selectRowsForTable(table: string) {
   const state = getState();
 
   switch (table) {
+    case "archive_events":
+      return state.archive_events;
     case "chronicles":
       return state.chronicles;
     case "diaries":
       return state.diaries;
+    case "memory_entries":
+      return state.memory_entries;
     case "memories":
       return state.memories;
     case "prompt_catalog":
       return state.prompt_catalog;
+    case "prompt_runs":
+      return state.prompt_runs;
     case "profiles":
       return state.profiles;
+    case "sessions":
+      return state.sessions;
     default:
       return [];
   }
@@ -404,17 +659,34 @@ function applySetupCompletion(args: Record<string, unknown>) {
     status: "in_progress",
   });
 
-  const setupMemories = (args.setup_memories as Array<{
-    title: string;
-  }>) || [];
+  const setupMemories =
+    (args.setup_memories as Array<{
+      entryText?: string;
+      title: string;
+    }>) || [];
 
   setupMemories.forEach((memory, index) => {
+    const memoryId = randomUUID();
+
     state.memories.push({
       chronicle_id: chronicle.id,
-      id: randomUUID(),
+      created_at: now,
+      diary_id: null,
+      forgotten_at: null,
+      id: memoryId,
       location: "mind",
       slot_index: index + 1,
       title: memory.title,
+      updated_at: now,
+    });
+
+    state.memory_entries.push({
+      created_at: now,
+      entry_text: memory.entryText || "",
+      id: randomUUID(),
+      memory_id: memoryId,
+      position: 1,
+      prompt_run_id: null,
     });
   });
 
@@ -465,30 +737,175 @@ function applyPromptResolution(args: Record<string, unknown>) {
   }
 
   if (session.status !== "in_progress") {
-    return {
-      data: null,
-      error: { message: "Session is not active." },
-    };
+    return createRpcError("Session is not active.");
   }
 
+  const now = timestamp();
+  const currentPrompt = getCurrentPrompt(state, chronicle);
+  const promptRunId = randomUUID();
+  const experienceText =
+    typeof args.experience_text === "string" ? args.experience_text : "";
+  const playerEntry =
+    typeof args.player_entry === "string" ? args.player_entry : "";
+  const eventPayload: Array<{ eventType: string; summary: string }> = [
+    {
+      eventType: "prompt_resolved",
+      summary: "The entry has been set into memory.",
+    },
+  ];
+  const memoryDecision =
+    (args.memory_decision as
+      | {
+          memoryId?: string;
+          mode?: string;
+          targetMemoryId?: string;
+        }
+      | null) ?? { mode: "create-new" };
+
+  if ((memoryDecision.mode ?? "create-new") === "append-existing") {
+    const targetMemory = state.memories.find(
+      (memory) =>
+        memory.id === memoryDecision.targetMemoryId &&
+        memory.chronicle_id === chronicle.id,
+    );
+
+    if (!targetMemory) {
+      return createRpcError("Choose a memory still held in mind.");
+    }
+
+    if (targetMemory.location !== "mind") {
+      return createRpcError(
+        "Only memories still held in mind can accept new entries.",
+      );
+    }
+
+    const entries = findMemoryEntries(state, targetMemory.id);
+
+    if (entries.length >= 3) {
+      return createRpcError("That memory is already full.");
+    }
+
+    state.memory_entries.push({
+      created_at: now,
+      entry_text: experienceText,
+      id: randomUUID(),
+      memory_id: targetMemory.id,
+      position: entries.length + 1,
+      prompt_run_id: promptRunId,
+    });
+  } else {
+    if (countMindMemories(state, chronicle.id) >= 5) {
+      const selectedMemory = state.memories.find(
+        (memory) =>
+          memory.id === memoryDecision.memoryId &&
+          memory.chronicle_id === chronicle.id &&
+          memory.location === "mind",
+      );
+
+      if ((memoryDecision.mode ?? "") === "forget-existing") {
+        if (!selectedMemory) {
+          return createRpcError("Choose a memory still held in mind.");
+        }
+
+        selectedMemory.diary_id = null;
+        selectedMemory.forgotten_at = now;
+        selectedMemory.location = "forgotten";
+        selectedMemory.slot_index = null;
+        selectedMemory.updated_at = now;
+        eventPayload.push({
+          eventType: "memory_forgotten",
+          summary: "An old memory has been surrendered to the dark.",
+        });
+      } else if ((memoryDecision.mode ?? "") === "move-to-diary") {
+        if (!selectedMemory) {
+          return createRpcError("Choose a memory still held in mind.");
+        }
+
+        const { created, diary } = ensureActiveDiary(state, chronicle.id, now);
+
+        if (created) {
+          eventPayload.push({
+            eventType: "diary_created",
+            summary: "A diary has been opened against forgetting.",
+          });
+        }
+
+        selectedMemory.diary_id = diary.id;
+        selectedMemory.location = "diary";
+        selectedMemory.slot_index = null;
+        selectedMemory.updated_at = now;
+        eventPayload.push({
+          eventType: "memory_moved_to_diary",
+          summary: "A memory has been placed into the diary.",
+        });
+      } else {
+        return createRpcError("A memory decision is required when the mind is full.");
+      }
+    }
+
+    const availableSlot = nextOpenMindSlot(state, chronicle.id);
+
+    if (availableSlot === null) {
+      return createRpcError("No in-mind memory slot is available.");
+    }
+
+    const newMemoryId = randomUUID();
+    state.memories.push({
+      chronicle_id: chronicle.id,
+      created_at: now,
+      diary_id: null,
+      forgotten_at: null,
+      id: newMemoryId,
+      location: "mind",
+      slot_index: availableSlot,
+      title: experienceText.slice(0, 80),
+      updated_at: now,
+    });
+    state.memory_entries.push({
+      created_at: now,
+      entry_text: experienceText,
+      id: randomUUID(),
+      memory_id: newMemoryId,
+      position: 1,
+      prompt_run_id: promptRunId,
+    });
+  }
+
+  state.prompt_runs.push({
+    chronicle_id: chronicle.id,
+    created_at: now,
+    d10_roll: 7,
+    d6_roll: 4,
+    encounter_index: chronicle.current_prompt_encounter,
+    experience_text: experienceText,
+    id: promptRunId,
+    movement: 3,
+    next_prompt_encounter: 1,
+    next_prompt_number: 4,
+    player_entry: playerEntry,
+    prompt_markdown: currentPrompt?.prompt_markdown || "",
+    prompt_number: chronicle.current_prompt_number,
+    session_id: session.id,
+  });
   chronicle.current_prompt_number = 4;
   chronicle.current_prompt_encounter = 1;
-  chronicle.last_played_at = timestamp();
-  chronicle.updated_at = timestamp();
+  chronicle.last_played_at = now;
+  chronicle.updated_at = now;
+  session.snapshot_json = {
+    ...session.snapshot_json,
+    currentPromptEncounter: 1,
+    currentPromptNumber: 4,
+  };
+  appendArchiveEvents(state, chronicle.id, session.id, eventPayload, now);
 
   return {
     data: {
-      archiveEvents: [
-        {
-          eventType: "prompt_resolved",
-          summary: "The entry has been set into memory.",
-        },
-      ],
+      archiveEvents: eventPayload,
       nextPrompt: {
         encounterIndex: 1,
         promptNumber: 4,
       },
-      promptRunId: randomUUID(),
+      promptRunId,
       rolled: {
         d10: 7,
         d6: 4,
@@ -592,6 +1009,9 @@ export function createE2EServerSupabaseClient(cookieStore: CookieStoreLike) {
             columns,
             options,
           );
+        },
+        update(values: Record<string, unknown>) {
+          return createUpdateBuilder(table, values);
         },
         async upsert() {
           if (table === "profiles") {

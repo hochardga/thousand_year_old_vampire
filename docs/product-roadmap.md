@@ -126,39 +126,39 @@
 **Phase prompt — give this to your coding agent:**
 > "Read docs/product-roadmap.md and find Phase 2. Then read only the Reference sections listed above from docs/prd.md and docs/product-vision.md. Continue from the first unchecked task. After each task, mark it complete in the roadmap. When all tasks are done, create a branch `phase-2/archive-memory-loss-and-return`, commit, push, and open a PR for review."
 
-- [ ] **TASK-020** — Implement the core memory-overflow and diary business rules in server helpers or SQL functions.
+- [x] **TASK-020** — Implement the core memory-overflow and diary business rules in server helpers or SQL functions.
   Files: `src/lib/chronicles/memoryRules.ts`, `supabase/migrations/0003_memory_rule_helpers.sql`
   Notes: Enforce five in-mind memories, three entries per memory, and one active diary. Verify: automated checks reject illegal overflow states.
 
-- [ ] **TASK-021** — Build the archive route with memory cards, diary panel, prompt history, and archive event timeline.
+- [x] **TASK-021** — Build the archive route with memory cards, diary panel, prompt history, and archive event timeline.
   Files: `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx`, `src/components/archive/MemoryCard.tsx`, `src/components/archive/EventTimeline.tsx`
   Notes: Follow docs/prd.md § UI/UX Requirements for archive layout and pagination. Verify: a chronicle with multiple prompt runs renders archive sections in order.
 
-- [ ] **TASK-022** — Build the ledger route for skills, resources, characters, and marks.
+- [x] **TASK-022** — Build the ledger route for skills, resources, characters, and marks.
   Files: `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx`, `src/components/archive/LedgerSection.tsx`, `src/components/archive/TraitItem.tsx`
   Notes: Lost and checked states must remain readable, not hidden. Verify: ledger reflects active and lost states after prompt resolution.
 
-- [ ] **TASK-023** — Add the in-context memory overflow UI to the play route.
+- [x] **TASK-023** — Add the in-context memory overflow UI to the play route.
   Files: `src/components/ritual/MemoryDecisionPanel.tsx`, `src/app/(app)/chronicles/[chronicleId]/play/page.tsx`
   Notes: Present only legal choices and keep the player on the play route. Verify: when the sixth in-mind memory would be created, the decision panel appears and can complete the flow.
 
-- [ ] **TASK-024** — Implement recap generation and session snapshot updates after prompt resolution and session close.
+- [x] **TASK-024** — Implement recap generation and session snapshot updates after prompt resolution and session close.
   Files: `src/lib/recap/buildRecap.ts`, `src/app/api/chronicles/[chronicleId]/recap/route.ts`, `src/lib/chronicles/sessionSnapshots.ts`
   Notes: Recap content should rely on structured events and recent prompt runs. Verify: closing or resuming a session returns useful recap prose.
 
-- [ ] **TASK-025** — Build the recap route and resume flow from chronicle list to active play.
+- [x] **TASK-025** — Build the recap route and resume flow from chronicle list to active play.
   Files: `src/app/(app)/chronicles/[chronicleId]/recap/page.tsx`, `src/components/ritual/RecapBlock.tsx`, `src/app/(app)/chronicles/page.tsx`
   Notes: Support direct resume of the last active chronicle. Verify: a returning user can reopen a chronicle and reach the current prompt through recap in one short path.
 
-- [ ] **TASK-026** — Implement patch handlers and lightweight UI interactions for editable ledger details.
+- [x] **TASK-026** — Implement patch handlers and lightweight UI interactions for editable ledger details.
   Files: `src/app/api/chronicles/[chronicleId]/characters/[characterId]/route.ts`, `src/app/api/chronicles/[chronicleId]/skills/[skillId]/route.ts`, `src/app/api/chronicles/[chronicleId]/resources/[resourceId]/route.ts`, `src/app/api/chronicles/[chronicleId]/marks/[markId]/route.ts`
   Notes: Allow only the narrow edits specified in docs/prd.md § API Specification. Verify: updates obey chronicle ownership and persist immediately.
 
-- [ ] **TASK-027** — Refine responsive behavior for mobile play, archive, and ledger screens.
+- [x] **TASK-027** — Refine responsive behavior for mobile play, archive, and ledger screens.
   Files: `src/app/globals.css`, `src/components/archive/MemoryCard.tsx`, `src/components/ritual/PromptCard.tsx`
   Notes: Prioritize writing comfort and stacked archive panels at small widths. Verify: 390px-wide viewport remains readable without horizontal scrolling.
 
-- [ ] **TASK-028** — Add automated coverage for multi-session play, diary placement, forgotten memories, and resume behavior.
+- [x] **TASK-028** — Add automated coverage for multi-session play, diary placement, forgotten memories, and resume behavior.
   Files: `tests/integration/archive-rules.test.ts`, `tests/e2e/multi-session.spec.ts`
   Notes: Cover the riskiest state transitions in docs/prd.md § Edge Cases & Error Handling. Verify: tests fail without the new logic and pass with it.
 

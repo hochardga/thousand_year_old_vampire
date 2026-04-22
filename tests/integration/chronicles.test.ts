@@ -175,4 +175,68 @@ describe("chronicles page", () => {
       }),
     ).toBeInTheDocument();
   });
+
+  it("routes returning players through recap for the last active chronicle", async () => {
+    const profileMaybeSingle = vi.fn().mockResolvedValue({
+      data: {
+        display_name: "Gregory",
+        id: "user-1",
+      },
+      error: null,
+    });
+    const profileEq = vi.fn(() => ({ maybeSingle: profileMaybeSingle }));
+    const profileSelect = vi.fn(() => ({ eq: profileEq }));
+    const chroniclesOrder = vi.fn().mockResolvedValue({
+      data: [
+        {
+          created_at: "2026-04-10T10:00:00.000Z",
+          id: "chronicle-1",
+          last_played_at: "2026-04-21T10:00:00.000Z",
+          status: "active",
+          title: "The Long Night",
+          vampire_name: "Aurelia's Refusal",
+        },
+      ],
+      error: null,
+    });
+    const chroniclesSelect = vi.fn(() => ({ order: chroniclesOrder }));
+
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: {
+            user: {
+              email: "gregory@example.com",
+              id: "user-1",
+            },
+          },
+        }),
+      },
+      from: vi.fn((table: string) => {
+        if (table === "profiles") {
+          return {
+            select: profileSelect,
+          };
+        }
+
+        return {
+          select: chroniclesSelect,
+        };
+      }),
+    });
+
+    const { default: ChroniclesPage } = await import("@/app/(app)/chronicles/page");
+    const view = await ChroniclesPage({
+      searchParams: Promise.resolve({}),
+    } as never);
+
+    render(view);
+
+    expect(
+      screen.getByRole("link", { name: "Resume the last active chronicle" }),
+    ).toHaveAttribute("href", "/chronicles/chronicle-1/recap");
+    expect(
+      screen.getByText("Resume through recap"),
+    ).toBeInTheDocument();
+  });
 });

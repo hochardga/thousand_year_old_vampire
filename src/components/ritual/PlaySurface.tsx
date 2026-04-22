@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ConsequencePanel } from "@/components/ritual/ConsequencePanel";
+import { MemoryDecisionPanel } from "@/components/ritual/MemoryDecisionPanel";
 import { RitualTextarea } from "@/components/ritual/RitualTextarea";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import {
@@ -23,12 +24,20 @@ type ResolvePromptResponse = {
 
 type PlaySurfaceProps = {
   chronicleId: string;
+  hasActiveDiary?: boolean;
   initialSessionId: string | null;
+  mindMemories?: Array<{
+    id: string;
+    slotIndex: number | null;
+    title: string;
+  }>;
 };
 
 export function PlaySurface({
   chronicleId,
+  hasActiveDiary = false,
   initialSessionId,
+  mindMemories = [],
 }: PlaySurfaceProps) {
   const [playerEntry, setPlayerEntry] = useState(
     () => loadPromptDraft(chronicleId)?.playerEntry ?? "",
@@ -39,6 +48,14 @@ export function PlaySurface({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<ResolvePromptResponse | null>(null);
+  const [overflowMode, setOverflowMode] = useState<
+    "forget-existing" | "move-to-diary" | null
+  >(null);
+  const [selectedOverflowMemoryId, setSelectedOverflowMemoryId] = useState<
+    string | null
+  >(null);
+
+  const requiresOverflowDecision = mindMemories.length >= 5;
 
   useEffect(() => {
     if (!playerEntry && !experienceText) {
@@ -54,6 +71,14 @@ export function PlaySurface({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage(null);
+
+    if (requiresOverflowDecision && (!overflowMode || !selectedOverflowMemoryId)) {
+      setErrorMessage(
+        "Choose which memory to forget or move into the diary before continuing.",
+      );
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -62,9 +87,15 @@ export function PlaySurface({
         {
           body: JSON.stringify({
             experienceText,
-            memoryDecision: {
-              mode: "create-new",
-            },
+            memoryDecision:
+              requiresOverflowDecision && overflowMode && selectedOverflowMemoryId
+                ? {
+                    memoryId: selectedOverflowMemoryId,
+                    mode: overflowMode,
+                  }
+                : {
+                    mode: "create-new",
+                  },
             playerEntry,
             sessionId: initialSessionId,
             traitMutations: {
@@ -92,6 +123,8 @@ export function PlaySurface({
       setResult(payload);
       setPlayerEntry("");
       setExperienceText("");
+      setOverflowMode(null);
+      setSelectedOverflowMemoryId(null);
       clearPromptDraft(chronicleId);
     } catch {
       setErrorMessage("The prompt could not be resolved.");
@@ -144,6 +177,16 @@ export function PlaySurface({
             onChange={setExperienceText}
             placeholder="Distill the lasting consequence into a single sentence."
           />
+          {requiresOverflowDecision ? (
+            <MemoryDecisionPanel
+              hasActiveDiary={hasActiveDiary}
+              memories={mindMemories}
+              onModeChange={setOverflowMode}
+              onSelectedMemoryChange={setSelectedOverflowMemoryId}
+              selectedMemoryId={selectedOverflowMemoryId}
+              selectedMode={overflowMode}
+            />
+          ) : null}
           <button
             type="submit"
             className="inline-flex min-h-11 items-center justify-center rounded-soft bg-nocturne px-5 py-3 text-sm font-medium text-surface transition-colors duration-160 ease-ritual hover:bg-nocturne/92 disabled:cursor-wait disabled:opacity-75"

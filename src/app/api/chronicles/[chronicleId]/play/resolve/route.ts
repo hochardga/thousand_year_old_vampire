@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { resolvePrompt } from "@/lib/chronicles/resolvePrompt";
+import { refreshSessionSnapshot } from "@/lib/chronicles/sessionSnapshots";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { promptResolutionSchema } from "@/lib/validation/play";
 
@@ -54,6 +55,14 @@ export async function POST(request: Request, context: ResolveRouteContext) {
       chronicleId,
       parsed.data,
     );
+    try {
+      await refreshSessionSnapshot(supabase as never, {
+        chronicleId,
+        sessionId: parsed.data.sessionId,
+      });
+    } catch {
+      // Keep prompt resolution resilient even if recap refresh lags behind.
+    }
 
     return NextResponse.json(result);
   } catch (error) {

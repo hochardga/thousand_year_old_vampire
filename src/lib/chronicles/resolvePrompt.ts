@@ -1,4 +1,5 @@
 import type { PromptResolutionPayload } from "@/types/chronicle";
+import { toMemoryRuleMessage } from "@/lib/chronicles/memoryRules";
 
 type PromptResolutionResult = {
   archiveEvents: Array<{
@@ -42,7 +43,11 @@ export async function resolvePrompt(
   });
 
   if (error || !data) {
-    throw new Error(error?.message || "The prompt could not be resolved.");
+    throw new Error(
+      error?.message
+        ? toMemoryRuleMessage(error.message)
+        : "The prompt could not be resolved.",
+    );
   }
 
   return data;
