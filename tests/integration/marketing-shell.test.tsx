@@ -6,16 +6,16 @@ describe("marketing shell", () => {
     render(<MarketingPage />);
 
     expect(
+      screen.getByText("A guided digital ritual for a solitary gothic life."),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("heading", {
         name: "Enter the vampire's life before the rules get in the way.",
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Private beta. Cross-device. Quietly guided."),
-    ).toBeInTheDocument();
-    expect(
       screen.getByText(
-        "Built for players who want the literary depth of the original without the analog burden, while the launch remains deliberately small.",
+        "A faithful digital edition for players who want the literary depth of the original without the analog burden.",
       ),
     ).toBeInTheDocument();
     expect(
@@ -43,6 +43,10 @@ describe("marketing shell", () => {
         name: "Preserve authorship",
       }),
     ).toBeInTheDocument();
-    expect(screen.getAllByText(/private beta/i)).toHaveLength(2);
+    expect(
+      screen.getByText(
+        "This release is a private beta focused on onboarding, prompt flow, archive return, and product tone while licensing posture remains explicit.",
+      ),
+    ).toBeInTheDocument();
   });
 });
