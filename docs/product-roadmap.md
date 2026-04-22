@@ -186,8 +186,8 @@
   Files: `src/lib/analytics/posthog.ts`, `src/components/providers/PostHogProvider.tsx`, `src/app/layout.tsx`
   Notes: Never send prompt or journal text to analytics. Verify: events appear in PostHog during manual smoke testing.
 
-- [ ] **TASK-032** — Implement the feedback capture flow and storage path for beta testers.
-  Files: `supabase/migrations/0004_feedback.sql`, `src/app/api/feedback/route.ts`, `src/components/ui/FeedbackForm.tsx`
+- [x] **TASK-032** — Implement the feedback capture flow and storage path for beta testers.
+  Files: `supabase/migrations/0008_feedback.sql`, `src/app/api/feedback/route.ts`, `src/components/ui/FeedbackForm.tsx`
   Notes: Keep the form lightweight and available from recap or settings, not mid-writing unless explicitly opened. Verify: feedback submissions persist with chronicle context when present.
 
 - [ ] **TASK-033** — Run the accessibility pass for keyboard navigation, focus treatment, labels, and reduced motion behavior.

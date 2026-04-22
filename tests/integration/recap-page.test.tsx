@@ -127,6 +127,9 @@ describe("recap page", () => {
     expect(
       screen.getByRole("link", { name: "Resume the current prompt" }),
     ).toHaveAttribute("href", "/chronicles/chronicle-1/play");
+    expect(
+      screen.getByRole("button", { name: "Share beta feedback" }),
+    ).toBeInTheDocument();
     expect(refreshSessionSnapshot).not.toHaveBeenCalled();
     expect(redirect).not.toHaveBeenCalled();
     expect(TrackEventOnMount).toHaveBeenCalledWith(

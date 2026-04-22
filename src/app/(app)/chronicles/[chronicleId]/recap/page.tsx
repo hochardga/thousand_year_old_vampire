@@ -133,6 +133,7 @@ export default async function ChronicleRecapPage({
       </SurfacePanel>
 
       <RecapBlock
+        chronicleId={chronicleId}
         currentPromptEncounter={chronicle.current_prompt_encounter}
         currentPromptNumber={chronicle.current_prompt_number}
         latestEvents={latestEvents}

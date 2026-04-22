@@ -1,10 +1,15 @@
-import Link from "next/link";
+"use client";
+
+import { useState } from "react";
 import { EventTimeline } from "@/components/archive/EventTimeline";
+import { FeedbackForm } from "@/components/ui/FeedbackForm";
+import Link from "next/link";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 
 type RecapBlockProps = {
   currentPromptEncounter: number;
   currentPromptNumber: number;
+  chronicleId?: string;
   latestEvents: Array<{
     created_at: string;
     event_type: string;
@@ -18,10 +23,13 @@ type RecapBlockProps = {
 export function RecapBlock({
   currentPromptEncounter,
   currentPromptNumber,
+  chronicleId,
   latestEvents,
   recapMarkdown,
   resumeHref,
 }: RecapBlockProps) {
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+
   return (
     <div className="space-y-4">
       <SurfacePanel className="space-y-5 px-6 py-6 sm:px-8">
@@ -51,6 +59,25 @@ export function RecapBlock({
         >
           Resume the current prompt
         </Link>
+      </SurfacePanel>
+
+      <SurfacePanel className="space-y-4 px-6 py-6 sm:px-8">
+        <div className="space-y-2">
+          <p className="font-mono text-xs uppercase tracking-[0.22em] text-ink-muted">
+            Beta feedback
+          </p>
+          <h2 className="font-heading text-3xl text-ink">
+            Offer a quiet note from the recap.
+          </h2>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsFeedbackOpen((value) => !value)}
+          className="inline-flex min-h-11 items-center justify-center rounded-soft border border-ink/10 bg-bg/70 px-5 py-3 text-sm font-medium text-ink transition-colors duration-160 ease-ritual hover:border-gold/40"
+        >
+          Share beta feedback
+        </button>
+        {isFeedbackOpen ? <FeedbackForm chronicleId={chronicleId} /> : null}
       </SurfacePanel>
 
       <SurfacePanel className="space-y-4 px-6 py-6 sm:px-8">
