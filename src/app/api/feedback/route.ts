@@ -2,6 +2,33 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
+type FeedbackSubmissionInsert = {
+  body: string;
+  category: "delight" | "friction" | "bug" | "question";
+  chronicle_id: string | null;
+  source: "recap";
+  user_id: string;
+};
+
+type FeedbackInsertResult = {
+  error: { message: string } | null;
+};
+
+type FeedbackSupabaseClient = {
+  auth: {
+    getUser: () => Promise<{
+      data: {
+        user: { id: string } | null;
+      };
+    }>;
+  };
+  from: (table: "feedback_submissions") => {
+    insert: (
+      payload: FeedbackSubmissionInsert,
+    ) => PromiseLike<FeedbackInsertResult>;
+  };
+};
+
 const feedbackSchema = z
   .object({
     body: z.string().trim().min(20).max(4000),
@@ -47,7 +74,8 @@ export async function POST(request: Request) {
   }
 
   const { body, category, chronicleId, source } = parsed.data;
-  const { error } = await (supabase as any)
+  const feedbackClient = supabase as FeedbackSupabaseClient;
+  const { error } = await feedbackClient
     .from("feedback_submissions")
     .insert({
       body,
