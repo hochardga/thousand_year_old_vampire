@@ -86,4 +86,44 @@ describe("posthog helpers", () => {
       source: "archive",
     });
   });
+
+  it("captures at most once when sessionStorage.setItem throws", async () => {
+    process.env.NEXT_PUBLIC_POSTHOG_KEY = "phc_test";
+    process.env.NEXT_PUBLIC_POSTHOG_HOST = "https://us.i.posthog.com";
+
+    const getItem = vi.spyOn(Storage.prototype, "getItem").mockReturnValue(null);
+    const setItem = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {
+        throw new Error("storage blocked");
+      });
+
+    const { TrackEventOnMount } = await import(
+      "@/components/analytics/TrackEventOnMount"
+    );
+
+    try {
+      render(
+        <TrackEventOnMount
+          event="archive_opened"
+          onceKey="archive-opened:chronicle-2"
+          properties={{
+            chronicleId: "chronicle-2",
+            source: "archive",
+          }}
+        />,
+      );
+
+      expect(capture).toHaveBeenCalledTimes(1);
+      expect(capture).toHaveBeenCalledWith("archive_opened", {
+        chronicleId: "chronicle-2",
+        source: "archive",
+      });
+      expect(getItem).toHaveBeenCalledWith("archive-opened:chronicle-2");
+      expect(setItem).toHaveBeenCalledWith("archive-opened:chronicle-2", "1");
+    } finally {
+      getItem.mockRestore();
+      setItem.mockRestore();
+    }
+  });
 });

@@ -27,11 +27,16 @@ export function TrackEventOnMount({
       if (window.sessionStorage.getItem(onceKey)) {
         return;
       }
+    } catch {
+      // Storage can fail in privacy-restricted browsers; still capture once.
+    }
 
-      trackAnalyticsEvent(event, properties);
+    trackAnalyticsEvent(event, properties);
+
+    try {
       window.sessionStorage.setItem(onceKey, "1");
     } catch {
-      trackAnalyticsEvent(event, properties);
+      // Best effort only. Never retry the event.
     }
   }, [event, onceKey, properties]);
 
