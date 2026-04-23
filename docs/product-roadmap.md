@@ -194,7 +194,7 @@
   Files: `src/app/globals.css`, `src/components/**/*`, `tests/e2e/accessibility.spec.ts`
   Notes: Bring the app into alignment with docs/prd.md § Accessibility and docs/product-vision.md § Accessibility Commitments. Verify: keyboard-only pass works across all core routes.
 
-- [ ] **TASK-034** — Run the performance pass for bundle size, route hydration, prompt loading, and response caching.
+- [x] **TASK-034** — Run the performance pass for bundle size, route hydration, prompt loading, and response caching.
   Files: `src/app/(app)/chronicles/[chronicleId]/play/page.tsx`, `src/lib/prompts/catalog.ts`, `next.config.ts`
   Notes: Optimize the play route first. Verify: production build completes and key route metrics are within acceptable range.
 

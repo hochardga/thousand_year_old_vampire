@@ -104,8 +104,14 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
 
   const memoryClient = supabase as unknown as MemoryLookupClient;
   const diaryCountClient = supabase as unknown as DiaryCountLookupClient;
+  const promptPromise = getPromptByPosition(
+    supabase as never,
+    chronicle.current_prompt_number,
+    chronicle.current_prompt_encounter,
+    chronicle.prompt_version,
+  );
 
-  const [mindMemoriesResult, diaryResult, prompt] = (await Promise.all([
+  const [mindMemoriesResult, diaryResult, prompt] = await Promise.all([
     memoryClient
       .from("memories")
       .select("id, title, slot_index")
@@ -115,13 +121,8 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
       .select("id", { count: "exact", head: true })
       .eq("chronicle_id", chronicleId)
       .eq("status", "active"),
-    getPromptByPosition(
-      supabase as never,
-      chronicle.current_prompt_number,
-      chronicle.current_prompt_encounter,
-      chronicle.prompt_version,
-    ),
-  ] as const)) as [
+    promptPromise,
+  ] as const) as [
     {
       data: MindMemoryRecord[] | null;
       error: { message: string } | null;
@@ -130,9 +131,9 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
     Awaited<ReturnType<typeof getPromptByPosition>>,
   ];
 
-  const mindMemories =
-    (mindMemoriesResult.data ?? []).filter((memory) => memory.slot_index !== null) ??
-    [];
+  const mindMemories = (mindMemoriesResult.data ?? []).filter(
+    (memory) => memory.slot_index !== null,
+  );
   const memoriesInMind = mindMemories.length;
   const diaryCount = diaryResult.count ?? 0;
 
