@@ -198,7 +198,7 @@
   Files: `src/app/(app)/chronicles/[chronicleId]/play/page.tsx`, `src/lib/prompts/catalog.ts`, `next.config.ts`
   Notes: Optimize the play route first. Verify: production build completes and key route metrics are within acceptable range.
 
-- [ ] **TASK-035** — Add SEO metadata, Open Graph assets, and legal/licensing placeholder copy appropriate to the launch posture.
+- [x] **TASK-035** — Add SEO metadata, Open Graph assets, and legal/licensing placeholder copy appropriate to the launch posture.
   Files: `src/app/(marketing)/layout.tsx`, `src/app/robots.ts`, `src/app/sitemap.ts`, `src/app/(marketing)/page.tsx`
   Notes: If licensing is not settled, copy must accurately reflect beta/private status. Verify: metadata renders in page source and OG image path resolves.
 

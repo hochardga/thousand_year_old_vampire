@@ -45,7 +45,7 @@ describe("marketing shell", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "This release is a private beta focused on onboarding, prompt flow, archive return, and product tone while licensing posture remains explicit.",
+        "This beta is a careful adaptation in progress. The product is public enough to explain itself, but not presented as a broad official release while launch conditions are still being clarified.",
       ),
     ).toBeInTheDocument();
     expect(
