@@ -8,6 +8,7 @@
 - [ ] Memory overflow flow offers a preservation choice and records the selected outcome in the archive
 - [ ] Archive route loads memories, prompt history, and event timeline
 - [ ] Recap route loads prose and resume action
+- [ ] Second-session resume returns through recap and back into play
 - [ ] Feedback form submits successfully from recap
 - [ ] Keyboard-only pass succeeds on landing, sign-in, setup, play, archive, ledger, and recap
 - [ ] Production build succeeds with current metadata and OG assets

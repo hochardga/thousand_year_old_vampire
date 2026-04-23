@@ -194,4 +194,15 @@ test("beta smoke flow covers sign-in, setup, play, memory overflow, archive, rec
     .fill("The recap carried me forward, and the archive felt easy to trust.");
   await page.getByRole("button", { name: "Send feedback" }).click();
   await expect(page.getByText("Your note has been set down.")).toBeVisible();
+
+  await page.goto("/chronicles");
+  await page.getByRole("link", { name: "Resume the last active chronicle" }).click();
+
+  await expect(page).toHaveURL(/\/chronicles\/.+\/recap/);
+  await expect(page.getByText("Session recap")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "The Long Night" })).toBeVisible();
+  await page.getByRole("link", { name: "Resume the current prompt" }).click();
+
+  await expect(page).toHaveURL(/\/chronicles\/.+\/play/);
+  await expect(page.getByRole("heading", { name: "Prompt 4" })).toBeVisible();
 });
