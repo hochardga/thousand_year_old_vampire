@@ -228,31 +228,43 @@ const promptCatalogSeed: PromptCatalogRow[] = [
   },
 ];
 
+function buildInitialState(): E2EState {
+  return {
+    archive_events: [],
+    characters: [],
+    chronicles: [],
+    diaries: [],
+    feedback_submissions: [],
+    marks: [],
+    memory_entries: [],
+    memories: [],
+    prompt_catalog: [...promptCatalogSeed],
+    prompt_runs: [],
+    profiles: [],
+    resources: [],
+    sessions: [],
+    skills: [],
+  };
+}
+
 function getState() {
   const globalWithState = globalThis as typeof globalThis & {
     __tyovE2EState?: E2EState;
   };
 
   if (!globalWithState.__tyovE2EState) {
-    globalWithState.__tyovE2EState = {
-      archive_events: [],
-      characters: [],
-      chronicles: [],
-      diaries: [],
-      feedback_submissions: [],
-      marks: [],
-      memory_entries: [],
-      memories: [],
-      prompt_catalog: [...promptCatalogSeed],
-      prompt_runs: [],
-      profiles: [],
-      resources: [],
-      sessions: [],
-      skills: [],
-    };
+    globalWithState.__tyovE2EState = buildInitialState();
   }
 
   return globalWithState.__tyovE2EState;
+}
+
+export function resetE2EState() {
+  const globalWithState = globalThis as typeof globalThis & {
+    __tyovE2EState?: E2EState;
+  };
+
+  globalWithState.__tyovE2EState = buildInitialState();
 }
 
 function timestamp() {

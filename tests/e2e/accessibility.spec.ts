@@ -3,6 +3,9 @@ import { expect, test } from "@playwright/test";
 test("keyboard navigation and visible focus work across the core beta routes", async ({
   page,
 }) => {
+  const resetResponse = await page.request.post("/api/internal/e2e/reset");
+  expect(resetResponse.status()).toBe(204);
+
   await page.request.post("/__nextjs_devtools_config", {
     data: { disableDevIndicator: true },
   });
