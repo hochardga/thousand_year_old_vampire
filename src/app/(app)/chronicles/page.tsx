@@ -17,6 +17,8 @@ type ChroniclesPageProps = {
 
 type ChronicleRecord = {
   created_at: string;
+  current_prompt_encounter: number;
+  current_prompt_number: number;
   id: string;
   last_played_at: string | null;
   status: "draft" | "active" | "completed" | "archived";
@@ -38,13 +40,21 @@ type ChronicleListClient = {
   };
 };
 
+function hasResolvedPrompt(chronicle: ChronicleRecord) {
+  return (
+    chronicle.current_prompt_number > 1 ||
+    chronicle.current_prompt_encounter > 1
+  );
+}
+
 function resolveChronicleHref(chronicle: ChronicleRecord) {
   if (chronicle.status === "draft") {
     return `/chronicles/${chronicle.id}/setup`;
   }
 
   if (chronicle.status === "active") {
-    return `/chronicles/${chronicle.id}/recap?returned=1`;
+    const returnedParam = hasResolvedPrompt(chronicle) ? "?returned=1" : "";
+    return `/chronicles/${chronicle.id}/recap${returnedParam}`;
   }
 
   return `/chronicles/${chronicle.id}/recap`;
@@ -89,7 +99,9 @@ export default async function ChroniclesPage({
 
   const { data, error } = await (supabase as unknown as ChronicleListClient)
     .from("chronicles")
-    .select("id, title, status, vampire_name, created_at, last_played_at")
+    .select(
+      "id, title, status, vampire_name, created_at, last_played_at, current_prompt_number, current_prompt_encounter",
+    )
     .order("updated_at", { ascending: false });
 
   const chronicles = (data ?? []) as ChronicleRecord[];
@@ -116,7 +128,7 @@ export default async function ChroniclesPage({
         </p>
         {mostRecentActiveChronicle ? (
           <Link
-            href={`/chronicles/${mostRecentActiveChronicle.id}/recap?returned=1`}
+            href={resolveChronicleHref(mostRecentActiveChronicle)}
             className="mt-6 inline-flex min-h-11 items-center justify-center rounded-soft bg-surface px-5 py-3 text-sm font-medium text-nocturne transition-colors duration-160 ease-ritual hover:bg-surface-muted"
           >
             Resume the last active chronicle
