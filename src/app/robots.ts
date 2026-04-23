@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { resolveSiteUrl } from "@/lib/auth/redirects";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -7,6 +8,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/auth", "/chronicles", "/sign-in"],
     },
-    sitemap: "/sitemap.xml",
+    sitemap: new URL("/sitemap.xml", resolveSiteUrl()).toString(),
   };
 }
