@@ -41,7 +41,7 @@ export function ChronicleCard({
   vampireName,
 }: ChronicleCardProps) {
   return (
-    <Link href={href} className="block rounded-panel focus-visible:outline-none">
+    <Link href={href} className="block rounded-panel">
       <SurfacePanel
         className={cn(
           "px-5 py-5 transition-colors duration-160 ease-ritual hover:border-gold/40 hover:bg-gold/5 sm:px-6 sm:py-6",

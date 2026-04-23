@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 async function expectVisibleFocus(
   locator: Parameters<typeof expect>[0],
-  expectation: "default" | "forced-colors" = "default",
+  expectation: "default" | "forced-colors" | "nocturne" = "default",
 ) {
   const styles = await locator.evaluate((element) => {
     const computedStyles = window.getComputedStyle(element);
@@ -22,10 +22,16 @@ async function expectVisibleFocus(
     return;
   }
 
-  expect(
-    styles.boxShadow !== "none" ||
-      (styles.outlineStyle !== "none" && styles.outlineWidth !== "0px"),
-  ).toBeTruthy();
+  if (expectation === "default") {
+    expect(
+      styles.boxShadow !== "none" ||
+        (styles.outlineStyle !== "none" && styles.outlineWidth !== "0px"),
+    ).toBeTruthy();
+    return;
+  }
+
+  expect(styles.boxShadow).toContain("228, 221, 211");
+  expect(styles.outlineColor).toBe("rgb(251, 248, 244)");
 }
 
 test("keyboard navigation and visible focus work across the core beta routes", async ({
@@ -40,7 +46,7 @@ test("keyboard navigation and visible focus work across the core beta routes", a
     name: "Begin the Chronicle",
   });
   await expect(beginChronicleLink).toBeFocused();
-  await expectVisibleFocus(beginChronicleLink);
+  await expectVisibleFocus(beginChronicleLink, "nocturne");
 
   await page.emulateMedia({ forcedColors: "active" });
   await page.goto("/");

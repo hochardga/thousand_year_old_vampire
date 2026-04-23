@@ -24,10 +24,12 @@ type SurfacePanelProps = ComponentPropsWithoutRef<"section"> &
 export function SurfacePanel({
   className,
   tone,
+  "data-tone": dataTone,
   ...props
 }: SurfacePanelProps) {
   return (
     <section
+      data-tone={tone === "nocturne" ? "nocturne" : dataTone}
       className={cn(surfacePanelVariants({ tone }), className)}
       {...props}
     />

@@ -38,13 +38,13 @@ export function MemoryCard({
     <details
       open={defaultOpen}
       className={cn(
-        "overflow-hidden rounded-panel border px-4 py-4 text-ink transition-colors duration-160 ease-ritual sm:px-5",
+        "rounded-panel border px-4 py-4 text-ink transition-colors duration-160 ease-ritual sm:px-5",
         location === "forgotten"
           ? "border-ink/12 bg-surface-muted/60"
           : "border-ink/10 bg-surface/90",
       )}
     >
-      <summary className="min-h-11 cursor-pointer list-none rounded-soft px-1 py-1 focus-visible:outline-none">
+      <summary className="min-h-11 cursor-pointer list-none rounded-soft px-1 py-1">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-muted">
           {describeMemoryLocation(location, slotIndex)}
         </p>
