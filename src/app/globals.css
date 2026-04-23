@@ -98,14 +98,27 @@ blockquote {
 }
 
 :focus-visible {
-  outline: 2px solid transparent;
+  outline: 2px solid var(--color-nocturne);
   outline-offset: 3px;
   box-shadow: 0 0 0 3px var(--focus-ring-light);
 }
 
 .theme-nocturne :focus-visible,
 [data-tone="nocturne"] :focus-visible {
+  outline-color: var(--color-surface);
   box-shadow: 0 0 0 3px var(--focus-ring-dark);
+}
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid Highlight;
+    box-shadow: none;
+  }
+
+  .theme-nocturne :focus-visible,
+  [data-tone="nocturne"] :focus-visible {
+    outline-color: Highlight;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

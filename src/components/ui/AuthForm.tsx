@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { trackAnalyticsEvent } from "@/lib/analytics/posthog";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
@@ -45,22 +44,6 @@ export function AuthForm({
   testAuthEnabled = false,
   testAuthError,
 }: AuthFormProps) {
-  const [showTestAuth, setShowTestAuth] = useState(!testAuthEnabled);
-
-  useEffect(() => {
-    if (!testAuthEnabled) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setShowTestAuth(true);
-    }, 150);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [testAuthEnabled]);
-
   function handleSignInSubmit() {
     trackAnalyticsEvent("sign_in_requested", {
       source: "sign-in",
@@ -120,7 +103,7 @@ export function AuthForm({
         </p>
       ) : null}
 
-      {showTestAuth && testAuthEnabled && testAuthAction ? (
+      {testAuthEnabled && testAuthAction ? (
         <div className="mt-8 border-t border-ink/10 pt-6">
           <div className="max-w-reading">
             <p className="font-mono text-xs uppercase tracking-[0.22em] text-ink-muted">
