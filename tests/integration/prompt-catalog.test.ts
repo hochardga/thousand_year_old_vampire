@@ -35,4 +35,36 @@ describe("prompt catalog loader", () => {
       prompt_version: "base",
     });
   });
+
+  it("reuses a cached prompt lookup for identical prompt coordinates", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: {
+        encounter_index: 1,
+        prompt_markdown: "Prompt text",
+        prompt_number: 1,
+        prompt_version: "base",
+      },
+      error: null,
+    });
+
+    const supabase = {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              eq: () => ({
+                maybeSingle,
+              }),
+            }),
+          }),
+        }),
+      }),
+    };
+
+    const { getPromptByPosition } = await import("@/lib/prompts/catalog");
+    await getPromptByPosition(supabase as never, 1, 1, "base");
+    await getPromptByPosition(supabase as never, 1, 1, "base");
+
+    expect(maybeSingle).toHaveBeenCalledTimes(1);
+  });
 });

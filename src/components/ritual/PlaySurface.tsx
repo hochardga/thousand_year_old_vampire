@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { trackAnalyticsEvent } from "@/lib/analytics/posthog";
 import { ConsequencePanel } from "@/components/ritual/ConsequencePanel";
 import { MemoryDecisionPanel } from "@/components/ritual/MemoryDecisionPanel";
 import { RitualTextarea } from "@/components/ritual/RitualTextarea";
@@ -24,6 +25,7 @@ type ResolvePromptResponse = {
 
 type PlaySurfaceProps = {
   chronicleId: string;
+  currentPromptNumber: number;
   hasActiveDiary?: boolean;
   initialSessionId: string | null;
   mindMemories?: Array<{
@@ -35,10 +37,12 @@ type PlaySurfaceProps = {
 
 export function PlaySurface({
   chronicleId,
+  currentPromptNumber,
   hasActiveDiary = false,
   initialSessionId,
   mindMemories = [],
 }: PlaySurfaceProps) {
+  const hasTrackedFirstPromptResolved = useRef(false);
   const [playerEntry, setPlayerEntry] = useState(
     () => loadPromptDraft(chronicleId)?.playerEntry ?? "",
   );
@@ -121,6 +125,16 @@ export function PlaySurface({
       }
 
       setResult(payload);
+      if (
+        currentPromptNumber === 1 &&
+        !hasTrackedFirstPromptResolved.current
+      ) {
+        hasTrackedFirstPromptResolved.current = true;
+        trackAnalyticsEvent("first_prompt_resolved", {
+          chronicleId,
+          promptNumber: currentPromptNumber,
+        });
+      }
       setPlayerEntry("");
       setExperienceText("");
       setOverflowMode(null);
@@ -147,7 +161,10 @@ export function PlaySurface({
       ) : null}
 
       {errorMessage ? (
-        <SurfacePanel className="border-error/20 bg-error/10 px-5 py-4">
+        <SurfacePanel
+          role="alert"
+          className="border-error/20 bg-error/10 px-5 py-4"
+        >
           <p className="text-sm text-ink">{errorMessage}</p>
         </SurfacePanel>
       ) : null}

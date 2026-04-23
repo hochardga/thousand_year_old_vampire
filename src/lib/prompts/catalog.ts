@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 export type PromptCatalogRow = {
   encounter_index: number;
   prompt_markdown: string;
@@ -22,25 +24,62 @@ type PromptCatalogClient = {
   };
 };
 
+const promptLookupCache = new WeakMap<
+  PromptCatalogClient,
+  Map<string, PromptCatalogRow | null>
+>();
+
+const loadPromptByPosition = cache(
+  async (
+    supabase: PromptCatalogClient,
+    promptNumber: number,
+    encounterIndex: number,
+    promptVersion: string,
+  ) => {
+    const { data, error } = await supabase
+      .from("prompt_catalog")
+      .select(
+        "prompt_number, encounter_index, prompt_markdown, prompt_version",
+      )
+      .eq("prompt_number", promptNumber)
+      .eq("encounter_index", encounterIndex)
+      .eq("prompt_version", promptVersion)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data ?? null;
+  },
+);
+
 export async function getPromptByPosition(
   supabase: PromptCatalogClient,
   promptNumber: number,
   encounterIndex: number,
   promptVersion = "base",
 ) {
-  const { data, error } = await supabase
-    .from("prompt_catalog")
-    .select(
-      "prompt_number, encounter_index, prompt_markdown, prompt_version",
-    )
-    .eq("prompt_number", promptNumber)
-    .eq("encounter_index", encounterIndex)
-    .eq("prompt_version", promptVersion)
-    .maybeSingle();
+  const cacheKey = `${promptVersion}:${promptNumber}:${encounterIndex}`;
+  const requestCache = promptLookupCache.get(supabase);
 
-  if (error) {
-    throw error;
+  if (requestCache?.has(cacheKey)) {
+    return requestCache.get(cacheKey) ?? null;
   }
 
-  return data;
+  const prompt = await loadPromptByPosition(
+    supabase,
+    promptNumber,
+    encounterIndex,
+    promptVersion,
+  );
+  const cacheForRequest = requestCache ?? new Map<string, PromptCatalogRow | null>();
+
+  if (!requestCache) {
+    promptLookupCache.set(supabase, cacheForRequest);
+  }
+
+  cacheForRequest.set(cacheKey, prompt);
+
+  return prompt;
 }

@@ -1,3 +1,5 @@
+import { EmptyState } from "@/components/ui/EmptyState";
+
 type EventTimelineProps = {
   events: Array<{
     created_at: string;
@@ -22,15 +24,16 @@ function formatEventLabel(eventType: string) {
 export function EventTimeline({ events }: EventTimelineProps) {
   if (events.length === 0) {
     return (
-      <p className="text-sm leading-relaxed text-ink-muted">
-        The archive timeline is quiet for now. Events will gather here as the
-        chronicle lengthens.
-      </p>
+      <EmptyState
+        eyebrow="Archive state"
+        title="The archive timeline is quiet for now."
+        body="Events will gather here as the chronicle lengthens."
+      />
     );
   }
 
   return (
-    <ol className="space-y-4">
+    <ol aria-label="Archive events" className="space-y-4">
       {events.map((event) => (
         <li
           key={event.id}

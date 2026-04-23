@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { trackAnalyticsEvent } from "@/lib/analytics/posthog";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import {
   clearSetupDraft,
@@ -211,6 +212,10 @@ export function SetupStepper({
         return;
       }
 
+      trackAnalyticsEvent("setup_completed", {
+        chronicleId,
+        source: "setup",
+      });
       clearSetupDraft(chronicleId);
       window.location.assign(payload.nextRoute);
     } catch {
@@ -222,7 +227,11 @@ export function SetupStepper({
 
   return (
     <div className="space-y-6">
-      <SurfacePanel tone="nocturne" className="px-6 py-7 sm:px-8">
+      <SurfacePanel
+        tone="nocturne"
+        data-tone="nocturne"
+        className="px-6 py-7 sm:px-8"
+      >
         <p className="font-mono text-xs uppercase tracking-[0.24em] text-gold/80">
           Becoming-undead sequence
         </p>
@@ -236,13 +245,15 @@ export function SetupStepper({
       </SurfacePanel>
 
       <SurfacePanel className="px-6 py-6 sm:px-8">
-        <div className="flex flex-wrap gap-2">
+        <nav aria-label="Setup steps" className="flex flex-wrap gap-2">
           {stepDefinitions.map((step, index) => (
             <button
               key={step.id}
               type="button"
               onClick={() => setStepIndex(index)}
-              className={`rounded-soft border px-3 py-2 text-left text-sm transition-colors duration-160 ease-ritual ${
+              aria-current={index === stepIndex ? "step" : undefined}
+              aria-label={`Open step ${index + 1}: ${step.label}`}
+              className={`min-h-11 rounded-soft border px-3 py-2 text-left text-sm transition-colors duration-160 ease-ritual ${
                 index === stepIndex
                   ? "border-gold/60 bg-gold/10 text-ink"
                   : "border-ink/10 bg-surface text-ink-muted hover:border-gold/30 hover:text-ink"
@@ -251,7 +262,7 @@ export function SetupStepper({
               {step.label}
             </button>
           ))}
-        </div>
+        </nav>
       </SurfacePanel>
 
       <SurfacePanel className="space-y-6 px-6 py-6 sm:px-8">

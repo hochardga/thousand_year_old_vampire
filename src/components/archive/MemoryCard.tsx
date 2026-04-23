@@ -38,13 +38,13 @@ export function MemoryCard({
     <details
       open={defaultOpen}
       className={cn(
-        "overflow-hidden rounded-panel border px-4 py-4 text-ink transition-colors duration-160 ease-ritual sm:px-5",
+        "rounded-panel border px-4 py-4 text-ink transition-colors duration-160 ease-ritual sm:px-5",
         location === "forgotten"
           ? "border-ink/12 bg-surface-muted/60"
           : "border-ink/10 bg-surface/90",
       )}
     >
-      <summary className="cursor-pointer list-none">
+      <summary className="min-h-11 cursor-pointer list-none rounded-soft px-1 py-1">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-muted">
           {describeMemoryLocation(location, slotIndex)}
         </p>
@@ -56,6 +56,9 @@ export function MemoryCard({
             ? "1 entry kept here"
             : `${entries.length} entries kept here`}
         </p>
+        <span className="sr-only">
+          Press Enter or Space to expand or collapse this memory.
+        </span>
       </summary>
 
       <div className="mt-5 space-y-3 border-t border-ink/8 pt-5">

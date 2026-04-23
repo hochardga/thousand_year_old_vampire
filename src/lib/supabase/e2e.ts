@@ -96,11 +96,22 @@ type ProfileRow = {
   id: string;
 };
 
+type FeedbackSubmissionRow = {
+  body: string;
+  category: "bug" | "delight" | "friction" | "question";
+  chronicle_id: string | null;
+  created_at: string;
+  id: string;
+  source: "recap";
+  user_id: string;
+};
+
 type E2EState = {
   archive_events: ArchiveEventRow[];
   characters: Array<Record<string, unknown>>;
   chronicles: ChronicleRow[];
   diaries: DiaryRow[];
+  feedback_submissions: FeedbackSubmissionRow[];
   marks: Array<Record<string, unknown>>;
   memory_entries: MemoryEntryRow[];
   memories: MemoryRow[];
@@ -217,30 +228,43 @@ const promptCatalogSeed: PromptCatalogRow[] = [
   },
 ];
 
+function buildInitialState(): E2EState {
+  return {
+    archive_events: [],
+    characters: [],
+    chronicles: [],
+    diaries: [],
+    feedback_submissions: [],
+    marks: [],
+    memory_entries: [],
+    memories: [],
+    prompt_catalog: [...promptCatalogSeed],
+    prompt_runs: [],
+    profiles: [],
+    resources: [],
+    sessions: [],
+    skills: [],
+  };
+}
+
 function getState() {
   const globalWithState = globalThis as typeof globalThis & {
     __tyovE2EState?: E2EState;
   };
 
   if (!globalWithState.__tyovE2EState) {
-    globalWithState.__tyovE2EState = {
-      archive_events: [],
-      characters: [],
-      chronicles: [],
-      diaries: [],
-      marks: [],
-      memory_entries: [],
-      memories: [],
-      prompt_catalog: [...promptCatalogSeed],
-      prompt_runs: [],
-      profiles: [],
-      resources: [],
-      sessions: [],
-      skills: [],
-    };
+    globalWithState.__tyovE2EState = buildInitialState();
   }
 
   return globalWithState.__tyovE2EState;
+}
+
+export function resetE2EState() {
+  const globalWithState = globalThis as typeof globalThis & {
+    __tyovE2EState?: E2EState;
+  };
+
+  globalWithState.__tyovE2EState = buildInitialState();
 }
 
 function timestamp() {
@@ -524,7 +548,7 @@ function appendArchiveEvents(
 }
 
 function createChronicleInsertBuilder(
-  payload: Partial<ChronicleRow>,
+  payload: Record<string, unknown>,
 ): InsertBuilder<ChronicleRow> {
   const state = getState();
   const createdChronicle: ChronicleRow = {
@@ -537,9 +561,15 @@ function createChronicleInsertBuilder(
     mortal_summary: null,
     prompt_version: "base",
     status: "draft",
-    title: payload.title || "Chronicle begun in test mode",
+    title:
+      typeof payload.title === "string" && payload.title
+        ? payload.title
+        : "Chronicle begun in test mode",
     updated_at: timestamp(),
-    user_id: payload.user_id || E2E_USER_ID,
+    user_id:
+      typeof payload.user_id === "string" && payload.user_id
+        ? payload.user_id
+        : E2E_USER_ID,
     vampire_name: null,
   };
 
@@ -560,12 +590,18 @@ function createChronicleInsertBuilder(
 }
 
 function createProfileInsertBuilder(
-  payload: Partial<ProfileRow>,
+  payload: Record<string, unknown>,
 ): InsertBuilder<ProfileRow> {
   const state = getState();
   const createdProfile: ProfileRow = {
-    display_name: payload.display_name || "Unnamed Vampire",
-    id: payload.id || E2E_USER_ID,
+    display_name:
+      typeof payload.display_name === "string" && payload.display_name
+        ? payload.display_name
+        : "Unnamed Vampire",
+    id:
+      typeof payload.id === "string" && payload.id
+        ? payload.id
+        : E2E_USER_ID,
   };
   const existingProfileIndex = state.profiles.findIndex(
     (profile) => profile.id === createdProfile.id,
@@ -591,6 +627,43 @@ function createProfileInsertBuilder(
   };
 }
 
+function createFeedbackSubmissionInsertBuilder(
+  payload: Record<string, unknown>,
+): InsertBuilder<FeedbackSubmissionRow> {
+  const state = getState();
+  const createdSubmission: FeedbackSubmissionRow = {
+    body: typeof payload.body === "string" ? payload.body : "",
+    category:
+      (typeof payload.category === "string"
+        ? payload.category
+        : "friction") as FeedbackSubmissionRow["category"],
+    chronicle_id:
+      typeof payload.chronicle_id === "string" ? payload.chronicle_id : null,
+    created_at: timestamp(),
+    id: randomUUID(),
+    source: "recap",
+    user_id:
+      typeof payload.user_id === "string" && payload.user_id
+        ? payload.user_id
+        : E2E_USER_ID,
+  };
+
+  state.feedback_submissions.unshift(createdSubmission);
+
+  return {
+    select(columns: string) {
+      return {
+        single() {
+          return Promise.resolve({
+            data: pickColumns(createdSubmission, columns),
+            error: null,
+          });
+        },
+      };
+    },
+  };
+}
+
 function selectRowsForTable(table: string) {
   const state = getState();
 
@@ -601,6 +674,8 @@ function selectRowsForTable(table: string) {
       return state.chronicles;
     case "diaries":
       return state.diaries;
+    case "feedback_submissions":
+      return state.feedback_submissions;
     case "memory_entries":
       return state.memory_entries;
     case "memories":
@@ -992,13 +1067,17 @@ export function createE2EServerSupabaseClient(cookieStore: CookieStoreLike) {
     },
     from(table: string) {
       return {
-        insert(payload: Partial<ChronicleRow>) {
+        insert(payload: Record<string, unknown>) {
           if (table === "chronicles") {
             return createChronicleInsertBuilder(payload);
           }
 
           if (table === "profiles") {
-            return createProfileInsertBuilder(payload as Partial<ProfileRow>);
+            return createProfileInsertBuilder(payload);
+          }
+
+          if (table === "feedback_submissions") {
+            return createFeedbackSubmissionInsertBuilder(payload);
           }
 
           throw new Error(`Unsupported e2e insert table: ${table}`);

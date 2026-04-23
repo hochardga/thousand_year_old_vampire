@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
+import { TrackEventOnMount } from "@/components/analytics/TrackEventOnMount";
 import { RecapBlock } from "@/components/ritual/RecapBlock";
 import { PageShell } from "@/components/ui/PageShell";
+import { QuietAlert } from "@/components/ui/QuietAlert";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import { refreshSessionSnapshot } from "@/lib/chronicles/sessionSnapshots";
 import { buildRecap } from "@/lib/recap/buildRecap";
@@ -10,10 +12,19 @@ type RecapPageProps = {
   params: Promise<{
     chronicleId: string;
   }>;
+  searchParams?: Promise<{
+    returned?: string;
+  }>;
 };
 
-export default async function ChronicleRecapPage({ params }: RecapPageProps) {
+export default async function ChronicleRecapPage({
+  params,
+  searchParams,
+}: RecapPageProps) {
   const { chronicleId } = await params;
+  const recapParams: { returned?: string } = await (
+    searchParams ?? Promise.resolve({})
+  );
   const supabase = await createServerSupabaseClient();
   const recapClient = supabase as any;
   const {
@@ -90,6 +101,24 @@ export default async function ChronicleRecapPage({ params }: RecapPageProps) {
 
   return (
     <PageShell className="gap-6 py-8">
+      <TrackEventOnMount
+        event="recap_opened"
+        onceKey={`recap-opened:${chronicleId}`}
+        properties={{
+          chronicleId,
+          source: "recap",
+        }}
+      />
+      {recapParams.returned === "1" ? (
+        <TrackEventOnMount
+          event="second_session_return"
+          onceKey={`second-session:${chronicleId}`}
+          properties={{
+            chronicleId,
+            source: "recap",
+          }}
+        />
+      ) : null}
       <SurfacePanel tone="nocturne" className="px-6 py-7 sm:px-8">
         <p className="font-mono text-xs uppercase tracking-[0.24em] text-gold/80">
           Chronicle return
@@ -104,12 +133,21 @@ export default async function ChronicleRecapPage({ params }: RecapPageProps) {
       </SurfacePanel>
 
       <RecapBlock
+        chronicleId={chronicleId}
         currentPromptEncounter={chronicle.current_prompt_encounter}
         currentPromptNumber={chronicle.current_prompt_number}
         latestEvents={latestEvents}
         recapMarkdown={recapMarkdown}
         resumeHref={`/chronicles/${chronicleId}/play`}
       />
+
+      {latestEventsResult.error ? (
+        <QuietAlert
+          title="The latest archive echoes could not be gathered just now."
+          body="The recap is still here. Return to the archive when you are ready."
+          tone="info"
+        />
+      ) : null}
     </PageShell>
   );
 }

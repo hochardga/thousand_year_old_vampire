@@ -157,6 +157,62 @@ function buildSupabaseClient() {
   };
 }
 
+function buildSparseLedgerSupabaseClient() {
+  function createErroringSkillsBuilder() {
+    const builder = {
+      eq() {
+        return builder;
+      },
+      order() {
+        return Promise.resolve({
+          data: null,
+          error: { message: "timeout" },
+        });
+      },
+    };
+
+    return builder;
+  }
+
+  return {
+    auth: {
+      getUser: vi.fn().mockResolvedValue({
+        data: {
+          user: {
+            id: "user-1",
+          },
+        },
+      }),
+    },
+    from(table: string) {
+      return {
+        select() {
+          switch (table) {
+            case "characters":
+              return createQueryBuilder([]);
+            case "chronicles":
+              return createQueryBuilder([
+                {
+                  id: "chronicle-1",
+                  status: "active",
+                  title: "The Long Night",
+                },
+              ]);
+            case "marks":
+              return createQueryBuilder([]);
+            case "resources":
+              return createQueryBuilder([]);
+            case "skills":
+              return createErroringSkillsBuilder();
+            default:
+              throw new Error(`Unsupported table in ledger page test: ${table}`);
+          }
+        },
+      };
+    },
+  };
+}
+
 describe("ledger page", () => {
   beforeEach(() => {
     createServerSupabaseClient.mockReset();
@@ -190,6 +246,41 @@ describe("ledger page", () => {
     expect(screen.getByText("Dormant")).toBeInTheDocument();
     expect(screen.getByText("Mortal")).toBeInTheDocument();
     expect(screen.getByText("Immortal")).toBeInTheDocument();
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it("uses shared alert and empty states across sparse ledger sections", async () => {
+    createServerSupabaseClient.mockResolvedValue(buildSparseLedgerSupabaseClient());
+
+    const LedgerPage = (
+      await import("@/app/(app)/chronicles/[chronicleId]/ledger/page")
+    ).default;
+    render(
+      await LedgerPage({
+        params: Promise.resolve({ chronicleId: "chronicle-1" }),
+      } as never),
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: "The skill ledger could not be read just now.",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: "No resources have been entered into the ledger yet.",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: "No characters have been entered into the ledger yet.",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: "No marks have been entered into the ledger yet.",
+      }),
+    ).toBeInTheDocument();
     expect(redirect).not.toHaveBeenCalled();
   });
 });

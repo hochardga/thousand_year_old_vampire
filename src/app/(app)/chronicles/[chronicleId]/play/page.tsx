@@ -3,6 +3,7 @@ import { MemoryMeter } from "@/components/ritual/MemoryMeter";
 import { PlaySurface } from "@/components/ritual/PlaySurface";
 import { PromptCard } from "@/components/ritual/PromptCard";
 import { PageShell } from "@/components/ui/PageShell";
+import { QuietAlert } from "@/components/ui/QuietAlert";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import { getPromptByPosition } from "@/lib/prompts/catalog";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -103,8 +104,14 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
 
   const memoryClient = supabase as unknown as MemoryLookupClient;
   const diaryCountClient = supabase as unknown as DiaryCountLookupClient;
+  const promptPromise = getPromptByPosition(
+    supabase as never,
+    chronicle.current_prompt_number,
+    chronicle.current_prompt_encounter,
+    chronicle.prompt_version,
+  );
 
-  const [mindMemoriesResult, diaryResult, prompt] = (await Promise.all([
+  const [mindMemoriesResult, diaryResult, prompt] = await Promise.all([
     memoryClient
       .from("memories")
       .select("id, title, slot_index")
@@ -114,13 +121,8 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
       .select("id", { count: "exact", head: true })
       .eq("chronicle_id", chronicleId)
       .eq("status", "active"),
-    getPromptByPosition(
-      supabase as never,
-      chronicle.current_prompt_number,
-      chronicle.current_prompt_encounter,
-      chronicle.prompt_version,
-    ),
-  ] as const)) as [
+    promptPromise,
+  ] as const) as [
     {
       data: MindMemoryRecord[] | null;
       error: { message: string } | null;
@@ -129,9 +131,9 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
     Awaited<ReturnType<typeof getPromptByPosition>>,
   ];
 
-  const mindMemories =
-    (mindMemoriesResult.data ?? []).filter((memory) => memory.slot_index !== null) ??
-    [];
+  const mindMemories = (mindMemoriesResult.data ?? []).filter(
+    (memory) => memory.slot_index !== null,
+  );
   const memoriesInMind = mindMemories.length;
   const diaryCount = diaryResult.count ?? 0;
 
@@ -156,17 +158,17 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
           promptNumber={prompt.prompt_number}
         />
       ) : (
-        <SurfacePanel className="border-error/20 bg-error/10 px-6 py-5">
-          <p className="text-sm text-ink">
-            The prompt could not be found just now. Return when the chronicle is
-            ready.
-          </p>
-        </SurfacePanel>
+        <QuietAlert
+          title="The prompt could not be found just now."
+          body="Return when the chronicle is ready."
+          tone="error"
+        />
       )}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
         <PlaySurface
           chronicleId={chronicleId}
+          currentPromptNumber={chronicle.current_prompt_number}
           hasActiveDiary={diaryCount > 0}
           initialSessionId={chronicle.current_session_id}
           mindMemories={mindMemories.map((memory) => ({

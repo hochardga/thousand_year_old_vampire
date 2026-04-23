@@ -4,7 +4,9 @@ import { CharacterEditor } from "@/components/archive/CharacterEditor";
 import { LedgerSection } from "@/components/archive/LedgerSection";
 import { MarkEditor } from "@/components/archive/MarkEditor";
 import { TraitItem } from "@/components/archive/TraitItem";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { PageShell } from "@/components/ui/PageShell";
+import { QuietAlert } from "@/components/ui/QuietAlert";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -52,11 +54,7 @@ type MarkRecord = {
 };
 
 function renderSectionError(message: string) {
-  return (
-    <p className="rounded-soft border border-error/20 bg-error/10 px-4 py-3 text-sm text-ink">
-      {message}
-    </p>
-  );
+  return <QuietAlert title={message} body="Return when the chronicle is ready." />;
 }
 
 export default async function ChronicleLedgerPage({ params }: LedgerPageProps) {
@@ -149,16 +147,15 @@ export default async function ChronicleLedgerPage({ params }: LedgerPageProps) {
         <LedgerSection
           title="Skills"
           description="The capacities the vampire can still call upon, including the ones already checked or lost."
-          emptyMessage={
-            skillsResult.error
-              ? undefined
-              : skills.length === 0
-                ? "No skills have been entered into the ledger yet."
-                : undefined
-          }
         >
           {skillsResult.error ? (
             renderSectionError("The skill ledger could not be read just now.")
+          ) : skills.length === 0 ? (
+            <EmptyState
+              eyebrow="Ledger state"
+              title="No skills have been entered into the ledger yet."
+              body="The capacities the chronicle gathers will appear here."
+            />
           ) : (
             <div className="space-y-4">
               {skills.map((skill) => (
@@ -176,16 +173,15 @@ export default async function ChronicleLedgerPage({ params }: LedgerPageProps) {
         <LedgerSection
           title="Resources"
           description="Shelters, reputations, tools, and keepsakes that still matter to the chronicle."
-          emptyMessage={
-            resourcesResult.error
-              ? undefined
-              : resources.length === 0
-                ? "No resources have been entered into the ledger yet."
-                : undefined
-          }
         >
           {resourcesResult.error ? (
             renderSectionError("The resource ledger could not be read just now.")
+          ) : resources.length === 0 ? (
+            <EmptyState
+              eyebrow="Ledger state"
+              title="No resources have been entered into the ledger yet."
+              body="Shelters, tools, and keepsakes will appear here when the chronicle claims them."
+            />
           ) : (
             <div className="space-y-4">
               {resources.map((resource) => (
@@ -204,16 +200,15 @@ export default async function ChronicleLedgerPage({ params }: LedgerPageProps) {
         <LedgerSection
           title="Characters"
           description="Mortals and immortals whose presence still presses against the story, whether they remain or not."
-          emptyMessage={
-            charactersResult.error
-              ? undefined
-              : characters.length === 0
-                ? "No characters have been entered into the ledger yet."
-                : undefined
-          }
         >
           {charactersResult.error ? (
             renderSectionError("The character ledger could not be read just now.")
+          ) : characters.length === 0 ? (
+            <EmptyState
+              eyebrow="Ledger state"
+              title="No characters have been entered into the ledger yet."
+              body="Mortals and immortals will gather here as the chronicle names them."
+            />
           ) : (
             <div className="space-y-4">
               {characters.map((character) => (
@@ -241,16 +236,15 @@ export default async function ChronicleLedgerPage({ params }: LedgerPageProps) {
         <LedgerSection
           title="Marks"
           description="Conditions, curses, and visible or hidden changes the chronicle still carries."
-          emptyMessage={
-            marksResult.error
-              ? undefined
-              : marks.length === 0
-                ? "No marks have been entered into the ledger yet."
-                : undefined
-          }
         >
           {marksResult.error ? (
             renderSectionError("The marks could not be read just now.")
+          ) : marks.length === 0 ? (
+            <EmptyState
+              eyebrow="Ledger state"
+              title="No marks have been entered into the ledger yet."
+              body="Conditions, curses, and transformations will gather here."
+            />
           ) : (
             <div className="space-y-4">
               {marks.map((mark) => (
