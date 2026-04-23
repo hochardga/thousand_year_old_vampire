@@ -161,7 +161,10 @@ export function PlaySurface({
       ) : null}
 
       {errorMessage ? (
-        <SurfacePanel className="border-error/20 bg-error/10 px-5 py-4">
+        <SurfacePanel
+          role="alert"
+          className="border-error/20 bg-error/10 px-5 py-4"
+        >
           <p className="text-sm text-ink">{errorMessage}</p>
         </SurfacePanel>
       ) : null}

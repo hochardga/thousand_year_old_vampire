@@ -101,6 +101,7 @@ export default async function ChroniclesPage({
     <PageShell className="gap-6 py-8">
       <SurfacePanel
         tone="nocturne"
+        data-tone="nocturne"
         className="overflow-hidden px-6 py-8 sm:px-8 sm:py-10"
       >
         <p className="font-mono text-xs uppercase tracking-[0.28em] text-gold/80">
@@ -143,15 +144,24 @@ export default async function ChroniclesPage({
             method="post"
             className="flex w-full max-w-reading flex-col gap-3 sm:flex-row"
           >
-            <input
-              type="text"
-              name="title"
-              placeholder="The Long Night"
-              className="min-h-11 flex-1 rounded-soft border border-ink/10 bg-bg/70 px-4 py-3 text-base text-ink shadow-inner shadow-ink/5 outline-none transition-colors duration-160 ease-ritual placeholder:text-ink-muted/70 focus:border-gold/70"
-            />
+            <div className="flex-1 space-y-3">
+              <label
+                htmlFor="chronicle-title"
+                className="font-mono text-xs uppercase tracking-[0.22em] text-ink-muted"
+              >
+                Chronicle title
+              </label>
+              <input
+                id="chronicle-title"
+                type="text"
+                name="title"
+                placeholder="The Long Night"
+                className="min-h-11 w-full rounded-soft border border-ink/10 bg-bg/70 px-4 py-3 text-base text-ink shadow-inner shadow-ink/5 outline-none transition-colors duration-160 ease-ritual placeholder:text-ink-muted/70 focus:border-gold/70"
+              />
+            </div>
             <button
               type="submit"
-              className="inline-flex min-h-11 items-center justify-center rounded-soft bg-nocturne px-5 py-3 text-sm font-medium text-surface transition-colors duration-160 ease-ritual hover:bg-nocturne/92"
+              className="inline-flex min-h-11 items-center justify-center self-end rounded-soft bg-nocturne px-5 py-3 text-sm font-medium text-surface transition-colors duration-160 ease-ritual hover:bg-nocturne/92"
             >
               Begin a New Chronicle
             </button>

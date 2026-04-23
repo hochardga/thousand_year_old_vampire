@@ -116,11 +116,19 @@ export function FeedbackForm({ chronicleId }: FeedbackFormProps) {
               id="feedback-body"
               name="body"
               rows={5}
+              aria-describedby="feedback-hint"
               value={body}
               onChange={(event) => setBody(event.target.value)}
               placeholder="Tell us what helped, what felt unclear, or what broke your rhythm."
               className="min-h-32 w-full rounded-soft border border-ink/10 bg-bg/70 px-4 py-3 text-base leading-relaxed text-ink shadow-inner shadow-ink/5 outline-none transition-colors duration-160 ease-ritual placeholder:text-ink-muted/70 focus:border-gold/70"
             />
+            <p
+              id="feedback-hint"
+              className="text-sm leading-relaxed text-ink-muted"
+            >
+              Share enough detail for us to retrace the moment that helped or
+              broke your rhythm.
+            </p>
           </div>
 
           <button

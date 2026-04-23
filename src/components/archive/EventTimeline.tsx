@@ -33,7 +33,7 @@ export function EventTimeline({ events }: EventTimelineProps) {
   }
 
   return (
-    <ol className="space-y-4">
+    <ol aria-label="Archive events" className="space-y-4">
       {events.map((event) => (
         <li
           key={event.id}

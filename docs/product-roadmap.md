@@ -190,7 +190,7 @@
   Files: `supabase/migrations/0008_feedback.sql`, `src/app/api/feedback/route.ts`, `src/components/ui/FeedbackForm.tsx`
   Notes: Keep the form lightweight and available from recap or settings, not mid-writing unless explicitly opened. Verify: feedback submissions persist with chronicle context when present.
 
-- [ ] **TASK-033** — Run the accessibility pass for keyboard navigation, focus treatment, labels, and reduced motion behavior.
+- [x] **TASK-033** — Run the accessibility pass for keyboard navigation, focus treatment, labels, and reduced motion behavior.
   Files: `src/app/globals.css`, `src/components/**/*`, `tests/e2e/accessibility.spec.ts`
   Notes: Bring the app into alignment with docs/prd.md § Accessibility and docs/product-vision.md § Accessibility Commitments. Verify: keyboard-only pass works across all core routes.
 

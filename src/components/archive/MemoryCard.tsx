@@ -44,7 +44,7 @@ export function MemoryCard({
           : "border-ink/10 bg-surface/90",
       )}
     >
-      <summary className="cursor-pointer list-none">
+      <summary className="min-h-11 cursor-pointer list-none rounded-soft px-1 py-1 focus-visible:outline-none">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-muted">
           {describeMemoryLocation(location, slotIndex)}
         </p>
@@ -56,6 +56,9 @@ export function MemoryCard({
             ? "1 entry kept here"
             : `${entries.length} entries kept here`}
         </p>
+        <span className="sr-only">
+          Press Enter or Space to expand or collapse this memory.
+        </span>
       </summary>
 
       <div className="mt-5 space-y-3 border-t border-ink/8 pt-5">

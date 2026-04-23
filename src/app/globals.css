@@ -30,6 +30,8 @@
   --radius-soft: 4px;
   --shadow-float: 0 18px 40px rgb(36 42 49 / 0.08);
   --ease-ritual: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --focus-ring-light: rgb(95 42 52 / 0.28);
+  --focus-ring-dark: rgb(228 221 211 / 0.36);
 }
 
 * {
@@ -96,11 +98,21 @@ blockquote {
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-nocturne);
+  outline: 2px solid transparent;
   outline-offset: 3px;
+  box-shadow: 0 0 0 3px var(--focus-ring-light);
+}
+
+.theme-nocturne :focus-visible,
+[data-tone="nocturne"] :focus-visible {
+  box-shadow: 0 0 0 3px var(--focus-ring-dark);
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
   *,
   *::before,
   *::after {
