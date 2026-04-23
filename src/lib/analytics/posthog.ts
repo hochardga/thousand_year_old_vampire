@@ -52,14 +52,14 @@ function sanitizeProperties(
 
 export function initPostHog() {
   if (hasInitializedPostHog) {
-    return;
+    return true;
   }
 
   const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
   const host = process.env.NEXT_PUBLIC_POSTHOG_HOST;
 
   if (!key || !host) {
-    return;
+    return false;
   }
 
   posthog.init(key, {
@@ -68,11 +68,17 @@ export function initPostHog() {
     person_profiles: "identified_only",
   });
   hasInitializedPostHog = true;
+  return true;
 }
 
 export function trackAnalyticsEvent(
   event: AnalyticsEventName,
   properties: Partial<SafeProperties> = {},
 ) {
+  if (!initPostHog()) {
+    return false;
+  }
+
   posthog.capture(event, sanitizeProperties(properties));
+  return true;
 }

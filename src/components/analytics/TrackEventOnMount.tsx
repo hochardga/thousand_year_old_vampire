@@ -38,7 +38,10 @@ export function TrackEventOnMount({
       // Storage can fail in privacy-restricted browsers; still capture once.
     }
 
-    trackAnalyticsEvent(event, properties);
+    if (!trackAnalyticsEvent(event, properties)) {
+      return;
+    }
+
     inMemoryOnceKeys.add(onceKey);
 
     try {

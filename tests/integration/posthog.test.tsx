@@ -13,6 +13,7 @@ vi.mock("posthog-js", () => ({
 
 describe("posthog helpers", () => {
   beforeEach(() => {
+    vi.resetModules();
     capture.mockReset();
     init.mockReset();
     window.sessionStorage.clear();
@@ -123,6 +124,53 @@ describe("posthog helpers", () => {
       expect(setItem).toHaveBeenCalledWith("archive-opened:chronicle-2", "1");
     } finally {
       getItem.mockRestore();
+      setItem.mockRestore();
+    }
+  });
+
+  it("does not burn a onceKey before analytics can initialize", async () => {
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    const { TrackEventOnMount } = await import(
+      "@/components/analytics/TrackEventOnMount"
+    );
+
+    try {
+      const firstAttempt = render(
+        <TrackEventOnMount
+          event="recap_opened"
+          onceKey="recap-opened:chronicle-retry"
+          properties={{
+            chronicleId: "chronicle-retry",
+            source: "recap",
+          }}
+        />,
+      );
+
+      expect(capture).not.toHaveBeenCalled();
+      expect(setItem).not.toHaveBeenCalled();
+
+      firstAttempt.unmount();
+      process.env.NEXT_PUBLIC_POSTHOG_KEY = "phc_test";
+      process.env.NEXT_PUBLIC_POSTHOG_HOST = "https://us.i.posthog.com";
+
+      render(
+        <TrackEventOnMount
+          event="recap_opened"
+          onceKey="recap-opened:chronicle-retry"
+          properties={{
+            chronicleId: "chronicle-retry",
+            source: "recap",
+          }}
+        />,
+      );
+
+      expect(capture).toHaveBeenCalledTimes(1);
+      expect(capture).toHaveBeenCalledWith("recap_opened", {
+        chronicleId: "chronicle-retry",
+        source: "recap",
+      });
+      expect(setItem).toHaveBeenCalledWith("recap-opened:chronicle-retry", "1");
+    } finally {
       setItem.mockRestore();
     }
   });
