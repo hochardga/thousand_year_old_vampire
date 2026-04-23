@@ -78,25 +78,43 @@ async function createChronicleThroughSetup(page: Page) {
   await expect(page).toHaveURL(/\/chronicles\/.+\/play/, { timeout: 15_000 });
 }
 
-test("beta smoke flow covers sign-in, setup, play, archive, recap, and feedback", async ({
-  page,
-}) => {
-  await resetE2EState(page);
-  await signInThroughTestAuth(page);
-  await createChronicleThroughSetup(page);
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
-  await expect(page.getByRole("heading", { name: "Prompt 1" })).toBeVisible();
+async function resolvePrompt(
+  page: Page,
+  options: {
+    continueToNextPrompt?: boolean;
+    experienceText: string;
+    overflowChoiceTitle?: string;
+    overflowMode?: "forget-existing" | "move-to-diary";
+    playerEntry: string;
+  },
+) {
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByLabel("Player entry")).toBeEditable();
+  await page.getByLabel("Player entry").fill(options.playerEntry);
+  await page.getByLabel("Experience text").fill(options.experienceText);
 
-  await page
-    .getByLabel("Player entry")
-    .fill(
-      "I answered the bells by dragging the sexton into the thawing graveyard.",
-    );
-  await page
-    .getByLabel("Experience text")
-    .fill(
-      "I left the chapel with blood under my nails and a prayer I could not finish.",
-    );
+  if (options.overflowMode) {
+    await expect(page.getByRole("heading", { name: "The mind is full." })).toBeVisible();
+
+    await page
+      .getByRole("radio", {
+        name:
+          options.overflowMode === "move-to-diary"
+            ? /Move one memory into/i
+            : /Forget one in-mind memory/i,
+      })
+      .check();
+
+    await page
+      .getByRole("radio", {
+        name: new RegExp(escapeRegExp(options.overflowChoiceTitle ?? ""), "i"),
+      })
+      .check();
+  }
 
   const resolveResponsePromise = page.waitForResponse(
     (response) =>
@@ -109,12 +127,61 @@ test("beta smoke flow covers sign-in, setup, play, archive, recap, and feedback"
   expect(resolveResponse.ok()).toBeTruthy();
   await expect(page.getByText("The entry has been set into memory.")).toBeVisible();
 
+  if (options.continueToNextPrompt) {
+    await page.getByRole("link", { name: /Continue to prompt/i }).click();
+    await expect(page).toHaveURL(/\/chronicles\/.+\/play/);
+  }
+}
+
+test("beta smoke flow covers sign-in, setup, play, memory overflow, archive, recap, and feedback", async ({
+  page,
+}) => {
+  await resetE2EState(page);
+  await signInThroughTestAuth(page);
+  await createChronicleThroughSetup(page);
+
+  await expect(page.getByRole("heading", { name: "Prompt 1" })).toBeVisible();
+  await resolvePrompt(page, {
+    continueToNextPrompt: true,
+    experienceText:
+      "I left the chapel with blood under my nails and a prayer I could not finish.",
+    playerEntry:
+      "I answered the bells by dragging the sexton into the thawing graveyard.",
+  });
+
   const chronicleId = page.url().match(/\/chronicles\/([^/]+)\//)?.[1];
   expect(chronicleId).toBeTruthy();
 
+  await resolvePrompt(page, {
+    continueToNextPrompt: true,
+    experienceText: "Second consequence kept in mind.",
+    playerEntry: "I learned how to keep my hunger hidden behind a church door.",
+  });
+  await resolvePrompt(page, {
+    continueToNextPrompt: true,
+    experienceText: "Third consequence kept in mind.",
+    playerEntry: "I took the road beyond the village and let my old life fall away.",
+  });
+  await resolvePrompt(page, {
+    continueToNextPrompt: true,
+    experienceText: "Fourth consequence kept in mind.",
+    playerEntry: "I counted the names I could still say before dawn took them.",
+  });
+  await expect(page.getByText("5 memories held in mind")).toBeVisible();
+  await resolvePrompt(page, {
+    continueToNextPrompt: true,
+    experienceText: "Fifth consequence kept in mind.",
+    overflowChoiceTitle: "My vigil by the sickbed",
+    overflowMode: "move-to-diary",
+    playerEntry: "I needed the diary before the oldest vigil could vanish entirely.",
+  });
+  await expect(page.getByText("Diary present")).toBeVisible();
+
   await page.goto(`/chronicles/${chronicleId}/archive`);
   await expect(page.getByText("Chronicle archive")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "My vigil by the sickbed" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "The Diary" })).toBeVisible();
+  await expect(page.getByText("A diary has been opened against forgetting.")).toBeVisible();
+  await expect(page.getByText("A memory has been placed into the diary.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Prompt history" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Event timeline" })).toBeVisible();
 

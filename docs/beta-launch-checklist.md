@@ -5,6 +5,7 @@
 - [ ] Chronicle creation routes into setup
 - [ ] Setup completion routes into play
 - [ ] First prompt resolution shows the consequence panel
+- [ ] Memory overflow flow offers a preservation choice and records the selected outcome in the archive
 - [ ] Archive route loads memories, prompt history, and event timeline
 - [ ] Recap route loads prose and resume action
 - [ ] Feedback form submits successfully from recap
