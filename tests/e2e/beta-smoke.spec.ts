@@ -98,6 +98,10 @@ async function resolvePrompt(
   await page.getByLabel("Experience text").fill(options.experienceText);
 
   if (options.overflowMode) {
+    if (!options.overflowChoiceTitle) {
+      throw new Error("overflowChoiceTitle is required with overflowMode");
+    }
+
     await expect(page.getByRole("heading", { name: "The mind is full." })).toBeVisible();
 
     await page
@@ -111,7 +115,7 @@ async function resolvePrompt(
 
     await page
       .getByRole("radio", {
-        name: new RegExp(escapeRegExp(options.overflowChoiceTitle ?? ""), "i"),
+        name: new RegExp(escapeRegExp(options.overflowChoiceTitle), "i"),
       })
       .check();
   }
