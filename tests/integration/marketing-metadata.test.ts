@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { resolveSiteUrl } from "@/lib/auth/redirects";
 
 describe("marketing metadata", () => {
   it("returns a sitemap with only the public marketing route", async () => {
@@ -6,7 +7,7 @@ describe("marketing metadata", () => {
     const entries = await sitemap();
 
     expect(entries).toHaveLength(1);
-    expect(entries[0]?.url).toMatch(/\/$/);
+    expect(entries[0]?.url).toBe(resolveSiteUrl());
   });
 
   it("disallows indexing authenticated routes", async () => {
