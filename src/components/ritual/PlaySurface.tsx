@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { ActiveDiarySummary } from "@/types/chronicle";
 import { trackAnalyticsEvent } from "@/lib/analytics/posthog";
 import { ConsequencePanel } from "@/components/ritual/ConsequencePanel";
 import { MemoryDecisionPanel } from "@/components/ritual/MemoryDecisionPanel";
@@ -24,9 +25,9 @@ type ResolvePromptResponse = {
 };
 
 type PlaySurfaceProps = {
+  activeDiary?: ActiveDiarySummary | null;
   chronicleId: string;
   currentPromptNumber: number;
-  hasActiveDiary?: boolean;
   initialSessionId: string | null;
   mindMemories?: Array<{
     id: string;
@@ -36,9 +37,9 @@ type PlaySurfaceProps = {
 };
 
 export function PlaySurface({
+  activeDiary = null,
   chronicleId,
   currentPromptNumber,
-  hasActiveDiary = false,
   initialSessionId,
   mindMemories = [],
 }: PlaySurfaceProps) {
@@ -196,7 +197,7 @@ export function PlaySurface({
           />
           {requiresOverflowDecision ? (
             <MemoryDecisionPanel
-              hasActiveDiary={hasActiveDiary}
+              activeDiary={activeDiary}
               memories={mindMemories}
               onModeChange={setOverflowMode}
               onSelectedMemoryChange={setSelectedOverflowMemoryId}

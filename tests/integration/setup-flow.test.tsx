@@ -430,16 +430,27 @@ describe("guided setup flow", () => {
       data: [
         {
           id: "memory-1",
+          location: "mind",
           slot_index: 1,
           title: "Winter bells",
+        },
+        {
+          id: "memory-2",
+          location: "diary",
+          slot_index: null,
+          title: "The vow written down",
         },
       ],
       error: null,
     });
     const memoriesSelect = vi.fn(() => ({ eq: memoriesEqChronicle }));
     const diariesEqStatus = vi.fn().mockResolvedValue({
-      count: 1,
-      data: null,
+      data: {
+        id: "diary-1",
+        memory_capacity: 4,
+        status: "active",
+        title: "The Diary",
+      },
       error: null,
     });
     const diariesEqChronicle = vi.fn(() => ({ eq: diariesEqStatus }));
@@ -507,7 +518,7 @@ describe("guided setup flow", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("1 memory held in mind")).toBeInTheDocument();
-    expect(screen.getByText("Diary present")).toBeInTheDocument();
+    expect(screen.getByText("Diary 1 of 4 memories")).toBeInTheDocument();
   });
 
   it("submits a valid prompt resolution payload through the resolve route", async () => {
@@ -751,7 +762,6 @@ describe("guided setup flow", () => {
     render(
       <PlaySurface
         chronicleId="chronicle-1"
-        hasActiveDiary={false}
         initialSessionId="session-1"
         mindMemories={[
           { id: "memory-1", slotIndex: 1, title: "Winter bells" },
@@ -814,6 +824,43 @@ describe("guided setup flow", () => {
     });
 
     fetchMock.mockRestore();
+  });
+
+  it("disables diary overflow when the active diary is already full", async () => {
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        {...({
+          activeDiary: {
+            id: "diary-1",
+            memoryCapacity: 4,
+            memoryCount: 4,
+            title: "The Diary",
+          },
+        } as never)}
+        chronicleId="chronicle-1"
+        initialSessionId="session-1"
+        mindMemories={[
+          { id: "memory-1", slotIndex: 1, title: "Winter bells" },
+          { id: "memory-2", slotIndex: 2, title: "The nameless face" },
+          { id: "memory-3", slotIndex: 3, title: "A flooded chapel" },
+          { id: "memory-4", slotIndex: 4, title: "The black carriage" },
+          { id: "memory-5", slotIndex: 5, title: "A ruined oath" },
+        ]}
+      />,
+    );
+
+    expect(
+      screen.getByRole("radio", {
+        name: /Move one memory into the diary/i,
+      }),
+    ).toBeDisabled();
+    expect(
+      screen.getByText(
+        "The diary is full at 4 memories. Forget one in-mind memory, or wait for a prompt effect that changes the diary.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("preserves the unsent prompt draft after a failed submission", async () => {

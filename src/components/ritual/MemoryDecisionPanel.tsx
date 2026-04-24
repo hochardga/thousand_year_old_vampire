@@ -1,9 +1,10 @@
 "use client";
 
+import type { ActiveDiarySummary } from "@/types/chronicle";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 
 type MemoryDecisionPanelProps = {
-  hasActiveDiary: boolean;
+  activeDiary: ActiveDiarySummary | null;
   memories: Array<{
     id: string;
     slotIndex: number | null;
@@ -16,13 +17,17 @@ type MemoryDecisionPanelProps = {
 };
 
 export function MemoryDecisionPanel({
-  hasActiveDiary,
+  activeDiary,
   memories,
   onModeChange,
   onSelectedMemoryChange,
   selectedMemoryId,
   selectedMode,
 }: MemoryDecisionPanelProps) {
+  const isDiaryFull =
+    activeDiary !== null &&
+    activeDiary.memoryCount >= activeDiary.memoryCapacity;
+
   return (
     <SurfacePanel className="space-y-5 border-gold/18 bg-gold/6 px-6 py-6 sm:px-8">
       <div>
@@ -67,6 +72,7 @@ export function MemoryDecisionPanel({
           <input
             checked={selectedMode === "move-to-diary"}
             className="mt-1"
+            disabled={isDiaryFull}
             name="overflowMode"
             onChange={() => onModeChange("move-to-diary")}
             type="radio"
@@ -74,13 +80,15 @@ export function MemoryDecisionPanel({
           />
           <span className="space-y-1">
             <span className="block text-sm font-medium text-ink">
-              {hasActiveDiary
+              {activeDiary
                 ? "Move one memory into the diary"
                 : "Move one memory into a new diary"}
             </span>
             <span className="block text-sm leading-relaxed text-ink-muted">
-              {hasActiveDiary
-                ? "The chosen memory leaves the active stack but remains legible in the diary."
+              {isDiaryFull
+                ? `The diary is full at ${activeDiary.memoryCapacity} memories. Forget one in-mind memory, or wait for a prompt effect that changes the diary.`
+                : activeDiary
+                  ? "The chosen memory leaves the active stack but remains legible in the diary."
                 : "The chosen memory will be pressed into a diary the chronicle opens for you."}
             </span>
           </span>

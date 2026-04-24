@@ -56,6 +56,13 @@ export type MemoryDecisionPayload = {
   targetMemoryId?: string;
 };
 
+export type ActiveDiarySummary = {
+  id: string;
+  memoryCapacity: number;
+  memoryCount: number;
+  title: string;
+};
+
 export type SkillMutation = {
   action: "check" | "lose";
   id: string;
