@@ -136,6 +136,7 @@ function buildSupabaseClient() {
       chronicle_id: "chronicle-1",
       id: "memory-3",
       location: "diary",
+      diary_id: "diary-1",
       memory_entries: [
         {
           created_at: "2026-04-18T10:00:00.000Z",
@@ -146,6 +147,22 @@ function buildSupabaseClient() {
       ],
       slot_index: null,
       title: "Diary-kept vow",
+    },
+    {
+      chronicle_id: "chronicle-1",
+      id: "memory-4",
+      location: "diary",
+      diary_id: "diary-2",
+      memory_entries: [
+        {
+          created_at: "2026-04-17T10:00:00.000Z",
+          entry_text: "Another diary-bound memory from elsewhere.",
+          id: "entry-4",
+          position: 1,
+        },
+      ],
+      slot_index: null,
+      title: "Elsewhere bound memory",
     },
   ];
   const diaries = [

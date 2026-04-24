@@ -33,6 +33,7 @@ type ChronicleRecord = {
 
 type MemoryRecord = {
   id: string;
+  diary_id: string | null;
   location: "mind" | "diary" | "forgotten";
   memory_entries:
     | Array<{
@@ -292,7 +293,7 @@ export default async function ChronicleArchivePage({
       archiveClient
         .from("memories")
         .select(
-          "id, title, location, slot_index, memory_entries(id, position, entry_text)",
+          "id, title, location, diary_id, slot_index, memory_entries(id, position, entry_text)",
         )
         .eq("chronicle_id", chronicleId),
       archiveClient
@@ -307,8 +308,13 @@ export default async function ChronicleArchivePage({
 
   const sortedMemories = sortMemories(memoriesResult.data ?? []);
   const memoryStack = sortedMemories.filter((memory) => memory.location !== "diary");
-  const diaryMemories = sortedMemories.filter((memory) => memory.location === "diary");
   const activeDiary = diaryResult.data ?? null;
+  const diaryMemories = activeDiary
+    ? sortedMemories.filter(
+        (memory) =>
+          memory.location === "diary" && memory.diary_id === activeDiary.id,
+      )
+    : [];
   const promptPage = trimPage(promptRunsResult.data ?? []);
   const eventPage = trimPage(archiveEventsResult.data ?? []);
 
