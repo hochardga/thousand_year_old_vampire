@@ -52,6 +52,15 @@ type SessionStateRow = {
   status: "in_progress" | "paused" | "closed";
 };
 
+type SkillStateRow = {
+  chronicle_id: string;
+  description: string | null;
+  id: string;
+  label: string;
+  sort_order: number;
+  status: "active" | "checked" | "lost";
+};
+
 type PromptRunRpcResult = Awaited<
   ReturnType<
     ReturnType<typeof createE2EServerSupabaseClient>["rpc"]
@@ -66,6 +75,7 @@ type TestState = {
   memory_entries?: MemoryEntryStateRow[];
   prompt_runs: Array<Record<string, unknown>>;
   sessions: SessionStateRow[];
+  skills: SkillStateRow[];
 };
 
 function resetE2EState() {
@@ -101,11 +111,16 @@ function buildResolveArgs(
   chronicleId: string,
   sessionId: string,
   memoryDecision: Record<string, string>,
+  newSkill?: {
+    description: string;
+    label: string;
+  },
 ) {
   return {
     experience_text:
       "I set down the shape of this moment before it can leave me again.",
     memory_decision: memoryDecision,
+    new_skill: newSkill ?? null,
     player_entry:
       "I answer the prompt with something measured enough to survive rereading.",
     target_chronicle_id: chronicleId,
@@ -119,7 +134,13 @@ function buildResolveArgs(
   };
 }
 
-async function createActiveChronicle(memoryCount = 1) {
+async function createActiveChronicle(
+  memoryCount = 1,
+  initialSkills: Array<{
+    description: string;
+    label: string;
+  }> = [],
+) {
   const client = createAuthedClient();
   const inserted = await client
     .from("chronicles")
@@ -128,6 +149,7 @@ async function createActiveChronicle(memoryCount = 1) {
     .single();
   const chronicleId = inserted.data?.id as string;
   const setup = await client.rpc("complete_chronicle_setup", {
+    initial_skills: initialSkills,
     setup_memories: Array.from({ length: memoryCount }, (_, index) => ({
       entryText: `Memory fragment ${index + 1}`,
       title: `Memory ${index + 1}`,
@@ -193,10 +215,14 @@ async function resolvePromptRun(
   chronicleId: string,
   sessionId: string,
   memoryDecision: Record<string, string>,
+  newSkill?: {
+    description: string;
+    label: string;
+  },
 ): Promise<PromptRunRpcResult> {
   return client.rpc(
     "resolve_prompt_run",
-    buildResolveArgs(chronicleId, sessionId, memoryDecision),
+    buildResolveArgs(chronicleId, sessionId, memoryDecision, newSkill),
   );
 }
 
@@ -205,6 +231,123 @@ beforeEach(() => {
 });
 
 describe("archive rule enforcement", () => {
+  it("stores setup-era skills in e2e state so later play-time reads can load them", async () => {
+    const initialSkills = [
+      {
+        description: "I know how to listen before danger takes shape.",
+        label: "Quiet Devotion",
+      },
+      {
+        description: "I can read the older debts in a room.",
+        label: "Long Memory",
+      },
+    ];
+    const { chronicleId, client, state } = await createActiveChronicle(1, initialSkills);
+
+    expect(state.skills).toEqual([
+      expect.objectContaining({
+        chronicle_id: chronicleId,
+        description: "I know how to listen before danger takes shape.",
+        label: "Quiet Devotion",
+        sort_order: 0,
+        status: "active",
+      }),
+      expect.objectContaining({
+        chronicle_id: chronicleId,
+        description: "I can read the older debts in a room.",
+        label: "Long Memory",
+        sort_order: 1,
+        status: "active",
+      }),
+    ]);
+
+    const skillsResult = await client
+      .from("skills")
+      .select("label, description, sort_order, status")
+      .eq("chronicle_id", chronicleId)
+      .order("sort_order", { ascending: true });
+
+    expect(skillsResult.error).toBeNull();
+    expect(skillsResult.data).toEqual([
+      {
+        description: "I know how to listen before danger takes shape.",
+        label: "Quiet Devotion",
+        sort_order: 0,
+        status: "active",
+      },
+      {
+        description: "I can read the older debts in a room.",
+        label: "Long Memory",
+        sort_order: 1,
+        status: "active",
+      },
+    ]);
+  });
+
+  it("creates prompt-created skills at the next sort order", async () => {
+    const initialSkills = [
+      {
+        description: "I know how to listen before danger takes shape.",
+        label: "Quiet Devotion",
+      },
+      {
+        description: "I can read the older debts in a room.",
+        label: "Long Memory",
+      },
+    ];
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle(
+      1,
+      initialSkills,
+    );
+
+    const result = await resolvePromptRun(
+      client,
+      chronicleId,
+      sessionId,
+      { mode: "create-new" },
+      {
+        description: "  I can find the safe route home after dusk.  ",
+        label: "  Night Navigation  ",
+      },
+    );
+
+    expect(result.error).toBeNull();
+    expect(state.skills).toHaveLength(3);
+    expect(state.skills.at(-1)).toMatchObject({
+      chronicle_id: chronicleId,
+      description: "I can find the safe route home after dusk.",
+      label: "Night Navigation",
+      sort_order: 2,
+      status: "active",
+    });
+  });
+
+  it("rejects duplicate prompt-created skill labels within the same chronicle", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle(1, [
+      {
+        description: "I know how to listen before danger takes shape.",
+        label: "Quiet Devotion",
+      },
+    ]);
+
+    const result = await resolvePromptRun(
+      client,
+      chronicleId,
+      sessionId,
+      { mode: "create-new" },
+      {
+        description: "  The hunger teaches the same lesson twice.  ",
+        label: "  Quiet Devotion  ",
+      },
+    );
+
+    expect(result.error).toMatchObject({
+      message: "A skill with this name already exists.",
+    });
+    expect(state.skills).toHaveLength(1);
+    expect(state.prompt_runs).toHaveLength(0);
+  });
+
   it("appends an entry to an in-mind memory until it reaches three total entries", async () => {
     const { chronicleId, client, sessionId, state } = await createActiveChronicle();
     const targetMemory = state.memories[0];

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const createServerSupabaseClient = vi.hoisted(() => vi.fn());
@@ -29,16 +29,27 @@ function createQueryBuilder(rows: QueryRow[]) {
     order(column: string, options?: { ascending?: boolean }) {
       const ascending = options?.ascending ?? true;
       workingRows = [...workingRows].sort((left, right) => {
-        const leftValue = String(left[column] ?? "");
-        const rightValue = String(right[column] ?? "");
+        const leftValue = left[column];
+        const rightValue = right[column];
 
-        if (leftValue === rightValue) {
+        if (typeof leftValue === "number" && typeof rightValue === "number") {
+          if (leftValue === rightValue) {
+            return 0;
+          }
+
+          return ascending ? leftValue - rightValue : rightValue - leftValue;
+        }
+
+        const leftText = String(leftValue ?? "");
+        const rightText = String(rightValue ?? "");
+
+        if (leftText === rightText) {
           return 0;
         }
 
         return ascending
-          ? leftValue.localeCompare(rightValue)
-          : rightValue.localeCompare(leftValue);
+          ? leftText.localeCompare(rightText)
+          : rightText.localeCompare(leftText);
       });
 
       return builder;
@@ -138,13 +149,23 @@ function buildSupabaseClient() {
                   description: "I know how to listen for danger.",
                   id: "skill-1",
                   label: "Quiet Devotion",
+                  sort_order: 0,
                   status: "checked",
+                },
+                {
+                  chronicle_id: "chronicle-1",
+                  description: "I can follow the river roads after midnight.",
+                  id: "skill-3",
+                  label: "Night Navigation",
+                  sort_order: 2,
+                  status: "active",
                 },
                 {
                   chronicle_id: "chronicle-1",
                   description: "I no longer trust this hunger.",
                   id: "skill-2",
                   label: "Bloodthirsty",
+                  sort_order: 1,
                   status: "lost",
                 },
               ]);
@@ -240,12 +261,23 @@ describe("ledger page", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Marks" })).toBeInTheDocument();
     expect(screen.getByText("Quiet Devotion")).toBeInTheDocument();
+    expect(screen.getByText("Night Navigation")).toBeInTheDocument();
     expect(screen.getByText("Checked")).toBeInTheDocument();
     expect(screen.getAllByText("Lost").length).toBeGreaterThan(1);
     expect(screen.getByText("Concealed")).toBeInTheDocument();
     expect(screen.getByText("Dormant")).toBeInTheDocument();
     expect(screen.getByText("Mortal")).toBeInTheDocument();
     expect(screen.getByText("Immortal")).toBeInTheDocument();
+    const skillsSection = screen.getByRole("heading", { name: "Skills" }).closest("section");
+    expect(skillsSection).not.toBeNull();
+    expect(within(skillsSection as HTMLElement).getByText("Active")).toBeInTheDocument();
+    const pageText = document.body.textContent ?? "";
+    expect(pageText.indexOf("Quiet Devotion")).toBeLessThan(
+      pageText.indexOf("Bloodthirsty"),
+    );
+    expect(pageText.indexOf("Bloodthirsty")).toBeLessThan(
+      pageText.indexOf("Night Navigation"),
+    );
     expect(redirect).not.toHaveBeenCalled();
   });
 

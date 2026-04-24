@@ -107,6 +107,15 @@ type FeedbackSubmissionRow = {
   user_id: string;
 };
 
+type SkillRow = {
+  chronicle_id: string;
+  description: string;
+  id: string;
+  label: string;
+  sort_order: number;
+  status: "active" | "checked" | "lost";
+};
+
 type E2EState = {
   archive_events: ArchiveEventRow[];
   characters: Array<Record<string, unknown>>;
@@ -121,7 +130,7 @@ type E2EState = {
   profiles: ProfileRow[];
   resources: Array<Record<string, unknown>>;
   sessions: SessionRow[];
-  skills: Array<Record<string, unknown>>;
+  skills: SkillRow[];
 };
 
 type CookieStoreLike = {
@@ -478,6 +487,22 @@ function countDiaryMemories(state: E2EState, diaryId: string) {
   ).length;
 }
 
+function nextSkillSortOrder(state: E2EState, chronicleId: string) {
+  return (
+    state.skills.reduce((highestSortOrder, skill) => {
+      if (skill.chronicle_id !== chronicleId) {
+        return highestSortOrder;
+      }
+
+      return Math.max(highestSortOrder, skill.sort_order);
+    }, -1) + 1
+  );
+}
+
+function normalizeSkillText(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
 function nextOpenMindSlot(state: E2EState, chronicleId: string) {
   for (let slot = 1; slot <= 5; slot += 1) {
     const occupied = state.memories.some(
@@ -696,6 +721,8 @@ function selectRowsForTable(table: string) {
       return state.profiles;
     case "sessions":
       return state.sessions;
+    case "skills":
+      return state.skills;
     default:
       return [];
   }
@@ -747,6 +774,11 @@ function applySetupCompletion(args: Record<string, unknown>) {
       entryText?: string;
       title: string;
     }>) || [];
+  const initialSkills =
+    (args.initial_skills as Array<{
+      description?: string;
+      label?: string;
+    }>) || [];
 
   setupMemories.forEach((memory, index) => {
     const memoryId = randomUUID();
@@ -770,6 +802,17 @@ function applySetupCompletion(args: Record<string, unknown>) {
       memory_id: memoryId,
       position: 1,
       prompt_run_id: null,
+    });
+  });
+
+  initialSkills.forEach((skill, index) => {
+    state.skills.push({
+      chronicle_id: chronicle.id,
+      description: normalizeSkillText(skill.description),
+      id: randomUUID(),
+      label: normalizeSkillText(skill.label),
+      sort_order: index,
+      status: "active",
     });
   });
 
@@ -844,6 +887,27 @@ function applyPromptResolution(args: Record<string, unknown>) {
           targetMemoryId?: string;
         }
       | null) ?? { mode: "create-new" };
+  const rawNewSkill =
+    args.new_skill && typeof args.new_skill === "object"
+      ? (args.new_skill as Record<string, unknown>)
+      : null;
+  const newSkill = rawNewSkill
+    ? {
+        description: normalizeSkillText(rawNewSkill.description),
+        label: normalizeSkillText(rawNewSkill.label),
+      }
+    : null;
+
+  if (
+    newSkill &&
+    state.skills.some(
+      (skill) =>
+        skill.chronicle_id === chronicle.id &&
+        normalizeSkillText(skill.label) === newSkill.label,
+    )
+  ) {
+    return createRpcError("A skill with this name already exists.");
+  }
 
   if ((memoryDecision.mode ?? "create-new") === "append-existing") {
     const targetMemory = state.memories.find(
@@ -956,6 +1020,17 @@ function applyPromptResolution(args: Record<string, unknown>) {
       memory_id: newMemoryId,
       position: 1,
       prompt_run_id: promptRunId,
+    });
+  }
+
+  if (newSkill) {
+    state.skills.push({
+      chronicle_id: chronicle.id,
+      description: newSkill.description,
+      id: randomUUID(),
+      label: newSkill.label,
+      sort_order: nextSkillSortOrder(state, chronicle.id),
+      status: "active",
     });
   }
 
