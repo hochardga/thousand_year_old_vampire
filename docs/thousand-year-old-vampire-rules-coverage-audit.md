@@ -27,7 +27,7 @@ What is already strong:
 | Strongly covered area | Current state |
 | --- | --- |
 | Prompt movement | The app rolls `d10 - d6`, moves forward or backward, tracks repeat encounters, and skips to the next available prompt entry. |
-| Memory pressure | The app enforces three entries per memory, five in-mind memories, forgetting, and moving memories into a diary. |
+| Memory pressure | The app enforces three entries per memory, five in-mind memories, four-memory diary capacity, forgetting, and moving memories into a diary. |
 | Archive continuity | Prompt history, memory entries, forgotten memories, diary memories, and archive events are all persisted and visible. |
 
 What is only partly covered:
@@ -45,7 +45,7 @@ What is still missing or materially incomplete:
 | Normal UI support for adding an Experience to an existing memory | This is a core memory rule in the book, but the play UI only creates new memories or handles overflow. |
 | Book-faithful setup end state | The book expects 5 starting memories, 3 skills, 3 resources, at least 3 mortals, and 1 immortal; the default setup flow does not. |
 | Skill/resource substitution and end-game rules | The app does not parse prompt costs, apply substitution rules, or end the game when those costs become impossible. |
-| Diary capacity and diary loss rules | One active diary is enforced, but four-memory diary capacity and diary loss cascading to stored memories are not. |
+| Diary loss cascading to stored memories | Normal four-memory diary capacity is now enforced, but diary loss and the loss of preserved memories tied to it are still not implemented. |
 
 What now looks intentionally unsupported:
 
@@ -60,9 +60,9 @@ What now looks intentionally unsupported:
 
 The app currently implements a **promising but narrower rules slice** of *Thousand Year Old Vampire*.
 
-It is already good at the memory engine: prompt lookup, movement, repeated encounters, creating memories, forgetting memories, diary overflow, and preserving the archive across sessions. That part is real and backed by schema, RPCs, and tests.
+It is already good at the memory engine: prompt lookup, movement, repeated encounters, creating memories, forgetting memories, four-memory diary overflow, and preserving the archive across sessions. That part is real and backed by schema, RPCs, and tests.
 
-It is not yet a full digital implementation of the rules text. The biggest genuine gaps are setup fidelity, append-to-existing-memory in the normal UI, prompt-driven creation and mutation of traits, substitution logic, diary limits and loss, and game-ending conditions.
+It is not yet a full digital implementation of the rules text. The biggest genuine gaps are setup fidelity, append-to-existing-memory in the normal UI, prompt-driven creation and mutation of traits, substitution logic, diary-loss consequences, and game-ending conditions.
 
 ## Detailed Breakdown
 
@@ -114,7 +114,7 @@ The biggest memory gap is also an important one: the book expects the player to 
 | The vampire may have one Diary at a time. | Automated | Only one active diary is allowed per chronicle, and overflow logic reuses it instead of creating duplicates. | `supabase/migrations/0002_core_gameplay_schema.sql`, `supabase/migrations/0007_memory_rule_helpers.sql`, `tests/integration/archive-rules.test.ts` |
 | A Diary is created when needed and becomes a physical preserved object. | Partial | The app auto-creates a generic diary titled `The Diary`, but the player does not describe it in the flow and it is not tracked as a normal resource entry. | `supabase/migrations/0007_memory_rule_helpers.sql`, `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx` |
 | A Diary must contain at least one Memory. | Automated | The diary is only created during a move-to-diary operation, so it never exists empty at creation time. | `supabase/migrations/0007_memory_rule_helpers.sql` |
-| A Diary may hold up to 4 memories. | Missing | There is no capacity check before moving another memory into the diary. | `supabase/migrations/0007_memory_rule_helpers.sql`, `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx` |
+| A Diary may hold up to 4 memories. | Automated | Diary capacity is now durable state on the diary record, overflow resolution rejects illegal move-to-diary choices once the active diary is full, and the play/archive UI shows current diary usage. | `supabase/migrations/0009_diary_capacity.sql`, `src/components/ritual/MemoryDecisionPanel.tsx`, `src/components/ritual/MemoryMeter.tsx`, `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx`, `tests/integration/archive-rules.test.ts`, `tests/integration/gameplay-rpc-guards.test.ts` |
 | A Memory moved to the Diary is no longer in the vampire's head. | Automated | Moving to diary clears `slot_index` and changes `location` to `diary`. | `supabase/migrations/0007_memory_rule_helpers.sql` |
 | Once in the Diary, a Memory cannot gain new Experiences. | Automated | Appending is restricted to in-mind memories only. | `supabase/migrations/0007_memory_rule_helpers.sql`, `tests/integration/archive-rules.test.ts` |
 | If the Diary is lost, the Memories in it are lost too. | Missing | There is no diary-loss route, no diary-loss UI, and no cascade from diary loss to memory loss. | `supabase/migrations/0002_core_gameplay_schema.sql`, absence of any diary loss handler |
@@ -254,7 +254,7 @@ These are the highest-value mismatches between the source rules and the current 
 | Guided setup does not produce the book's required starting state | A player who only uses the first-party setup flow begins with a simpler chronicle than the rules describe. |
 | No in-play creation of new skills, resources, characters, or marks | Many prompt outcomes in the book depend on creating new traits, not just mutating existing ones. |
 | No skill/resource substitution engine | The game-ending pressure around dwindling traits is one of the book's core mechanics, and it is currently absent. |
-| Diary holds unlimited memories and cannot be lost | This removes an important pressure valve and consequence from the original rules. |
+| Diary loss and cascading memory loss are still missing | Diary capacity pressure now exists, but losing the diary and the memories preserved in it is still absent from the rules loop. |
 | No end-game flow | The app has statuses for `completed`, but no prompt-driven or rules-driven completion path in play. |
 
 ## Areas That Are Already Quite Faithful
