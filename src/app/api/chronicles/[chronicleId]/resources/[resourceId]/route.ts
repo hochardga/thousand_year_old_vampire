@@ -28,6 +28,37 @@ type ResourceRouteContext = {
   }>;
 };
 
+type ResourcePatchInput = z.infer<typeof resourcePatchSchema>;
+
+type ResourceRecord = {
+  description: string | null;
+  id: string;
+  is_stationary: boolean;
+  label: string;
+  status: "active" | "checked" | "lost";
+};
+
+type QueryError = {
+  message: string;
+};
+
+type ResourceRouteClient = {
+  from: (table: "resources") => {
+    update: (values: ResourcePatchInput) => {
+      eq: (column: string, value: string) => {
+        eq: (column: string, value: string) => {
+          select: (columns: string) => {
+            single: () => Promise<{
+              data: ResourceRecord | null;
+              error: QueryError | null;
+            }>;
+          };
+        };
+      };
+    };
+  };
+};
+
 export async function PATCH(request: Request, context: ResourceRouteContext) {
   const { chronicleId, resourceId } = await context.params;
   const supabase = await createServerSupabaseClient();
@@ -51,7 +82,7 @@ export async function PATCH(request: Request, context: ResourceRouteContext) {
     return validationErrorResponse(parsed.error.issues);
   }
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await (supabase as unknown as ResourceRouteClient)
     .from("resources")
     .update(parsed.data)
     .eq("id", resourceId)

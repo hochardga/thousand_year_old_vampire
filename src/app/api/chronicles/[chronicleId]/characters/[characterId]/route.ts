@@ -32,6 +32,37 @@ type CharacterRouteContext = {
   }>;
 };
 
+type CharacterPatchInput = z.infer<typeof characterPatchSchema>;
+
+type CharacterRecord = {
+  description: string;
+  id: string;
+  kind: "mortal" | "immortal";
+  name: string;
+  status: "active" | "dead" | "lost";
+};
+
+type QueryError = {
+  message: string;
+};
+
+type CharacterRouteClient = {
+  from: (table: "characters") => {
+    update: (values: CharacterPatchInput) => {
+      eq: (column: string, value: string) => {
+        eq: (column: string, value: string) => {
+          select: (columns: string) => {
+            single: () => Promise<{
+              data: CharacterRecord | null;
+              error: QueryError | null;
+            }>;
+          };
+        };
+      };
+    };
+  };
+};
+
 export async function PATCH(request: Request, context: CharacterRouteContext) {
   const { characterId, chronicleId } = await context.params;
   const supabase = await createServerSupabaseClient();
@@ -55,7 +86,7 @@ export async function PATCH(request: Request, context: CharacterRouteContext) {
     return validationErrorResponse(parsed.error.issues);
   }
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await (supabase as unknown as CharacterRouteClient)
     .from("characters")
     .update(parsed.data)
     .eq("id", characterId)

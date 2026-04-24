@@ -65,6 +65,69 @@ type ArchiveEventRecord = {
   summary: string;
 };
 
+type QueryError = {
+  message: string;
+};
+
+type SingleResult<T> = Promise<{
+  data: T | null;
+  error: QueryError | null;
+}>;
+
+type ManyResult<T> = Promise<{
+  data: T[] | null;
+  error: QueryError | null;
+}>;
+
+type CursorPageQuery<T> = {
+  limit: (count: number) => ManyResult<T>;
+  lt: (column: string, value: string) => CursorPageQuery<T>;
+};
+
+type ArchivePageClient = {
+  from: (table: "archive_events") => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        order: (
+          column: string,
+          options: { ascending: boolean },
+        ) => CursorPageQuery<ArchiveEventRecord>;
+      };
+    };
+  };
+  from: (table: "chronicles") => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        single: () => SingleResult<ChronicleRecord>;
+      };
+    };
+  };
+  from: (table: "diaries") => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        eq: (column: string, value: string) => {
+          maybeSingle: () => SingleResult<DiaryRecord>;
+        };
+      };
+    };
+  };
+  from: (table: "memories") => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => ManyResult<MemoryRecord>;
+    };
+  };
+  from: (table: "prompt_runs") => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        order: (
+          column: string,
+          options: { ascending: boolean },
+        ) => CursorPageQuery<PromptRunRecord>;
+      };
+    };
+  };
+};
+
 function formatArchiveDate(value: string) {
   return new Intl.DateTimeFormat("en-US", {
     day: "numeric",
@@ -173,7 +236,7 @@ export default async function ChronicleArchivePage({
   const { chronicleId } = await params;
   const { eventCursor, promptCursor } = await searchParams;
   const supabase = await createServerSupabaseClient();
-  const archiveClient = supabase as any;
+  const archiveClient = supabase as unknown as ArchivePageClient;
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -194,7 +257,7 @@ export default async function ChronicleArchivePage({
     redirect("/chronicles?error=That%20chronicle%20could%20not%20be%20opened.");
   }
 
-  if ((chronicle as ChronicleRecord).status === "draft") {
+  if (chronicle.status === "draft") {
     redirect(`/chronicles/${chronicleId}/setup`);
   }
 
@@ -238,14 +301,12 @@ export default async function ChronicleArchivePage({
       archiveEventsQuery.limit(PAGE_SIZE + 1),
     ]);
 
-  const sortedMemories = sortMemories((memoriesResult.data ?? []) as MemoryRecord[]);
+  const sortedMemories = sortMemories(memoriesResult.data ?? []);
   const memoryStack = sortedMemories.filter((memory) => memory.location !== "diary");
   const diaryMemories = sortedMemories.filter((memory) => memory.location === "diary");
-  const activeDiary = (diaryResult.data ?? null) as DiaryRecord;
-  const promptPage = trimPage((promptRunsResult.data ?? []) as PromptRunRecord[]);
-  const eventPage = trimPage(
-    (archiveEventsResult.data ?? []) as ArchiveEventRecord[],
-  );
+  const activeDiary = diaryResult.data ?? null;
+  const promptPage = trimPage(promptRunsResult.data ?? []);
+  const eventPage = trimPage(archiveEventsResult.data ?? []);
 
   return (
     <PageShell className="gap-6 py-8">
@@ -254,7 +315,7 @@ export default async function ChronicleArchivePage({
           Chronicle archive
         </p>
         <h1 className="mt-4 font-heading text-4xl leading-[1.08] text-surface sm:text-5xl lg:text-6xl">
-          {(chronicle as ChronicleRecord).title}
+          {chronicle.title}
         </h1>
         <p className="mt-4 max-w-reading text-base leading-relaxed text-surface/76 sm:text-lg">
           Read the memories still in reach, the ones already surrendered, and

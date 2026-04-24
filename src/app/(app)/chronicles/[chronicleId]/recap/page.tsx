@@ -12,10 +12,92 @@ type RecapPageProps = {
   }>;
 };
 
+type ChronicleRecord = {
+  current_prompt_encounter: number;
+  current_prompt_number: number;
+  current_session_id: string | null;
+  id: string;
+  status: "draft" | "active" | "completed" | "archived";
+  title: string;
+};
+
+type ArchiveEventRecord = {
+  created_at: string;
+  event_type: string;
+  id: string;
+  summary: string;
+};
+
+type PromptRunRecord = {
+  created_at: string;
+  encounter_index: number;
+  experience_text: string;
+  movement: number;
+  prompt_number: number;
+};
+
+type SessionRecord = {
+  recap_markdown: string | null;
+};
+
+type QueryError = {
+  message: string;
+};
+
+type SingleResult<T> = Promise<{
+  data: T | null;
+  error: QueryError | null;
+}>;
+
+type ManyResult<T> = Promise<{
+  data: T[] | null;
+  error: QueryError | null;
+}>;
+
+type LimitedOrderQuery<T> = {
+  order: (
+    column: string,
+    options: { ascending: boolean },
+  ) => ManyResult<T>;
+};
+
+type RecapPageClient = {
+  from: (table: "archive_events") => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        limit: (count: number) => LimitedOrderQuery<ArchiveEventRecord>;
+      };
+    };
+  };
+  from: (table: "chronicles") => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        single: () => SingleResult<ChronicleRecord>;
+      };
+    };
+  };
+  from: (table: "prompt_runs") => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        limit: (count: number) => LimitedOrderQuery<PromptRunRecord>;
+      };
+    };
+  };
+  from: (table: "sessions") => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        eq: (column: string, value: string) => {
+          single: () => SingleResult<SessionRecord>;
+        };
+      };
+    };
+  };
+};
+
 export default async function ChronicleRecapPage({ params }: RecapPageProps) {
   const { chronicleId } = await params;
   const supabase = await createServerSupabaseClient();
-  const recapClient = supabase as any;
+  const recapClient = supabase as unknown as RecapPageClient;
   const {
     data: { user },
   } = await supabase.auth.getUser();
