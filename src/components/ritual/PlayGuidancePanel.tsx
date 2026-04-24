@@ -15,7 +15,7 @@ const guidanceItems = [
   },
   {
     title: "When the mind is full",
-    body: "Choose whether the new experience joins a memory, replaces one, or moves into the diary when a diary is present.",
+    body: "Choose which older memory to forget or move into a diary before the new experience can settle.",
   },
 ];
 

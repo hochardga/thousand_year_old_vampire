@@ -503,7 +503,7 @@ describe("guided setup flow", () => {
     expect(screen.getByText("When the mind is full")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Choose whether the new experience joins a memory, replaces one, or moves into the diary when a diary is present.",
+        "Choose which older memory to forget or move into a diary before the new experience can settle.",
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("1 memory held in mind")).toBeInTheDocument();
