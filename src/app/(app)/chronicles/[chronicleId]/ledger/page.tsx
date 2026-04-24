@@ -74,35 +74,35 @@ type OrderedListQuery<T> = {
   ) => ManyResult<T>;
 };
 
-type LedgerPageClient = {
-  from: (table: "characters") => {
+interface LedgerPageClient {
+  from(table: "characters"): {
     select: (columns: string) => {
       eq: (column: string, value: string) => OrderedListQuery<CharacterRecord>;
     };
   };
-  from: (table: "chronicles") => {
+  from(table: "chronicles"): {
     select: (columns: string) => {
       eq: (column: string, value: string) => {
         single: () => SingleResult<ChronicleRecord>;
       };
     };
   };
-  from: (table: "marks") => {
+  from(table: "marks"): {
     select: (columns: string) => {
       eq: (column: string, value: string) => OrderedListQuery<MarkRecord>;
     };
   };
-  from: (table: "resources") => {
+  from(table: "resources"): {
     select: (columns: string) => {
       eq: (column: string, value: string) => OrderedListQuery<ResourceRecord>;
     };
   };
-  from: (table: "skills") => {
+  from(table: "skills"): {
     select: (columns: string) => {
       eq: (column: string, value: string) => OrderedListQuery<SkillRecord>;
     };
   };
-};
+}
 
 function renderSectionError(message: string) {
   return <QuietAlert title={message} body="Return when the chronicle is ready." />;

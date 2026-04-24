@@ -66,29 +66,29 @@ type LimitedOrderQuery<T> = {
   ) => ManyResult<T>;
 };
 
-type RecapPageClient = {
-  from: (table: "archive_events") => {
+interface RecapPageClient {
+  from(table: "archive_events"): {
     select: (columns: string) => {
       eq: (column: string, value: string) => {
         limit: (count: number) => LimitedOrderQuery<ArchiveEventRecord>;
       };
     };
   };
-  from: (table: "chronicles") => {
+  from(table: "chronicles"): {
     select: (columns: string) => {
       eq: (column: string, value: string) => {
         single: () => SingleResult<ChronicleRecord>;
       };
     };
   };
-  from: (table: "prompt_runs") => {
+  from(table: "prompt_runs"): {
     select: (columns: string) => {
       eq: (column: string, value: string) => {
         limit: (count: number) => LimitedOrderQuery<PromptRunRecord>;
       };
     };
   };
-  from: (table: "sessions") => {
+  from(table: "sessions"): {
     select: (columns: string) => {
       eq: (column: string, value: string) => {
         eq: (column: string, value: string) => {
@@ -97,7 +97,7 @@ type RecapPageClient = {
       };
     };
   };
-};
+}
 
 export default async function ChronicleRecapPage({
   params,

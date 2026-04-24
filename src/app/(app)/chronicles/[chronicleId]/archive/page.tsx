@@ -87,8 +87,8 @@ type CursorPageQuery<T> = {
   lt: (column: string, value: string) => CursorPageQuery<T>;
 };
 
-type ArchivePageClient = {
-  from: (table: "archive_events") => {
+interface ArchivePageClient {
+  from(table: "archive_events"): {
     select: (columns: string) => {
       eq: (column: string, value: string) => {
         order: (
@@ -98,14 +98,14 @@ type ArchivePageClient = {
       };
     };
   };
-  from: (table: "chronicles") => {
+  from(table: "chronicles"): {
     select: (columns: string) => {
       eq: (column: string, value: string) => {
         single: () => SingleResult<ChronicleRecord>;
       };
     };
   };
-  from: (table: "diaries") => {
+  from(table: "diaries"): {
     select: (columns: string) => {
       eq: (column: string, value: string) => {
         eq: (column: string, value: string) => {
@@ -114,12 +114,12 @@ type ArchivePageClient = {
       };
     };
   };
-  from: (table: "memories") => {
+  from(table: "memories"): {
     select: (columns: string) => {
       eq: (column: string, value: string) => ManyResult<MemoryRecord>;
     };
   };
-  from: (table: "prompt_runs") => {
+  from(table: "prompt_runs"): {
     select: (columns: string) => {
       eq: (column: string, value: string) => {
         order: (
@@ -129,7 +129,7 @@ type ArchivePageClient = {
       };
     };
   };
-};
+}
 
 function formatArchiveDate(value: string) {
   return new Intl.DateTimeFormat("en-US", {
