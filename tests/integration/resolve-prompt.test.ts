@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { resolvePrompt } from "@/lib/chronicles/resolvePrompt";
 import type { PromptResolutionPayload } from "@/types/chronicle";
 
@@ -20,6 +20,47 @@ const payload: PromptResolutionPayload = {
 };
 
 describe("resolvePrompt", () => {
+  it("passes prompt-created skills into the resolve_prompt_run RPC payload", async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        archiveEvents: [],
+        nextPrompt: {
+          encounterIndex: 1,
+          promptNumber: 4,
+        },
+        promptRunId: "run-1",
+        rolled: {
+          d10: 7,
+          d6: 4,
+          movement: 3,
+        },
+      },
+      error: null,
+    });
+
+    await resolvePrompt(
+      { rpc },
+      "chronicle-1",
+      {
+        ...payload,
+        newSkill: {
+          description: "I learned to feed first and mourn later.",
+          label: "Bloodthirsty",
+        },
+      },
+    );
+
+    expect(rpc).toHaveBeenCalledWith(
+      "resolve_prompt_run",
+      expect.objectContaining({
+        new_skill: {
+          description: "I learned to feed first and mourn later.",
+          label: "Bloodthirsty",
+        },
+      }),
+    );
+  });
+
   it("normalizes known memory-rule failures into calm product copy", async () => {
     const supabase = {
       rpc: async () => ({
@@ -34,6 +75,29 @@ describe("resolvePrompt", () => {
       resolvePrompt(supabase, "chronicle-1", payload),
     ).rejects.toThrow(
       "Choose a memory to forget or move into the diary before adding a new one.",
+    );
+  });
+
+  it("normalizes duplicate prompt-created skill failures into calm copy", async () => {
+    const supabase = {
+      rpc: async () => ({
+        data: null,
+        error: {
+          message: "A skill with this name already exists.",
+        },
+      }),
+    };
+
+    await expect(
+      resolvePrompt(supabase, "chronicle-1", {
+        ...payload,
+        newSkill: {
+          description: "I learned to feed first and mourn later.",
+          label: "Bloodthirsty",
+        },
+      }),
+    ).rejects.toThrow(
+      "That skill name is already in the chronicle. Choose different wording.",
     );
   });
 });

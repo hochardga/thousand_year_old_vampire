@@ -36,6 +36,7 @@ export async function resolvePrompt(
   const { data, error } = await supabase.rpc("resolve_prompt_run", {
     experience_text: payload.experienceText,
     memory_decision: payload.memoryDecision,
+    new_skill: payload.newSkill ?? null,
     player_entry: payload.playerEntry,
     target_chronicle_id: chronicleId,
     target_session_id: payload.sessionId,

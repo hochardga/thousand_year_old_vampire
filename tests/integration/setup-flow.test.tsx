@@ -639,6 +639,75 @@ describe("guided setup flow", () => {
     });
   });
 
+  it("passes prompt-created skill payloads through the resolve route", async () => {
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user-1" } },
+        }),
+      },
+    });
+    resolvePrompt.mockResolvedValue({
+      archiveEvents: [],
+      nextPrompt: {
+        encounterIndex: 1,
+        promptNumber: 4,
+      },
+      promptRunId: "run-1",
+      rolled: {
+        d10: 7,
+        d6: 4,
+        movement: 3,
+      },
+    });
+
+    const { POST } = await import(
+      "@/app/api/chronicles/[chronicleId]/play/resolve/route"
+    );
+    await POST(
+      new Request("http://localhost/api/chronicles/chronicle-1/play/resolve", {
+        body: JSON.stringify({
+          experienceText:
+            "I left the chapel with blood under my nails and a prayer I could not finish.",
+          memoryDecision: {
+            mode: "create-new",
+          },
+          newSkill: {
+            description: "I learned to feed first and mourn later.",
+            label: "Bloodthirsty",
+          },
+          playerEntry:
+            "I answered the bells by dragging the sexton into the thawing graveyard.",
+          sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+          traitMutations: {
+            characters: [],
+            marks: [],
+            resources: [],
+            skills: [],
+          },
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      }),
+      {
+        params: Promise.resolve({ chronicleId: "chronicle-1" }),
+      } as never,
+    );
+
+    expect(resolvePrompt).toHaveBeenCalledWith(
+      expect.anything(),
+      "chronicle-1",
+      expect.objectContaining({
+        newSkill: {
+          description: "I learned to feed first and mourn later.",
+          label: "Bloodthirsty",
+        },
+      }),
+    );
+  });
+
   it("rejects an invalid prompt resolution payload with the standard error shape", async () => {
     createServerSupabaseClient.mockResolvedValue({
       auth: {
