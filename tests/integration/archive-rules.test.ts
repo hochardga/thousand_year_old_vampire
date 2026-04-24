@@ -15,6 +15,7 @@ type MemoryStateRow = {
 type DiaryStateRow = {
   chronicle_id: string;
   id: string;
+  memory_capacity: number;
   status: "active" | "lost";
   title: string;
 };
@@ -254,6 +255,7 @@ describe("archive rule enforcement", () => {
     state.diaries.push({
       chronicle_id: chronicleId,
       id: diaryId,
+      memory_capacity: 4,
       status: "active",
       title: "The Diary",
     });
@@ -325,6 +327,46 @@ describe("archive rule enforcement", () => {
         expect.objectContaining({ eventType: "memory_moved_to_diary" }),
       ]),
     );
+  });
+
+  it("rejects moving a memory into a full diary", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle(5);
+    const selectedMemory = state.memories[0];
+    const diaryId = randomUUID();
+
+    state.diaries.push({
+      chronicle_id: chronicleId,
+      id: diaryId,
+      memory_capacity: 4,
+      status: "active",
+      title: "The Diary",
+    });
+
+    for (let index = 0; index < 4; index += 1) {
+      state.memories.push({
+        chronicle_id: chronicleId,
+        diary_id: diaryId,
+        id: randomUUID(),
+        location: "diary",
+        slot_index: null,
+        title: `Archived Memory ${index + 1}`,
+      });
+    }
+
+    const result = await resolvePromptRun(client, chronicleId, sessionId, {
+      memoryId: selectedMemory.id,
+      mode: "move-to-diary",
+    });
+
+    expect(result.error).toMatchObject({
+      message: "The diary is already full.",
+    });
+    expect(selectedMemory.location).toBe("mind");
+    expect(
+      state.memories.filter(
+        (memory) => memory.diary_id === diaryId && memory.location === "diary",
+      ),
+    ).toHaveLength(4);
   });
 
   it("forgets the selected in-mind memory and frees its slot for the new memory", async () => {

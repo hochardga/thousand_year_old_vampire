@@ -44,6 +44,7 @@ type DiaryRow = {
   created_at: string;
   id: string;
   lost_at: string | null;
+  memory_capacity: number;
   status: "active" | "lost";
   title: string;
 };
@@ -471,6 +472,12 @@ function findMemoryEntries(state: E2EState, memoryId: string) {
     .sort((left, right) => left.position - right.position);
 }
 
+function countDiaryMemories(state: E2EState, diaryId: string) {
+  return state.memories.filter(
+    (memory) => memory.diary_id === diaryId && memory.location === "diary",
+  ).length;
+}
+
 function nextOpenMindSlot(state: E2EState, chronicleId: string) {
   for (let slot = 1; slot <= 5; slot += 1) {
     const occupied = state.memories.some(
@@ -519,6 +526,7 @@ function ensureActiveDiary(
     created_at: now,
     id: randomUUID(),
     lost_at: null,
+    memory_capacity: 4,
     status: "active",
     title: "The Diary",
   };
@@ -897,6 +905,11 @@ function applyPromptResolution(args: Record<string, unknown>) {
         }
 
         const { created, diary } = ensureActiveDiary(state, chronicle.id, now);
+        const diaryMemoryCount = countDiaryMemories(state, diary.id);
+
+        if (diaryMemoryCount >= diary.memory_capacity) {
+          return createRpcError("The diary is already full.");
+        }
 
         if (created) {
           eventPayload.push({
