@@ -28,6 +28,36 @@ type SkillRouteContext = {
   }>;
 };
 
+type SkillPatchInput = z.infer<typeof skillPatchSchema>;
+
+type SkillRecord = {
+  description: string | null;
+  id: string;
+  label: string;
+  status: "active" | "checked" | "lost";
+};
+
+type QueryError = {
+  message: string;
+};
+
+type SkillRouteClient = {
+  from: (table: "skills") => {
+    update: (values: SkillPatchInput) => {
+      eq: (column: string, value: string) => {
+        eq: (column: string, value: string) => {
+          select: (columns: string) => {
+            single: () => Promise<{
+              data: SkillRecord | null;
+              error: QueryError | null;
+            }>;
+          };
+        };
+      };
+    };
+  };
+};
+
 export async function PATCH(request: Request, context: SkillRouteContext) {
   const { chronicleId, skillId } = await context.params;
   const supabase = await createServerSupabaseClient();
@@ -51,7 +81,7 @@ export async function PATCH(request: Request, context: SkillRouteContext) {
     return validationErrorResponse(parsed.error.issues);
   }
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await (supabase as unknown as SkillRouteClient)
     .from("skills")
     .update(parsed.data)
     .eq("id", skillId)

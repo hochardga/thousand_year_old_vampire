@@ -53,6 +53,57 @@ type MarkRecord = {
   label: string;
 };
 
+type QueryError = {
+  message: string;
+};
+
+type SingleResult<T> = Promise<{
+  data: T | null;
+  error: QueryError | null;
+}>;
+
+type ManyResult<T> = Promise<{
+  data: T[] | null;
+  error: QueryError | null;
+}>;
+
+type OrderedListQuery<T> = {
+  order: (
+    column: string,
+    options: { ascending: boolean },
+  ) => ManyResult<T>;
+};
+
+interface LedgerPageClient {
+  from(table: "characters"): {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => OrderedListQuery<CharacterRecord>;
+    };
+  };
+  from(table: "chronicles"): {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        single: () => SingleResult<ChronicleRecord>;
+      };
+    };
+  };
+  from(table: "marks"): {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => OrderedListQuery<MarkRecord>;
+    };
+  };
+  from(table: "resources"): {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => OrderedListQuery<ResourceRecord>;
+    };
+  };
+  from(table: "skills"): {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => OrderedListQuery<SkillRecord>;
+    };
+  };
+}
+
 function renderSectionError(message: string) {
   return <QuietAlert title={message} body="Return when the chronicle is ready." />;
 }
@@ -60,7 +111,7 @@ function renderSectionError(message: string) {
 export default async function ChronicleLedgerPage({ params }: LedgerPageProps) {
   const { chronicleId } = await params;
   const supabase = await createServerSupabaseClient();
-  const ledgerClient = supabase as any;
+  const ledgerClient = supabase as unknown as LedgerPageClient;
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -81,7 +132,7 @@ export default async function ChronicleLedgerPage({ params }: LedgerPageProps) {
     redirect("/chronicles?error=That%20chronicle%20could%20not%20be%20opened.");
   }
 
-  if ((chronicle as ChronicleRecord).status === "draft") {
+  if (chronicle.status === "draft") {
     redirect(`/chronicles/${chronicleId}/setup`);
   }
 
@@ -109,10 +160,10 @@ export default async function ChronicleLedgerPage({ params }: LedgerPageProps) {
         .order("created_at", { ascending: true }),
     ]);
 
-  const skills = (skillsResult.data ?? []) as SkillRecord[];
-  const resources = (resourcesResult.data ?? []) as ResourceRecord[];
-  const characters = (charactersResult.data ?? []) as CharacterRecord[];
-  const marks = (marksResult.data ?? []) as MarkRecord[];
+  const skills = skillsResult.data ?? [];
+  const resources = resourcesResult.data ?? [];
+  const characters = charactersResult.data ?? [];
+  const marks = marksResult.data ?? [];
 
   return (
     <PageShell className="gap-6 py-8">
@@ -121,7 +172,7 @@ export default async function ChronicleLedgerPage({ params }: LedgerPageProps) {
           Chronicle ledger
         </p>
         <h1 className="mt-4 font-heading text-4xl leading-[1.08] text-surface sm:text-5xl lg:text-6xl">
-          {(chronicle as ChronicleRecord).title}
+          {chronicle.title}
         </h1>
         <p className="mt-4 max-w-reading text-base leading-relaxed text-surface/76 sm:text-lg">
           Everything the chronicle can still claim, what has already been worn

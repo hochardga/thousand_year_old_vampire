@@ -9,6 +9,8 @@ import {
   saveSetupDraft,
 } from "@/lib/chronicles/localDrafts";
 import type { ChronicleSetupPayload } from "@/types/chronicle";
+import { SafetyCheckpointPanel } from "./SafetyCheckpointPanel";
+import { SetupTeachingBlock } from "./SetupTeachingBlock";
 import { RitualTextarea } from "./RitualTextarea";
 
 type SetupStepperProps = {
@@ -61,26 +63,42 @@ const stepDefinitions = [
     heading: "Begin with the life you had before.",
     id: "before-life",
     label: "The life you had before",
+    teaching:
+      "This summary anchors the mortal life the chronicle will spend and distort.",
   },
   {
     heading: "Name what you can still carry into the night.",
     id: "traits",
     label: "What you can still carry",
+    teaching:
+      "Skills and resources become part of the living record, so choose what feels defining rather than exhaustive.",
   },
   {
     heading: "Record who stood beside you, and who changed you.",
     id: "characters",
     label: "Who stood beside you",
+    teaching:
+      "Characters matter both mechanically and emotionally, so choose the people whose loss or loyalty will still wound.",
   },
   {
     heading: "Write the mark the night left upon you.",
     id: "mark",
     label: "What the night left on you",
+    teaching:
+      "The mark is a lasting sign of what undeath changed, not a catalogue of every curse.",
   },
   {
     heading: "Gather the first memory fragments you refuse to lose.",
     id: "memories",
     label: "First memory fragments",
+    teaching:
+      "These first memories seed the mind the chronicle will later struggle to keep intact.",
+  },
+  {
+    heading: "Pause at the threshold before the first prompt.",
+    id: "safety",
+    label: "A deliberate threshold",
+    teaching: "",
   },
 ] as const;
 
@@ -130,12 +148,14 @@ function mergeWithDefaultDraft(
 }
 
 function SetupTextInput({
+  hint,
   label,
   name,
   onChange,
   placeholder,
   value,
 }: {
+  hint?: string;
   label: string;
   name: string;
   onChange: (value: string) => void;
@@ -159,6 +179,7 @@ function SetupTextInput({
         placeholder={placeholder}
         className="min-h-11 w-full rounded-soft border border-ink/10 bg-bg/70 px-4 py-3 text-base text-ink shadow-inner shadow-ink/5 outline-none transition-colors duration-160 ease-ritual placeholder:text-ink-muted/70 focus:border-gold/70"
       />
+      {hint ? <p className="text-sm leading-relaxed text-ink-muted">{hint}</p> : null}
     </div>
   );
 }
@@ -179,6 +200,7 @@ export function SetupStepper({
   }, [chronicleId, draft]);
 
   const currentStep = stepDefinitions[stepIndex];
+  const isSafetyStep = currentStep.id === "safety";
 
   async function handlePrimaryAction() {
     if (stepIndex < stepDefinitions.length - 1) {
@@ -270,9 +292,11 @@ export function SetupStepper({
           <p className="font-mono text-xs uppercase tracking-[0.22em] text-ink-muted">
             Step {stepIndex + 1} of {stepDefinitions.length}
           </p>
-          <h1 className="mt-3 font-heading text-4xl leading-tight text-ink">
-            {currentStep.heading}
-          </h1>
+          {isSafetyStep ? null : (
+            <h1 className="mt-3 font-heading text-4xl leading-tight text-ink">
+              {currentStep.heading}
+            </h1>
+          )}
         </div>
 
         {errorMessage ? (
@@ -280,6 +304,12 @@ export function SetupStepper({
             <p className="text-sm text-ink">{errorMessage}</p>
           </SurfacePanel>
         ) : null}
+
+        {isSafetyStep ? (
+          <SafetyCheckpointPanel />
+        ) : (
+          <SetupTeachingBlock body={currentStep.teaching} />
+        )}
 
         {stepIndex === 0 ? (
           <RitualTextarea
@@ -315,6 +345,7 @@ export function SetupStepper({
                 }))
               }
               placeholder="Quiet Devotion"
+              hint="Choose one thing the vampire could do before the hunger learned its name."
             />
             <RitualTextarea
               label="Why this skill mattered"
@@ -349,6 +380,7 @@ export function SetupStepper({
                 }))
               }
               placeholder="The Marsh House"
+              hint="Name the place, possession, or leverage survival keeps pulling the chronicle back toward."
             />
             <RitualTextarea
               label="Why it matters"
@@ -388,6 +420,7 @@ export function SetupStepper({
                 }))
               }
               placeholder="Marta"
+              hint="Pick someone whose absence would still rearrange the vampire's choices."
             />
             <RitualTextarea
               label="Why they still matter"
@@ -520,7 +553,9 @@ export function SetupStepper({
             className="inline-flex min-h-11 items-center justify-center rounded-soft border border-ink/10 px-5 py-3 text-sm font-medium text-ink transition-colors duration-160 ease-ritual hover:border-gold/40 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
             disabled={stepIndex === 0}
           >
-            Return to the previous threshold
+            {isSafetyStep
+              ? "Return to the memory fragments"
+              : "Return to the previous threshold"}
           </button>
           <button
             type="button"
@@ -528,10 +563,10 @@ export function SetupStepper({
             className="inline-flex min-h-11 items-center justify-center rounded-soft bg-nocturne px-5 py-3 text-sm font-medium text-surface transition-colors duration-160 ease-ritual hover:bg-nocturne/92"
             disabled={isSubmitting}
           >
-            {stepIndex === stepDefinitions.length - 1
+            {isSafetyStep
               ? isSubmitting
                 ? "Opening the first prompt..."
-                : "Enter the first prompt"
+                : "Continue to the first prompt"
               : "Continue to the next threshold"}
           </button>
         </div>

@@ -88,6 +88,189 @@ describe("guided setup flow", () => {
     expect(screen.getByText("What you can still carry")).toBeInTheDocument();
   });
 
+  it("renders rules guidance inside the setup thresholds", () => {
+    render(
+      <SetupStepper
+        chronicleId="chronicle-1"
+        chronicleTitle="The Long Night"
+      />,
+    );
+
+    expect(screen.getByText("How this works")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "This summary anchors the mortal life the chronicle will spend and distort.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Keep this grounded in the life, habits, and loyalties that mattered before undeath.",
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+
+    expect(
+      screen.getByText(
+        "Skills and resources become part of the living record, so choose what feels defining rather than exhaustive.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Choose one thing the vampire could do before the hunger learned its name.",
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+
+    expect(
+      screen.getByText(
+        "These first memories seed the mind the chronicle will later struggle to keep intact.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("adds a deliberate safety checkpoint before the first prompt", () => {
+    render(
+      <SetupStepper
+        chronicleId="chronicle-1"
+        chronicleTitle="The Long Night"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Pause at the threshold before the first prompt.",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "This chronicle asks for mature, solitary, and sometimes painful material. You can continue now, step away, or return another night without penalty.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Continue to the first prompt",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Return to the memory fragments",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the player on the checkpoint when setup submission fails", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: "The chronicle could not be completed just now.",
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          status: 500,
+        },
+      ),
+    );
+
+    render(
+      <SetupStepper
+        chronicleId="chronicle-1"
+        chronicleTitle="The Long Night"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the first prompt",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("The chronicle could not be completed just now."),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.getByRole("heading", {
+        name: "Pause at the threshold before the first prompt.",
+      }),
+    ).toBeInTheDocument();
+
+    fetchMock.mockRestore();
+  });
+
   it("submits a valid setup payload through the completion route", async () => {
     createServerSupabaseClient.mockResolvedValue({
       auth: {
@@ -306,6 +489,21 @@ describe("guided setup flow", () => {
     expect(
       screen.getByText(
         "In your blood-hunger you destroy someone close to you. Kill a mortal Character.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Keep your footing")).toBeInTheDocument();
+    expect(
+      screen.getByText("What belongs in the entry?"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Write the immediate answer to the prompt: what the vampire did, chose, or suffered.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("When the mind is full")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Choose which older memory to forget or move into a diary before the new experience can settle.",
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("1 memory held in mind")).toBeInTheDocument();

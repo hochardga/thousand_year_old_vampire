@@ -136,12 +136,33 @@ async function createChronicleThroughSetup(page: Page) {
       .toContain("My vigil by the sickbed");
   }
 
+  await page
+    .getByRole("button", { name: "Continue to the next threshold" })
+    .click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Pause at the threshold before the first prompt.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "This chronicle asks for mature, solitary, and sometimes painful material. You can continue now, step away, or return another night without penalty.",
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "Reduce the level of detail when a prompt feels too close.",
+    ),
+  ).toBeVisible();
+
   const setupCompletionResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/setup/complete") &&
       response.request().method() === "POST",
   );
-  await page.getByRole("button", { name: "Enter the first prompt" }).click();
+  await page
+    .getByRole("button", { name: "Continue to the first prompt" })
+    .click();
   const setupCompletionResponse = await setupCompletionResponsePromise;
 
   expect(setupCompletionResponse.ok()).toBeTruthy();

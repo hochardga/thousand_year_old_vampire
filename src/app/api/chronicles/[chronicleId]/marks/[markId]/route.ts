@@ -39,6 +39,41 @@ type MarkRouteContext = {
   }>;
 };
 
+type MarkRecord = {
+  description: string;
+  id: string;
+  is_active: boolean;
+  is_concealed: boolean;
+  label: string;
+};
+
+type MarkUpdateInput = {
+  description?: string;
+  is_active?: boolean;
+  is_concealed?: boolean;
+};
+
+type QueryError = {
+  message: string;
+};
+
+type MarkRouteClient = {
+  from: (table: "marks") => {
+    update: (values: MarkUpdateInput) => {
+      eq: (column: string, value: string) => {
+        eq: (column: string, value: string) => {
+          select: (columns: string) => {
+            single: () => Promise<{
+              data: MarkRecord | null;
+              error: QueryError | null;
+            }>;
+          };
+        };
+      };
+    };
+  };
+};
+
 export async function PATCH(request: Request, context: MarkRouteContext) {
   const { chronicleId, markId } = await context.params;
   const supabase = await createServerSupabaseClient();
@@ -68,7 +103,7 @@ export async function PATCH(request: Request, context: MarkRouteContext) {
     is_concealed: parsed.data.isConcealed,
   };
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await (supabase as unknown as MarkRouteClient)
     .from("marks")
     .update(updates)
     .eq("id", markId)
