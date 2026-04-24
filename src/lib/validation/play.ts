@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type {
+  PromptCreatedSkillInput,
   PromptResolutionPayload,
   TraitMutationsPayload,
 } from "@/types/chronicle";
@@ -61,6 +62,11 @@ const markMutationSchema = z.object({
   isConcealed: z.boolean().optional(),
 });
 
+const newSkillSchema: z.ZodType<PromptCreatedSkillInput> = z.object({
+  description: z.string().trim().min(1).max(280),
+  label: z.string().trim().min(1).max(120),
+});
+
 const traitMutationsSchema: z.ZodType<TraitMutationsPayload> = z.object({
   characters: z.array(characterMutationSchema).default([]),
   marks: z.array(markMutationSchema).default([]),
@@ -72,6 +78,7 @@ export const promptResolutionSchema: z.ZodType<PromptResolutionPayload> =
   z.object({
     experienceText: z.string().trim().min(1).max(1600),
     memoryDecision: memoryDecisionSchema.default({ mode: "create-new" }),
+    newSkill: newSkillSchema.optional(),
     playerEntry: z.string().trim().min(1).max(4000),
     sessionId: uuidSchema,
     traitMutations: traitMutationsSchema.default({
