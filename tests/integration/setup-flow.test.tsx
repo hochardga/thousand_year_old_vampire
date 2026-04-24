@@ -88,6 +88,66 @@ describe("guided setup flow", () => {
     expect(screen.getByText("What you can still carry")).toBeInTheDocument();
   });
 
+  it("renders rules guidance inside the setup thresholds", () => {
+    render(
+      <SetupStepper
+        chronicleId="chronicle-1"
+        chronicleTitle="The Long Night"
+      />,
+    );
+
+    expect(screen.getByText("How this works")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "This summary anchors the mortal life the chronicle will spend and distort.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Keep this grounded in the life, habits, and loyalties that mattered before undeath.",
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+
+    expect(
+      screen.getByText(
+        "Skills and resources become part of the living record, so choose what feels defining rather than exhaustive.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Choose one thing the vampire could do before the hunger learned its name.",
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+
+    expect(
+      screen.getByText(
+        "These first memories seed the mind the chronicle will later struggle to keep intact.",
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("submits a valid setup payload through the completion route", async () => {
     createServerSupabaseClient.mockResolvedValue({
       auth: {

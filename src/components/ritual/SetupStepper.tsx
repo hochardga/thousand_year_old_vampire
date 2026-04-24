@@ -8,6 +8,7 @@ import {
   saveSetupDraft,
 } from "@/lib/chronicles/localDrafts";
 import type { ChronicleSetupPayload } from "@/types/chronicle";
+import { SetupTeachingBlock } from "./SetupTeachingBlock";
 import { RitualTextarea } from "./RitualTextarea";
 
 type SetupStepperProps = {
@@ -60,26 +61,36 @@ const stepDefinitions = [
     heading: "Begin with the life you had before.",
     id: "before-life",
     label: "The life you had before",
+    teaching:
+      "This summary anchors the mortal life the chronicle will spend and distort.",
   },
   {
     heading: "Name what you can still carry into the night.",
     id: "traits",
     label: "What you can still carry",
+    teaching:
+      "Skills and resources become part of the living record, so choose what feels defining rather than exhaustive.",
   },
   {
     heading: "Record who stood beside you, and who changed you.",
     id: "characters",
     label: "Who stood beside you",
+    teaching:
+      "Characters matter both mechanically and emotionally, so choose the people whose loss or loyalty will still wound.",
   },
   {
     heading: "Write the mark the night left upon you.",
     id: "mark",
     label: "What the night left on you",
+    teaching:
+      "The mark is a lasting sign of what undeath changed, not a catalogue of every curse.",
   },
   {
     heading: "Gather the first memory fragments you refuse to lose.",
     id: "memories",
     label: "First memory fragments",
+    teaching:
+      "These first memories seed the mind the chronicle will later struggle to keep intact.",
   },
 ] as const;
 
@@ -129,12 +140,14 @@ function mergeWithDefaultDraft(
 }
 
 function SetupTextInput({
+  hint,
   label,
   name,
   onChange,
   placeholder,
   value,
 }: {
+  hint?: string;
   label: string;
   name: string;
   onChange: (value: string) => void;
@@ -158,6 +171,7 @@ function SetupTextInput({
         placeholder={placeholder}
         className="min-h-11 w-full rounded-soft border border-ink/10 bg-bg/70 px-4 py-3 text-base text-ink shadow-inner shadow-ink/5 outline-none transition-colors duration-160 ease-ritual placeholder:text-ink-muted/70 focus:border-gold/70"
       />
+      {hint ? <p className="text-sm leading-relaxed text-ink-muted">{hint}</p> : null}
     </div>
   );
 }
@@ -270,6 +284,8 @@ export function SetupStepper({
           </SurfacePanel>
         ) : null}
 
+        <SetupTeachingBlock body={currentStep.teaching} />
+
         {stepIndex === 0 ? (
           <RitualTextarea
             label="Mortal summary"
@@ -304,6 +320,7 @@ export function SetupStepper({
                 }))
               }
               placeholder="Quiet Devotion"
+              hint="Choose one thing the vampire could do before the hunger learned its name."
             />
             <RitualTextarea
               label="Why this skill mattered"
@@ -338,6 +355,7 @@ export function SetupStepper({
                 }))
               }
               placeholder="The Marsh House"
+              hint="Name the place, possession, or leverage survival keeps pulling the chronicle back toward."
             />
             <RitualTextarea
               label="Why it matters"
@@ -377,6 +395,7 @@ export function SetupStepper({
                 }))
               }
               placeholder="Marta"
+              hint="Pick someone whose absence would still rearrange the vampire's choices."
             />
             <RitualTextarea
               label="Why they still matter"
