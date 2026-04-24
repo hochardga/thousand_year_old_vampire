@@ -972,6 +972,73 @@ describe("guided setup flow", () => {
     fetchMock.mockRestore();
   });
 
+  it("clears prompt-created skill draft fields when the skill is removed", async () => {
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+    const view = render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingSkillLabels={["Quiet Devotion"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a skill from this prompt",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("Skill name"), {
+      target: { value: "Bloodthirsty" },
+    });
+    fireEvent.change(screen.getByLabelText("Why this skill now"), {
+      target: { value: "I learned to feed first and mourn later." },
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Remove the new skill",
+      }),
+    );
+
+    expect(screen.queryByLabelText("Skill name")).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a skill from this prompt",
+      }),
+    );
+
+    expect(screen.getByLabelText("Skill name")).toHaveValue("");
+    expect(screen.getByLabelText("Why this skill now")).toHaveValue("");
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Remove the new skill",
+      }),
+    );
+
+    view.unmount();
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingSkillLabels={["Quiet Devotion"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a skill from this prompt",
+      }),
+    );
+
+    expect(screen.getByLabelText("Skill name")).toHaveValue("");
+    expect(screen.getByLabelText("Why this skill now")).toHaveValue("");
+  });
+
   it("shows the memory overflow panel in play and submits a legal overflow decision", async () => {
     const fetchMock = vi
       .spyOn(globalThis, "fetch")

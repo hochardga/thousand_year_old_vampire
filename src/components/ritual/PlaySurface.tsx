@@ -83,6 +83,7 @@ export function PlaySurface({
       isAddingSkill;
 
     if (!hasAnyDraftContent) {
+      clearPromptDraft(chronicleId);
       return;
     }
 
@@ -222,6 +223,31 @@ export function PlaySurface({
   const consequenceSummary = result?.archiveEvents?.[0]?.summary;
   const nextPromptNumber = result?.nextPrompt?.promptNumber;
 
+  function handleSkillComposerToggle() {
+    if (isAddingSkill) {
+      if (playerEntry || experienceText) {
+        savePromptDraft(chronicleId, {
+          experienceText,
+          newSkillDescription: "",
+          newSkillLabel: "",
+          playerEntry,
+          shouldCreateSkill: false,
+        });
+      } else {
+        clearPromptDraft(chronicleId);
+      }
+
+      setIsAddingSkill(false);
+      setNewSkillLabel("");
+      setNewSkillDescription("");
+      setSkillErrorMessage(null);
+      return;
+    }
+
+    setIsAddingSkill(true);
+    setSkillErrorMessage(null);
+  }
+
   return (
     <div className="space-y-4">
       {consequenceSummary && nextPromptNumber ? (
@@ -273,10 +299,7 @@ export function PlaySurface({
             label={newSkillLabel}
             onDescriptionChange={setNewSkillDescription}
             onLabelChange={setNewSkillLabel}
-            onToggle={() => {
-              setIsAddingSkill((value) => !value);
-              setSkillErrorMessage(null);
-            }}
+            onToggle={handleSkillComposerToggle}
           />
           {requiresOverflowDecision ? (
             <MemoryDecisionPanel
