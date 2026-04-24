@@ -8,6 +8,7 @@ import {
   saveSetupDraft,
 } from "@/lib/chronicles/localDrafts";
 import type { ChronicleSetupPayload } from "@/types/chronicle";
+import { SafetyCheckpointPanel } from "./SafetyCheckpointPanel";
 import { SetupTeachingBlock } from "./SetupTeachingBlock";
 import { RitualTextarea } from "./RitualTextarea";
 
@@ -91,6 +92,12 @@ const stepDefinitions = [
     label: "First memory fragments",
     teaching:
       "These first memories seed the mind the chronicle will later struggle to keep intact.",
+  },
+  {
+    heading: "Pause at the threshold before the first prompt.",
+    id: "safety",
+    label: "A deliberate threshold",
+    teaching: "",
   },
 ] as const;
 
@@ -192,6 +199,7 @@ export function SetupStepper({
   }, [chronicleId, draft]);
 
   const currentStep = stepDefinitions[stepIndex];
+  const isSafetyStep = currentStep.id === "safety";
 
   async function handlePrimaryAction() {
     if (stepIndex < stepDefinitions.length - 1) {
@@ -273,9 +281,11 @@ export function SetupStepper({
           <p className="font-mono text-xs uppercase tracking-[0.22em] text-ink-muted">
             Step {stepIndex + 1} of {stepDefinitions.length}
           </p>
-          <h1 className="mt-3 font-heading text-4xl leading-tight text-ink">
-            {currentStep.heading}
-          </h1>
+          {isSafetyStep ? null : (
+            <h1 className="mt-3 font-heading text-4xl leading-tight text-ink">
+              {currentStep.heading}
+            </h1>
+          )}
         </div>
 
         {errorMessage ? (
@@ -284,7 +294,11 @@ export function SetupStepper({
           </SurfacePanel>
         ) : null}
 
-        <SetupTeachingBlock body={currentStep.teaching} />
+        {isSafetyStep ? (
+          <SafetyCheckpointPanel />
+        ) : (
+          <SetupTeachingBlock body={currentStep.teaching} />
+        )}
 
         {stepIndex === 0 ? (
           <RitualTextarea
@@ -528,7 +542,9 @@ export function SetupStepper({
             className="inline-flex min-h-11 items-center justify-center rounded-soft border border-ink/10 px-5 py-3 text-sm font-medium text-ink transition-colors duration-160 ease-ritual hover:border-gold/40 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
             disabled={stepIndex === 0}
           >
-            Return to the previous threshold
+            {isSafetyStep
+              ? "Return to the memory fragments"
+              : "Return to the previous threshold"}
           </button>
           <button
             type="button"
@@ -536,10 +552,10 @@ export function SetupStepper({
             className="inline-flex min-h-11 items-center justify-center rounded-soft bg-nocturne px-5 py-3 text-sm font-medium text-surface transition-colors duration-160 ease-ritual hover:bg-nocturne/92"
             disabled={isSubmitting}
           >
-            {stepIndex === stepDefinitions.length - 1
+            {isSafetyStep
               ? isSubmitting
                 ? "Opening the first prompt..."
-                : "Enter the first prompt"
+                : "Continue to the first prompt"
               : "Continue to the next threshold"}
           </button>
         </div>

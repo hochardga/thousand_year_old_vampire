@@ -148,6 +148,129 @@ describe("guided setup flow", () => {
     ).toBeInTheDocument();
   });
 
+  it("adds a deliberate safety checkpoint before the first prompt", () => {
+    render(
+      <SetupStepper
+        chronicleId="chronicle-1"
+        chronicleTitle="The Long Night"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Pause at the threshold before the first prompt.",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "This chronicle asks for mature, solitary, and sometimes painful material. You can continue now, step away, or return another night without penalty.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Continue to the first prompt",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Return to the memory fragments",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the player on the checkpoint when setup submission fails", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: "The chronicle could not be completed just now.",
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          status: 500,
+        },
+      ),
+    );
+
+    render(
+      <SetupStepper
+        chronicleId="chronicle-1"
+        chronicleTitle="The Long Night"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the next threshold",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Continue to the first prompt",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("The chronicle could not be completed just now."),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.getByRole("heading", {
+        name: "Pause at the threshold before the first prompt.",
+      }),
+    ).toBeInTheDocument();
+
+    fetchMock.mockRestore();
+  });
+
   it("submits a valid setup payload through the completion route", async () => {
     createServerSupabaseClient.mockResolvedValue({
       auth: {
