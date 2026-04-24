@@ -75,7 +75,6 @@ declare
   overflow_events jsonb := '[]'::jsonb;
   active_diary_id uuid;
   diary_created boolean := false;
-  active_diary_title text;
   active_diary_capacity integer;
   active_diary_memory_count integer;
 begin
@@ -104,8 +103,8 @@ begin
     into active_diary_id, diary_created
     from public.ensure_active_diary(target_chronicle_id);
 
-    select diary_id, diary_title, memory_capacity, memory_count
-    into active_diary_id, active_diary_title, active_diary_capacity, active_diary_memory_count
+    select diary_id, memory_capacity, memory_count
+    into active_diary_id, active_diary_capacity, active_diary_memory_count
     from public.active_diary_usage(target_chronicle_id);
 
     if coalesce(active_diary_memory_count, 0) >= active_diary_capacity then

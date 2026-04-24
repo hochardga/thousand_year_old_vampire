@@ -151,6 +151,9 @@ describe("gameplay RPC safety guards", () => {
     const sql = readDiaryCapacityMigration();
 
     expect(sql).toContain("memories.location = 'diary'");
+    expect(sql).toMatch(
+      /insert into public\.diaries \(chronicle_id, title, memory_capacity\)\s*values \(target_chronicle_id, 'The Diary', 4\)/i,
+    );
   });
 
   it("raises a dedicated full-diary error in the diary-capacity migration", () => {
