@@ -152,6 +152,7 @@ function buildSupabaseClient() {
     {
       chronicle_id: "chronicle-1",
       id: "diary-1",
+      memory_capacity: 4,
       status: "active",
       title: "The Diary",
     },
@@ -274,6 +275,9 @@ describe("archive page", () => {
     );
     expect(screen.getByText("Winter bells")).toBeInTheDocument();
     expect(screen.getByText("Diary-kept vow")).toBeInTheDocument();
+    expect(
+      screen.getByText("1 of 4 memories sheltered here."),
+    ).toBeInTheDocument();
     expect(screen.getByText("Archive event 1")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Read older prompt entries" }),

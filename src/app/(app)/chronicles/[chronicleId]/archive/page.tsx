@@ -47,6 +47,7 @@ type MemoryRecord = {
 
 type DiaryRecord = {
   id: string;
+  memory_capacity: number;
   status: "active" | "lost";
   title: string;
 } | null;
@@ -296,7 +297,7 @@ export default async function ChronicleArchivePage({
         .eq("chronicle_id", chronicleId),
       archiveClient
         .from("diaries")
-        .select("id, title, status")
+        .select("id, title, status, memory_capacity")
         .eq("chronicle_id", chronicleId)
         .eq("status", "active")
         .maybeSingle(),
@@ -397,9 +398,8 @@ export default async function ChronicleArchivePage({
                 {activeDiary.title}
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-                {diaryMemories.length === 1
-                  ? "1 memory is sheltered here."
-                  : `${diaryMemories.length} memories are sheltered here.`}
+                {diaryMemories.length} of {activeDiary.memory_capacity} memories
+                sheltered here.
               </p>
             </div>
 
