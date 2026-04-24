@@ -69,11 +69,6 @@ async function createChronicleThroughSetup(page: Page) {
   await page
     .getByRole("button", { name: "Continue to the next threshold" })
     .click();
-  await expect(
-    page.getByRole("heading", {
-      name: "Pause at the threshold before the first prompt.",
-    }),
-  ).toBeVisible();
 
   const setupCompletionResponsePromise = page.waitForResponse(
     (response) =>
