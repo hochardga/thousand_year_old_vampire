@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import { trackAnalyticsEvent } from "@/lib/analytics/posthog";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 
 type AuthFormProps = {
@@ -43,9 +44,15 @@ export function AuthForm({
   testAuthEnabled = false,
   testAuthError,
 }: AuthFormProps) {
+  function handleSignInSubmit() {
+    trackAnalyticsEvent("sign_in_requested", {
+      source: "sign-in",
+    });
+  }
+
   return (
     <SurfacePanel className="w-full max-w-reading px-6 py-6 sm:px-8 sm:py-8">
-      <form action={action} className="space-y-5">
+      <form action={action} onSubmit={handleSignInSubmit} className="space-y-5">
         <div>
           <label
             htmlFor="magic-link-email"
@@ -79,13 +86,19 @@ export function AuthForm({
       </form>
 
       {sent ? (
-        <p className="mt-5 rounded-soft border border-success/20 bg-success/10 px-4 py-3 text-sm text-ink">
+        <p
+          role="status"
+          className="mt-5 rounded-soft border border-success/20 bg-success/10 px-4 py-3 text-sm text-ink"
+        >
           A sign-in link is on its way. Return when the night is ready.
         </p>
       ) : null}
 
       {error ? (
-        <p className="mt-5 rounded-soft border border-error/20 bg-error/10 px-4 py-3 text-sm text-ink">
+        <p
+          role="alert"
+          className="mt-5 rounded-soft border border-error/20 bg-error/10 px-4 py-3 text-sm text-ink"
+        >
           {error}
         </p>
       ) : null}
@@ -105,7 +118,11 @@ export function AuthForm({
             </p>
           </div>
 
-          <form action={testAuthAction} className="mt-5 space-y-5">
+          <form
+            action={testAuthAction}
+            onSubmit={handleSignInSubmit}
+            className="mt-5 space-y-5"
+          >
             <div>
               <label
                 htmlFor="test-auth-email"
@@ -157,7 +174,10 @@ export function AuthForm({
           </form>
 
           {testAuthError ? (
-            <p className="mt-5 rounded-soft border border-error/20 bg-error/10 px-4 py-3 text-sm text-ink">
+            <p
+              role="alert"
+              className="mt-5 rounded-soft border border-error/20 bg-error/10 px-4 py-3 text-sm text-ink"
+            >
               {testAuthError}
             </p>
           ) : null}

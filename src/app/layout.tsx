@@ -4,6 +4,7 @@ import {
   IBM_Plex_Mono,
   Newsreader,
 } from "next/font/google";
+import { PostHogProvider } from "@/components/providers/PostHogProvider";
 import "./globals.css";
 
 const headingFont = Cormorant_Garamond({
@@ -40,7 +41,7 @@ export default function RootLayout({
       <body
         className={`${headingFont.variable} ${bodyFont.variable} ${monoFont.variable}`}
       >
-        {children}
+        <PostHogProvider>{children}</PostHogProvider>
       </body>
     </html>
   );

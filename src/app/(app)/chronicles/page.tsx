@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { PageShell } from "@/components/ui/PageShell";
+import { QuietAlert } from "@/components/ui/QuietAlert";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import { ChronicleCard } from "@/components/ritual/ChronicleCard";
 import { ensureProfile } from "@/lib/profiles/ensureProfile";
@@ -15,6 +17,8 @@ type ChroniclesPageProps = {
 
 type ChronicleRecord = {
   created_at: string;
+  current_prompt_encounter: number;
+  current_prompt_number: number;
   id: string;
   last_played_at: string | null;
   status: "draft" | "active" | "completed" | "archived";
@@ -36,9 +40,21 @@ type ChronicleListClient = {
   };
 };
 
+function hasResolvedPrompt(chronicle: ChronicleRecord) {
+  return (
+    chronicle.current_prompt_number > 1 ||
+    chronicle.current_prompt_encounter > 1
+  );
+}
+
 function resolveChronicleHref(chronicle: ChronicleRecord) {
   if (chronicle.status === "draft") {
     return `/chronicles/${chronicle.id}/setup`;
+  }
+
+  if (chronicle.status === "active") {
+    const returnedParam = hasResolvedPrompt(chronicle) ? "?returned=1" : "";
+    return `/chronicles/${chronicle.id}/recap${returnedParam}`;
   }
 
   return `/chronicles/${chronicle.id}/recap`;
@@ -73,18 +89,19 @@ export default async function ChroniclesPage({
   } catch {
     return (
       <PageShell className="gap-6 py-8">
-        <SurfacePanel className="border-error/20 bg-error/10 px-5 py-4">
-          <p className="text-sm text-ink">
-            We signed you in, but your profile could not be loaded yet.
-          </p>
-        </SurfacePanel>
+        <QuietAlert
+          title="Your profile could not be prepared just now."
+          body="We signed you in, but the chronicle shell needs another moment."
+        />
       </PageShell>
     );
   }
 
   const { data, error } = await (supabase as unknown as ChronicleListClient)
     .from("chronicles")
-    .select("id, title, status, vampire_name, created_at, last_played_at")
+    .select(
+      "id, title, status, vampire_name, created_at, last_played_at, current_prompt_number, current_prompt_encounter",
+    )
     .order("updated_at", { ascending: false });
 
   const chronicles = (data ?? []) as ChronicleRecord[];
@@ -96,6 +113,7 @@ export default async function ChroniclesPage({
     <PageShell className="gap-6 py-8">
       <SurfacePanel
         tone="nocturne"
+        data-tone="nocturne"
         className="overflow-hidden px-6 py-8 sm:px-8 sm:py-10"
       >
         <p className="font-mono text-xs uppercase tracking-[0.28em] text-gold/80">
@@ -110,7 +128,7 @@ export default async function ChroniclesPage({
         </p>
         {mostRecentActiveChronicle ? (
           <Link
-            href={`/chronicles/${mostRecentActiveChronicle.id}/recap`}
+            href={resolveChronicleHref(mostRecentActiveChronicle)}
             className="mt-6 inline-flex min-h-11 items-center justify-center rounded-soft bg-surface px-5 py-3 text-sm font-medium text-nocturne transition-colors duration-160 ease-ritual hover:bg-surface-muted"
           >
             Resume the last active chronicle
@@ -138,15 +156,24 @@ export default async function ChroniclesPage({
             method="post"
             className="flex w-full max-w-reading flex-col gap-3 sm:flex-row"
           >
-            <input
-              type="text"
-              name="title"
-              placeholder="The Long Night"
-              className="min-h-11 flex-1 rounded-soft border border-ink/10 bg-bg/70 px-4 py-3 text-base text-ink shadow-inner shadow-ink/5 outline-none transition-colors duration-160 ease-ritual placeholder:text-ink-muted/70 focus:border-gold/70"
-            />
+            <div className="flex-1 space-y-3">
+              <label
+                htmlFor="chronicle-title"
+                className="font-mono text-xs uppercase tracking-[0.22em] text-ink-muted"
+              >
+                Chronicle title
+              </label>
+              <input
+                id="chronicle-title"
+                type="text"
+                name="title"
+                placeholder="The Long Night"
+                className="min-h-11 w-full rounded-soft border border-ink/10 bg-bg/70 px-4 py-3 text-base text-ink shadow-inner shadow-ink/5 outline-none transition-colors duration-160 ease-ritual placeholder:text-ink-muted/70 focus:border-gold/70"
+              />
+            </div>
             <button
               type="submit"
-              className="inline-flex min-h-11 items-center justify-center rounded-soft bg-nocturne px-5 py-3 text-sm font-medium text-surface transition-colors duration-160 ease-ritual hover:bg-nocturne/92"
+              className="inline-flex min-h-11 items-center justify-center self-end rounded-soft bg-nocturne px-5 py-3 text-sm font-medium text-surface transition-colors duration-160 ease-ritual hover:bg-nocturne/92"
             >
               Begin a New Chronicle
             </button>
@@ -155,32 +182,27 @@ export default async function ChroniclesPage({
       </SurfacePanel>
 
       {params.error ? (
-        <SurfacePanel className="border-error/20 bg-error/10 px-5 py-4">
-          <p className="text-sm text-ink">{params.error}</p>
-        </SurfacePanel>
+        <QuietAlert
+          title="The chronicle could not be opened just now."
+          body={params.error}
+          tone="error"
+        />
       ) : null}
 
       {error ? (
-        <SurfacePanel className="border-error/20 bg-error/10 px-5 py-4">
-          <p className="text-sm text-ink">
-            The chronicle ledger could not be read just now.
-          </p>
-        </SurfacePanel>
+        <QuietAlert
+          title="The chronicle ledger could not be read just now."
+          body="Try again when you are ready."
+          tone="error"
+        />
       ) : null}
 
       {chronicles.length === 0 ? (
-        <SurfacePanel className="max-w-reading px-6 py-8 sm:px-8">
-          <p className="font-mono text-xs uppercase tracking-[0.22em] text-ink-muted">
-            Empty state
-          </p>
-          <h2 className="mt-3 font-heading text-3xl text-ink">
-            No chronicle has been opened yet.
-          </h2>
-          <p className="mt-3 text-base leading-relaxed text-ink-muted">
-            Begin the first one when you are ready. The ledger will keep the
-            life for you once it starts.
-          </p>
-        </SurfacePanel>
+        <EmptyState
+          eyebrow="Empty state"
+          title="No chronicle has been opened yet."
+          body="Begin the first one when you are ready. The ledger will keep the life for you once it starts."
+        />
       ) : (
         <div className="grid gap-4">
           {chronicles.map((chronicle) => (

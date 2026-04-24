@@ -19,15 +19,19 @@ const surfacePanelVariants = cva(
 );
 
 type SurfacePanelProps = ComponentPropsWithoutRef<"section"> &
-  VariantProps<typeof surfacePanelVariants>;
+  VariantProps<typeof surfacePanelVariants> & {
+    "data-tone"?: string;
+  };
 
 export function SurfacePanel({
   className,
   tone,
+  "data-tone": dataTone,
   ...props
 }: SurfacePanelProps) {
   return (
     <section
+      data-tone={tone === "nocturne" ? "nocturne" : dataTone}
       className={cn(surfacePanelVariants({ tone }), className)}
       {...props}
     />

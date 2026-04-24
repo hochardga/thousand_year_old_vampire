@@ -27,7 +27,7 @@ export function HeroPanel() {
             Begin the Chronicle
           </Link>
           <p className="font-mono text-xs uppercase tracking-[0.22em] text-surface/60">
-            Private by default. Cross-device. Quietly guided.
+            Private beta. Cross-device. Quietly guided.
           </p>
         </div>
       </SurfacePanel>
