@@ -66,12 +66,23 @@ async function createChronicleThroughSetup(page: Page) {
     .getByLabel("First memory entry")
     .fill("I kept watch outside the sickroom and learned patience.");
 
+  await page
+    .getByRole("button", { name: "Continue to the next threshold" })
+    .click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Pause at the threshold before the first prompt.",
+    }),
+  ).toBeVisible();
+
   const setupCompletionResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/setup/complete") &&
       response.request().method() === "POST",
   );
-  await page.getByRole("button", { name: "Enter the first prompt" }).click();
+  await page
+    .getByRole("button", { name: "Continue to the first prompt" })
+    .click();
   const setupCompletionResponse = await setupCompletionResponsePromise;
 
   expect(setupCompletionResponse.ok()).toBeTruthy();
@@ -179,11 +190,12 @@ test("beta smoke flow covers sign-in, setup, play, memory overflow, archive, rec
     overflowMode: "move-to-diary",
     playerEntry: "I needed the diary before the oldest vigil could vanish entirely.",
   });
-  await expect(page.getByText("Diary present")).toBeVisible();
+  await expect(page.getByText("Diary 1 of 4 memories")).toBeVisible();
 
   await page.goto(`/chronicles/${chronicleId}/archive`);
   await expect(page.getByText("Chronicle archive")).toBeVisible();
   await expect(page.getByRole("heading", { name: "The Diary" })).toBeVisible();
+  await expect(page.getByText("1 of 4 memories sheltered here.")).toBeVisible();
   await expect(page.getByText("A diary has been opened against forgetting.")).toBeVisible();
   await expect(page.getByText("A memory has been placed into the diary.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Prompt history" })).toBeVisible();
