@@ -1,7 +1,8 @@
+import type { ActiveDiarySummary } from "@/types/chronicle";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 
 type MemoryMeterProps = {
-  hasActiveDiary: boolean;
+  activeDiary: ActiveDiarySummary | null;
   memoriesInMind: number;
 };
 
@@ -12,7 +13,7 @@ function memoryLabel(memoriesInMind: number) {
 }
 
 export function MemoryMeter({
-  hasActiveDiary,
+  activeDiary,
   memoriesInMind,
 }: MemoryMeterProps) {
   return (
@@ -23,7 +24,9 @@ export function MemoryMeter({
       <div className="space-y-2">
         <p className="text-base text-ink">{memoryLabel(memoriesInMind)}</p>
         <p className="text-sm text-ink-muted">
-          {hasActiveDiary ? "Diary present" : "No diary yet"}
+          {activeDiary
+            ? `Diary ${activeDiary.memoryCount} of ${activeDiary.memoryCapacity} memories`
+            : "No diary yet"}
         </p>
       </div>
     </SurfacePanel>

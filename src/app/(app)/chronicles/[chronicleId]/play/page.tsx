@@ -8,6 +8,7 @@ import { QuietAlert } from "@/components/ui/QuietAlert";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import { getPromptByPosition } from "@/lib/prompts/catalog";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import type { ActiveDiarySummary } from "@/types/chronicle";
 
 type PlayPageProps = {
   params: Promise<{
@@ -15,13 +16,17 @@ type PlayPageProps = {
   }>;
 };
 
-type DiaryCountResult = {
-  count: number | null;
+type MindMemoryRecord = {
+  diary_id: string | null;
+  id: string;
+  location: "mind" | "diary";
+  slot_index: number | null;
+  title: string;
 };
 
-type MindMemoryRecord = {
+type ActiveDiaryRecord = {
   id: string;
-  slot_index: number | null;
+  memory_capacity: number;
   title: string;
 };
 
@@ -61,14 +66,18 @@ type MemoryLookupClient = {
   };
 };
 
-type DiaryCountLookupClient = {
+type ActiveDiaryLookupResult = {
+  data: ActiveDiaryRecord | null;
+  error: { message: string } | null;
+};
+
+type ActiveDiaryMaybeSingleClient = {
   from: (table: "diaries") => {
-    select: (
-      columns: string,
-      options: { count: "exact"; head: true },
-    ) => {
+    select: (columns: string) => {
       eq: (column: string, value: string) => {
-        eq: (column: string, value: string) => Promise<DiaryCountResult>;
+        eq: (column: string, value: string) => {
+          maybeSingle: () => Promise<ActiveDiaryLookupResult>;
+        };
       };
     };
   };
@@ -104,7 +113,7 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
   }
 
   const memoryClient = supabase as unknown as MemoryLookupClient;
-  const diaryCountClient = supabase as unknown as DiaryCountLookupClient;
+  const diaryClient = supabase as unknown as ActiveDiaryMaybeSingleClient;
   const promptPromise = getPromptByPosition(
     supabase as never,
     chronicle.current_prompt_number,
@@ -115,28 +124,41 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
   const [mindMemoriesResult, diaryResult, prompt] = await Promise.all([
     memoryClient
       .from("memories")
-      .select("id, title, slot_index")
+      .select("id, title, slot_index, location, diary_id")
       .eq("chronicle_id", chronicleId),
-    diaryCountClient
+    diaryClient
       .from("diaries")
-      .select("id", { count: "exact", head: true })
+      .select("id, title, memory_capacity")
       .eq("chronicle_id", chronicleId)
-      .eq("status", "active"),
+      .eq("status", "active")
+      .maybeSingle(),
     promptPromise,
   ] as const) as [
     {
       data: MindMemoryRecord[] | null;
       error: { message: string } | null;
     },
-    DiaryCountResult,
+    ActiveDiaryLookupResult,
     Awaited<ReturnType<typeof getPromptByPosition>>,
   ];
 
-  const mindMemories = (mindMemoriesResult.data ?? []).filter(
-    (memory) => memory.slot_index !== null,
+  const allMemories = mindMemoriesResult.data ?? [];
+  const mindMemories = allMemories.filter(
+    (memory) => memory.location === "mind",
   );
   const memoriesInMind = mindMemories.length;
-  const diaryCount = diaryResult.count ?? 0;
+  const activeDiary: ActiveDiarySummary | null = diaryResult.data
+    ? {
+        id: diaryResult.data.id,
+        memoryCapacity: diaryResult.data.memory_capacity,
+        memoryCount: allMemories.filter(
+          (memory) =>
+            memory.location === "diary" &&
+            memory.diary_id === diaryResult.data?.id,
+        ).length,
+        title: diaryResult.data.title,
+      }
+    : null;
 
   return (
     <PageShell className="gap-6 py-8">
@@ -168,9 +190,9 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
         <PlaySurface
+          activeDiary={activeDiary}
           chronicleId={chronicleId}
           currentPromptNumber={chronicle.current_prompt_number}
-          hasActiveDiary={diaryCount > 0}
           initialSessionId={chronicle.current_session_id}
           mindMemories={mindMemories.map((memory) => ({
             id: memory.id,
@@ -182,7 +204,7 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
         <div className="space-y-4">
           <PlayGuidancePanel />
           <MemoryMeter
-            hasActiveDiary={diaryCount > 0}
+            activeDiary={activeDiary}
             memoriesInMind={memoriesInMind}
           />
         </div>

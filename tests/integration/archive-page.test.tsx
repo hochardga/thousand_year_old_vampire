@@ -136,6 +136,7 @@ function buildSupabaseClient() {
       chronicle_id: "chronicle-1",
       id: "memory-3",
       location: "diary",
+      diary_id: "diary-1",
       memory_entries: [
         {
           created_at: "2026-04-18T10:00:00.000Z",
@@ -147,11 +148,28 @@ function buildSupabaseClient() {
       slot_index: null,
       title: "Diary-kept vow",
     },
+    {
+      chronicle_id: "chronicle-1",
+      id: "memory-4",
+      location: "diary",
+      diary_id: "diary-2",
+      memory_entries: [
+        {
+          created_at: "2026-04-17T10:00:00.000Z",
+          entry_text: "Another diary-bound memory from elsewhere.",
+          id: "entry-4",
+          position: 1,
+        },
+      ],
+      slot_index: null,
+      title: "Elsewhere bound memory",
+    },
   ];
   const diaries = [
     {
       chronicle_id: "chronicle-1",
       id: "diary-1",
+      memory_capacity: 4,
       status: "active",
       title: "The Diary",
     },
@@ -274,6 +292,10 @@ describe("archive page", () => {
     );
     expect(screen.getByText("Winter bells")).toBeInTheDocument();
     expect(screen.getByText("Diary-kept vow")).toBeInTheDocument();
+    expect(screen.getByText("Elsewhere bound memory")).toBeInTheDocument();
+    expect(
+      screen.getByText("1 of 4 memories sheltered here."),
+    ).toBeInTheDocument();
     expect(screen.getByText("Archive event 1")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Read older prompt entries" }),

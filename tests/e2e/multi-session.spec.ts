@@ -282,11 +282,12 @@ test("mobile return flow supports diary overflow, forgotten memories, and recap 
     playerEntry: "I needed the diary before the oldest vigil could vanish entirely.",
   });
 
-  await expect(page.getByText("Diary present")).toBeVisible();
+  await expect(page.getByText("Diary 1 of 4 memories")).toBeVisible();
 
   const diaryArchiveUrl = page.url().replace("/play", "/archive");
   await page.goto(diaryArchiveUrl);
   await expect(page.getByRole("heading", { name: "The Diary" })).toBeVisible();
+  await expect(page.getByText("1 of 4 memories sheltered here.")).toBeVisible();
   await expect(page.getByText("A diary has been opened against forgetting.")).toBeVisible();
   await expect(page.getByText("A memory has been placed into the diary.")).toBeVisible();
 

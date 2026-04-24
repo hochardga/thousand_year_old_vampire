@@ -33,6 +33,7 @@ type ChronicleRecord = {
 
 type MemoryRecord = {
   id: string;
+  diary_id: string | null;
   location: "mind" | "diary" | "forgotten";
   memory_entries:
     | Array<{
@@ -47,6 +48,7 @@ type MemoryRecord = {
 
 type DiaryRecord = {
   id: string;
+  memory_capacity: number;
   status: "active" | "lost";
   title: string;
 } | null;
@@ -291,12 +293,12 @@ export default async function ChronicleArchivePage({
       archiveClient
         .from("memories")
         .select(
-          "id, title, location, slot_index, memory_entries(id, position, entry_text)",
+          "id, title, location, diary_id, slot_index, memory_entries(id, position, entry_text)",
         )
         .eq("chronicle_id", chronicleId),
       archiveClient
         .from("diaries")
-        .select("id, title, status")
+        .select("id, title, status, memory_capacity")
         .eq("chronicle_id", chronicleId)
         .eq("status", "active")
         .maybeSingle(),
@@ -304,10 +306,19 @@ export default async function ChronicleArchivePage({
       archiveEventsQuery.limit(PAGE_SIZE + 1),
     ]);
 
-  const sortedMemories = sortMemories(memoriesResult.data ?? []);
-  const memoryStack = sortedMemories.filter((memory) => memory.location !== "diary");
-  const diaryMemories = sortedMemories.filter((memory) => memory.location === "diary");
   const activeDiary = diaryResult.data ?? null;
+  const activeDiaryId = activeDiary?.id ?? null;
+  const sortedMemories = sortMemories(memoriesResult.data ?? []);
+  const diaryMemories = activeDiaryId
+    ? sortedMemories.filter(
+        (memory) =>
+          memory.location === "diary" && memory.diary_id === activeDiaryId,
+      )
+    : [];
+  const memoryStack = sortedMemories.filter(
+    (memory) =>
+      memory.location !== "diary" || memory.diary_id !== activeDiaryId,
+  );
   const promptPage = trimPage(promptRunsResult.data ?? []);
   const eventPage = trimPage(archiveEventsResult.data ?? []);
 
@@ -348,7 +359,7 @@ export default async function ChronicleArchivePage({
 
       <ArchiveSection
         title="Memory stack"
-        description="The memories still borne in mind, alongside the ones already given over to forgetting."
+        description="The memories still borne in mind, the ones already given over to forgetting, and any that remain preserved outside the active diary."
       >
         {memoriesResult.error ? (
           <QuietAlert
@@ -397,9 +408,8 @@ export default async function ChronicleArchivePage({
                 {activeDiary.title}
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-                {diaryMemories.length === 1
-                  ? "1 memory is sheltered here."
-                  : `${diaryMemories.length} memories are sheltered here.`}
+                {diaryMemories.length} of {activeDiary.memory_capacity} memories
+                sheltered here.
               </p>
             </div>
 
