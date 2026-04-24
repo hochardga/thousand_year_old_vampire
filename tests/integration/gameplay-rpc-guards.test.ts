@@ -14,6 +14,10 @@ const diaryCapacityMigrationPath = path.join(
   process.cwd(),
   "supabase/migrations/0009_diary_capacity.sql",
 );
+const promptCreatedSkillsMigrationPath = path.join(
+  process.cwd(),
+  "supabase/migrations/0010_prompt_created_skills.sql",
+);
 const samePromptEncounterHotfixPath = path.join(
   process.cwd(),
   "supabase/migrations/0006_fix_same_prompt_encounter_progression.sql",
@@ -29,6 +33,10 @@ function readMemoryRuleMigration() {
 
 function readDiaryCapacityMigration() {
   return fs.readFileSync(diaryCapacityMigrationPath, "utf8");
+}
+
+function readPromptCreatedSkillsMigration() {
+  return fs.readFileSync(promptCreatedSkillsMigrationPath, "utf8");
 }
 
 function readSamePromptEncounterHotfix() {
@@ -174,6 +182,31 @@ describe("gameplay RPC safety guards", () => {
     );
     expect(sql).toMatch(/event_row\.value->>'eventType'/i);
     expect(sql).toMatch(/event_row\.value->>'summary'/i);
+  });
+
+  it("adds a prompt-created skill helper and wires a new_skill argument into resolve_prompt_run", () => {
+    const sql = readPromptCreatedSkillsMigration();
+
+    expect(sql).toMatch(
+      /create or replace function public\.create_prompt_skill/i,
+    );
+    expect(sql).toMatch(/new_skill jsonb default null/i);
+    expect(sql).toMatch(
+      /perform public\.create_prompt_skill\(target_chronicle_id, new_skill\);/i,
+    );
+  });
+
+  it("drops the old resolve_prompt_run signature and rejects duplicate skill labels", () => {
+    const sql = readPromptCreatedSkillsMigration();
+
+    expect(sql).toMatch(
+      /drop function if exists public\.resolve_prompt_run\(uuid, uuid, text, text, jsonb, jsonb\);/i,
+    );
+    expect(sql).toMatch(
+      /raise exception 'A skill with this name already exists\.'/i,
+    );
+    expect(sql).toMatch(/btrim\(label\) = new_skill_label/i);
+    expect(sql).toMatch(/coalesce\(max\(sort_order\), -1\) \+ 1/i);
   });
 
   it("keeps the e2e gameplay mock aligned with the setup and active-session guards", async () => {
