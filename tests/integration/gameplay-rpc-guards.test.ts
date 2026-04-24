@@ -10,6 +10,10 @@ const memoryRuleMigrationPath = path.join(
   process.cwd(),
   "supabase/migrations/0007_memory_rule_helpers.sql",
 );
+const diaryCapacityMigrationPath = path.join(
+  process.cwd(),
+  "supabase/migrations/0009_diary_capacity.sql",
+);
 const samePromptEncounterHotfixPath = path.join(
   process.cwd(),
   "supabase/migrations/0006_fix_same_prompt_encounter_progression.sql",
@@ -21,6 +25,10 @@ function readMigration() {
 
 function readMemoryRuleMigration() {
   return fs.readFileSync(memoryRuleMigrationPath, "utf8");
+}
+
+function readDiaryCapacityMigration() {
+  return fs.readFileSync(diaryCapacityMigrationPath, "utf8");
 }
 
 function readSamePromptEncounterHotfix() {
@@ -126,6 +134,29 @@ describe("gameplay RPC safety guards", () => {
     expect(sql).toMatch(/public\.apply_memory_overflow/i);
     expect(sql).toMatch(/public\.next_open_memory_slot/i);
     expect(sql).toMatch(/public\.ensure_active_diary/i);
+  });
+
+  it("adds diary capacity columns and helpers in the diary-capacity migration", () => {
+    const sql = readDiaryCapacityMigration();
+
+    expect(sql).toMatch(
+      /add column memory_capacity integer not null default 4/i,
+    );
+    expect(sql).toMatch(
+      /create or replace function public\.active_diary_usage/i,
+    );
+  });
+
+  it("checks active diary usage against diary-held memories in the diary-capacity migration", () => {
+    const sql = readDiaryCapacityMigration();
+
+    expect(sql).toContain("memories.location = 'diary'");
+  });
+
+  it("raises a dedicated full-diary error in the diary-capacity migration", () => {
+    const sql = readDiaryCapacityMigration();
+
+    expect(sql).toContain("The diary is already full.");
   });
 
   it("persists every archive event generated during prompt resolution", () => {
