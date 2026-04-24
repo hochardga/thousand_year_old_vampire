@@ -140,7 +140,7 @@ describe("gameplay RPC safety guards", () => {
     const sql = readDiaryCapacityMigration();
 
     expect(sql).toMatch(
-      /add column memory_capacity integer not null default 4/i,
+      /alter table public\.diaries[\s\S]*add column if not exists memory_capacity integer not null default 4 check \(memory_capacity >= 1\);/i,
     );
     expect(sql).toMatch(
       /create or replace function public\.active_diary_usage/i,
@@ -157,6 +157,10 @@ describe("gameplay RPC safety guards", () => {
     const sql = readDiaryCapacityMigration();
 
     expect(sql).toContain("The diary is already full.");
+    expect(sql).toMatch(/where memory_capacity is null/i);
+    expect(sql).toMatch(
+      /if coalesce\(active_diary_memory_count, 0\) >= active_diary_capacity then/i,
+    );
   });
 
   it("persists every archive event generated during prompt resolution", () => {

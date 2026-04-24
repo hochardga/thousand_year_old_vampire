@@ -1,9 +1,9 @@
 alter table public.diaries
-  add column memory_capacity integer not null default 4;
+  add column if not exists memory_capacity integer not null default 4 check (memory_capacity >= 1);
 
 update public.diaries
 set memory_capacity = 4
-where memory_capacity is distinct from 4;
+where memory_capacity is null;
 
 create or replace function public.active_diary_usage(
   target_chronicle_id uuid
@@ -108,7 +108,7 @@ begin
     into active_diary_id, active_diary_title, active_diary_capacity, active_diary_memory_count
     from public.active_diary_usage(target_chronicle_id);
 
-    if active_diary_memory_count >= active_diary_capacity then
+    if coalesce(active_diary_memory_count, 0) >= active_diary_capacity then
       raise exception 'The diary is already full.'
         using errcode = 'P0001';
     end if;
