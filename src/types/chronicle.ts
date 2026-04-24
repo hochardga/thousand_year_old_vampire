@@ -1,14 +1,13 @@
 export type PromptVersion = "base" | "alternate_appendix_i";
 
-export type SetupSkillInput = {
+type SkillTextInput = {
   description: string;
   label: string;
 };
 
-export type PromptCreatedSkillInput = {
-  description: string;
-  label: string;
-};
+export type SetupSkillInput = SkillTextInput;
+
+export type PromptCreatedSkillInput = SkillTextInput;
 
 export type SetupResourceInput = {
   description: string;

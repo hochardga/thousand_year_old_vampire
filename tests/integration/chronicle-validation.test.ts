@@ -154,6 +154,40 @@ describe("chronicle validation", () => {
     });
   });
 
+  it("trims prompt-created skill fields in the parsed payload", () => {
+    const result = promptResolutionSchema.safeParse({
+      experienceText:
+        "I left the chapel with blood under my nails and a prayer I could not finish.",
+      memoryDecision: {
+        mode: "create-new",
+      },
+      newSkill: {
+        description: "  I learned to feed first and mourn later.  ",
+        label: "  Bloodthirsty  ",
+      },
+      playerEntry:
+        "I answered the bells by dragging the sexton into the thawing graveyard.",
+      sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+      traitMutations: {
+        characters: [],
+        marks: [],
+        resources: [],
+        skills: [],
+      },
+    });
+
+    expect(result.success).toBe(true);
+
+    if (!result.success) {
+      throw new Error("Expected trimmed prompt-created skill payload to parse.");
+    }
+
+    expect(result.data.newSkill).toEqual({
+      description: "I learned to feed first and mourn later.",
+      label: "Bloodthirsty",
+    });
+  });
+
   it("rejects prompt-created skills with missing description text", () => {
     const result = promptResolutionSchema.safeParse({
       experienceText:
@@ -164,6 +198,31 @@ describe("chronicle validation", () => {
       newSkill: {
         description: "",
         label: "Bloodthirsty",
+      },
+      playerEntry:
+        "I answered the bells by dragging the sexton into the thawing graveyard.",
+      sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+      traitMutations: {
+        characters: [],
+        marks: [],
+        resources: [],
+        skills: [],
+      },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects prompt-created skills with labels longer than 120 characters", () => {
+    const result = promptResolutionSchema.safeParse({
+      experienceText:
+        "I left the chapel with blood under my nails and a prayer I could not finish.",
+      memoryDecision: {
+        mode: "create-new",
+      },
+      newSkill: {
+        description: "I learned to feed first and mourn later.",
+        label: "B".repeat(121),
       },
       playerEntry:
         "I answered the bells by dragging the sexton into the thawing graveyard.",
