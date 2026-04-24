@@ -306,15 +306,19 @@ export default async function ChronicleArchivePage({
       archiveEventsQuery.limit(PAGE_SIZE + 1),
     ]);
 
-  const sortedMemories = sortMemories(memoriesResult.data ?? []);
-  const memoryStack = sortedMemories.filter((memory) => memory.location !== "diary");
   const activeDiary = diaryResult.data ?? null;
-  const diaryMemories = activeDiary
+  const activeDiaryId = activeDiary?.id ?? null;
+  const sortedMemories = sortMemories(memoriesResult.data ?? []);
+  const diaryMemories = activeDiaryId
     ? sortedMemories.filter(
         (memory) =>
-          memory.location === "diary" && memory.diary_id === activeDiary.id,
+          memory.location === "diary" && memory.diary_id === activeDiaryId,
       )
     : [];
+  const memoryStack = sortedMemories.filter(
+    (memory) =>
+      memory.location !== "diary" || memory.diary_id !== activeDiaryId,
+  );
   const promptPage = trimPage(promptRunsResult.data ?? []);
   const eventPage = trimPage(archiveEventsResult.data ?? []);
 
@@ -355,7 +359,7 @@ export default async function ChronicleArchivePage({
 
       <ArchiveSection
         title="Memory stack"
-        description="The memories still borne in mind, alongside the ones already given over to forgetting."
+        description="The memories still borne in mind, the ones already given over to forgetting, and any that remain preserved outside the active diary."
       >
         {memoriesResult.error ? (
           <QuietAlert

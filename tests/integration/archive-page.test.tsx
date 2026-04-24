@@ -292,6 +292,7 @@ describe("archive page", () => {
     );
     expect(screen.getByText("Winter bells")).toBeInTheDocument();
     expect(screen.getByText("Diary-kept vow")).toBeInTheDocument();
+    expect(screen.getByText("Elsewhere bound memory")).toBeInTheDocument();
     expect(
       screen.getByText("1 of 4 memories sheltered here."),
     ).toBeInTheDocument();
