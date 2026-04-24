@@ -188,11 +188,13 @@ describe("gameplay RPC safety guards", () => {
     const sql = readPromptCreatedSkillsMigration();
 
     expect(sql).toMatch(
-      /create or replace function public\.create_prompt_skill/i,
+      /create or replace function public\.create_prompt_skill\(\s*target_chronicle_id uuid,\s*new_skill jsonb\s*\)[\s\S]*?if new_skill is null then[\s\S]*?return null;[\s\S]*?select \*\s*into locked_chronicle\s*from public\.chronicles[\s\S]*?where id = target_chronicle_id[\s\S]*?for update;/i,
     );
-    expect(sql).toMatch(/new_skill jsonb default null/i);
     expect(sql).toMatch(
-      /perform public\.create_prompt_skill\(target_chronicle_id, new_skill\);/i,
+      /create or replace function public\.resolve_prompt_run\(\s*target_chronicle_id uuid,\s*target_session_id uuid,\s*player_entry text,\s*experience_text text,\s*memory_decision jsonb default null,\s*trait_mutations jsonb default '\{\}'::jsonb,\s*new_skill jsonb default null\s*\)/i,
+    );
+    expect(sql).toMatch(
+      /for mutation_row in[\s\S]*?coalesce\(trait_mutations->'marks', '\[\]'::jsonb\)[\s\S]*?end loop;\s*perform public\.create_prompt_skill\(target_chronicle_id, new_skill\);\s*insert into public\.archive_events/i,
     );
   });
 
@@ -203,10 +205,11 @@ describe("gameplay RPC safety guards", () => {
       /drop function if exists public\.resolve_prompt_run\(uuid, uuid, text, text, jsonb, jsonb\);/i,
     );
     expect(sql).toMatch(
-      /raise exception 'A skill with this name already exists\.'/i,
+      /create or replace function public\.create_prompt_skill[\s\S]*?if exists \([\s\S]*?from public\.skills[\s\S]*?where chronicle_id = target_chronicle_id[\s\S]*?and btrim\(label\) = new_skill_label[\s\S]*?\) then[\s\S]*?raise exception 'A skill with this name already exists\.'[\s\S]*?end if;/i,
     );
-    expect(sql).toMatch(/btrim\(label\) = new_skill_label/i);
-    expect(sql).toMatch(/coalesce\(max\(sort_order\), -1\) \+ 1/i);
+    expect(sql).toMatch(
+      /create or replace function public\.create_prompt_skill[\s\S]*?select \*\s*into locked_chronicle\s*from public\.chronicles[\s\S]*?for update;[\s\S]*?if exists \([\s\S]*?btrim\(label\) = new_skill_label[\s\S]*?end if;[\s\S]*?select coalesce\(max\(sort_order\), -1\) \+ 1[\s\S]*?into new_sort_order[\s\S]*?from public\.skills[\s\S]*?where chronicle_id = target_chronicle_id;/i,
+    );
   });
 
   it("keeps the e2e gameplay mock aligned with the setup and active-session guards", async () => {

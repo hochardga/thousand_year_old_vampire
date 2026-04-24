@@ -7,12 +7,24 @@ language plpgsql
 as $$
 declare
   created_skill_id uuid;
+  locked_chronicle public.chronicles%rowtype;
   new_skill_description text;
   new_skill_label text;
   new_sort_order integer;
 begin
   if new_skill is null then
     return null;
+  end if;
+
+  select *
+  into locked_chronicle
+  from public.chronicles
+  where id = target_chronicle_id
+  for update;
+
+  if not found then
+    raise exception 'Chronicle not found.'
+      using errcode = 'P0001';
   end if;
 
   new_skill_label := btrim(coalesce(new_skill->>'label', ''));
