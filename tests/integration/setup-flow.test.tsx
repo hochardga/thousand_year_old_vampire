@@ -429,22 +429,31 @@ describe("guided setup flow", () => {
     const memoriesEqChronicle = vi.fn().mockResolvedValue({
       data: [
         {
+          diary_id: null,
           id: "memory-1",
           location: "mind",
           slot_index: 1,
           title: "Winter bells",
         },
         {
+          diary_id: "diary-1",
           id: "memory-2",
           location: "diary",
           slot_index: null,
           title: "The vow written down",
         },
+        {
+          diary_id: "diary-2",
+          id: "memory-3",
+          location: "diary",
+          slot_index: null,
+          title: "A discarded ledger",
+        },
       ],
       error: null,
     });
     const memoriesSelect = vi.fn(() => ({ eq: memoriesEqChronicle }));
-    const diariesEqStatus = vi.fn().mockResolvedValue({
+    const diariesMaybeSingle = vi.fn().mockResolvedValue({
       data: {
         id: "diary-1",
         memory_capacity: 4,
@@ -453,6 +462,7 @@ describe("guided setup flow", () => {
       },
       error: null,
     });
+    const diariesEqStatus = vi.fn(() => ({ maybeSingle: diariesMaybeSingle }));
     const diariesEqChronicle = vi.fn(() => ({ eq: diariesEqStatus }));
     const diariesSelect = vi.fn(() => ({ eq: diariesEqChronicle }));
     const from = vi.fn((table: string) => {
@@ -519,6 +529,7 @@ describe("guided setup flow", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("1 memory held in mind")).toBeInTheDocument();
     expect(screen.getByText("Diary 1 of 4 memories")).toBeInTheDocument();
+    expect(diariesMaybeSingle).toHaveBeenCalledTimes(1);
   });
 
   it("submits a valid prompt resolution payload through the resolve route", async () => {

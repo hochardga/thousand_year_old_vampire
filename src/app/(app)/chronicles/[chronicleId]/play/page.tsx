@@ -17,6 +17,7 @@ type PlayPageProps = {
 };
 
 type MindMemoryRecord = {
+  diary_id: string | null;
   id: string;
   location: "mind" | "diary";
   slot_index: number | null;
@@ -65,14 +66,18 @@ type MemoryLookupClient = {
   };
 };
 
-type ActiveDiaryLookupClient = {
+type ActiveDiaryLookupResult = {
+  data: ActiveDiaryRecord | null;
+  error: { message: string } | null;
+};
+
+type ActiveDiaryMaybeSingleClient = {
   from: (table: "diaries") => {
     select: (columns: string) => {
       eq: (column: string, value: string) => {
-        eq: (column: string, value: string) => Promise<{
-          data: ActiveDiaryRecord | null;
-          error: { message: string } | null;
-        }>;
+        eq: (column: string, value: string) => {
+          maybeSingle: () => Promise<ActiveDiaryLookupResult>;
+        };
       };
     };
   };
@@ -108,7 +113,7 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
   }
 
   const memoryClient = supabase as unknown as MemoryLookupClient;
-  const diaryClient = supabase as unknown as ActiveDiaryLookupClient;
+  const diaryClient = supabase as unknown as ActiveDiaryMaybeSingleClient;
   const promptPromise = getPromptByPosition(
     supabase as never,
     chronicle.current_prompt_number,
@@ -119,23 +124,21 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
   const [mindMemoriesResult, diaryResult, prompt] = await Promise.all([
     memoryClient
       .from("memories")
-      .select("id, title, slot_index, location")
+      .select("id, title, slot_index, location, diary_id")
       .eq("chronicle_id", chronicleId),
     diaryClient
       .from("diaries")
       .select("id, title, memory_capacity")
       .eq("chronicle_id", chronicleId)
-      .eq("status", "active"),
+      .eq("status", "active")
+      .maybeSingle(),
     promptPromise,
   ] as const) as [
     {
       data: MindMemoryRecord[] | null;
       error: { message: string } | null;
     },
-    {
-      data: ActiveDiaryRecord | null;
-      error: { message: string } | null;
-    },
+    ActiveDiaryLookupResult,
     Awaited<ReturnType<typeof getPromptByPosition>>,
   ];
 
@@ -148,8 +151,11 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
     ? {
         id: diaryResult.data.id,
         memoryCapacity: diaryResult.data.memory_capacity,
-        memoryCount: allMemories.filter((memory) => memory.location === "diary")
-          .length,
+        memoryCount: allMemories.filter(
+          (memory) =>
+            memory.location === "diary" &&
+            memory.diary_id === diaryResult.data?.id,
+        ).length,
         title: diaryResult.data.title,
       }
     : null;
