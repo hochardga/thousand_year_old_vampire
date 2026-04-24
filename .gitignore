@@ -44,6 +44,7 @@ next-env.d.ts
 
 # local planning artifacts
 .superpowers/
+.worktrees/
 
 # Keep the large source PDFs out of Git history.
 docs/source_material/*.pdf
