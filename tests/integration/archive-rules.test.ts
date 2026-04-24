@@ -348,6 +348,58 @@ describe("archive rule enforcement", () => {
     expect(state.prompt_runs).toHaveLength(0);
   });
 
+  it("rejects prompt-created skills with a blank trimmed label", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle(1, [
+      {
+        description: "I know how to listen before danger takes shape.",
+        label: "Quiet Devotion",
+      },
+    ]);
+
+    const result = await resolvePromptRun(
+      client,
+      chronicleId,
+      sessionId,
+      { mode: "create-new" },
+      {
+        description: "A habit shaped by the road and its silence.",
+        label: "   ",
+      },
+    );
+
+    expect(result.error).toMatchObject({
+      message: "A skill name is required.",
+    });
+    expect(state.skills).toHaveLength(1);
+    expect(state.prompt_runs).toHaveLength(0);
+  });
+
+  it("rejects prompt-created skills with a blank trimmed description", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle(1, [
+      {
+        description: "I know how to listen before danger takes shape.",
+        label: "Quiet Devotion",
+      },
+    ]);
+
+    const result = await resolvePromptRun(
+      client,
+      chronicleId,
+      sessionId,
+      { mode: "create-new" },
+      {
+        description: "   ",
+        label: "Night Navigation",
+      },
+    );
+
+    expect(result.error).toMatchObject({
+      message: "A skill description is required.",
+    });
+    expect(state.skills).toHaveLength(1);
+    expect(state.prompt_runs).toHaveLength(0);
+  });
+
   it("appends an entry to an in-mind memory until it reaches three total entries", async () => {
     const { chronicleId, client, sessionId, state } = await createActiveChronicle();
     const targetMemory = state.memories[0];

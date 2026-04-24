@@ -270,14 +270,18 @@ describe("ledger page", () => {
     expect(screen.getByText("Immortal")).toBeInTheDocument();
     const skillsSection = screen.getByRole("heading", { name: "Skills" }).closest("section");
     expect(skillsSection).not.toBeNull();
-    expect(within(skillsSection as HTMLElement).getByText("Active")).toBeInTheDocument();
-    const pageText = document.body.textContent ?? "";
-    expect(pageText.indexOf("Quiet Devotion")).toBeLessThan(
-      pageText.indexOf("Bloodthirsty"),
-    );
-    expect(pageText.indexOf("Bloodthirsty")).toBeLessThan(
-      pageText.indexOf("Night Navigation"),
-    );
+    const skillsSectionQueries = within(skillsSection as HTMLElement);
+    expect(skillsSectionQueries.getByText("Active")).toBeInTheDocument();
+    const skillLabels = skillsSectionQueries
+      .getAllByRole("article")
+      .map((article) =>
+        article.querySelector("p.font-heading")?.textContent ?? null,
+      );
+    expect(skillLabels).toEqual([
+      "Quiet Devotion",
+      "Bloodthirsty",
+      "Night Navigation",
+    ]);
     expect(redirect).not.toHaveBeenCalled();
   });
 

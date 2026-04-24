@@ -898,6 +898,14 @@ function applyPromptResolution(args: Record<string, unknown>) {
       }
     : null;
 
+  if (newSkill && !newSkill.label) {
+    return createRpcError("A skill name is required.");
+  }
+
+  if (newSkill && !newSkill.description) {
+    return createRpcError("A skill description is required.");
+  }
+
   if (
     newSkill &&
     state.skills.some(
