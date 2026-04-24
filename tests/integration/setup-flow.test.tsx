@@ -491,6 +491,21 @@ describe("guided setup flow", () => {
         "In your blood-hunger you destroy someone close to you. Kill a mortal Character.",
       ),
     ).toBeInTheDocument();
+    expect(screen.getByText("Keep your footing")).toBeInTheDocument();
+    expect(
+      screen.getByText("What belongs in the entry?"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Write the immediate answer to the prompt: what the vampire did, chose, or suffered.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("When the mind is full")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Choose whether the new experience joins a memory, replaces one, or moves into the diary when a diary is present.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText("1 memory held in mind")).toBeInTheDocument();
     expect(screen.getByText("Diary present")).toBeInTheDocument();
   });

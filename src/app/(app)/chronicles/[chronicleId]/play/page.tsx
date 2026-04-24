@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { MemoryMeter } from "@/components/ritual/MemoryMeter";
+import { PlayGuidancePanel } from "@/components/ritual/PlayGuidancePanel";
 import { PlaySurface } from "@/components/ritual/PlaySurface";
 import { PromptCard } from "@/components/ritual/PromptCard";
 import { PageShell } from "@/components/ui/PageShell";
@@ -176,10 +177,13 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
           }))}
         />
 
-        <MemoryMeter
-          hasActiveDiary={diaryCount > 0}
-          memoriesInMind={memoriesInMind}
-        />
+        <div className="space-y-4">
+          <PlayGuidancePanel />
+          <MemoryMeter
+            hasActiveDiary={diaryCount > 0}
+            memoriesInMind={memoriesInMind}
+          />
+        </div>
       </div>
     </PageShell>
   );
