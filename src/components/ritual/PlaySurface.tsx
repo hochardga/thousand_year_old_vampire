@@ -5,6 +5,7 @@ import type { ActiveDiarySummary } from "@/types/chronicle";
 import { trackAnalyticsEvent } from "@/lib/analytics/posthog";
 import { ConsequencePanel } from "@/components/ritual/ConsequencePanel";
 import { MemoryDecisionPanel } from "@/components/ritual/MemoryDecisionPanel";
+import { PromptSkillComposer } from "@/components/ritual/PromptSkillComposer";
 import { RitualTextarea } from "@/components/ritual/RitualTextarea";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import {
@@ -28,6 +29,7 @@ type PlaySurfaceProps = {
   activeDiary?: ActiveDiarySummary | null;
   chronicleId: string;
   currentPromptNumber: number;
+  existingSkillLabels?: string[];
   initialSessionId: string | null;
   mindMemories?: Array<{
     id: string;
@@ -40,16 +42,26 @@ export function PlaySurface({
   activeDiary = null,
   chronicleId,
   currentPromptNumber,
+  existingSkillLabels = [],
   initialSessionId,
   mindMemories = [],
 }: PlaySurfaceProps) {
   const hasTrackedFirstPromptResolved = useRef(false);
-  const [playerEntry, setPlayerEntry] = useState(
-    () => loadPromptDraft(chronicleId)?.playerEntry ?? "",
-  );
+  const initialDraft = loadPromptDraft(chronicleId);
+  const [playerEntry, setPlayerEntry] = useState(() => initialDraft?.playerEntry ?? "");
   const [experienceText, setExperienceText] = useState(
-    () => loadPromptDraft(chronicleId)?.experienceText ?? "",
+    () => initialDraft?.experienceText ?? "",
   );
+  const [isAddingSkill, setIsAddingSkill] = useState(
+    () => initialDraft?.shouldCreateSkill ?? false,
+  );
+  const [newSkillLabel, setNewSkillLabel] = useState(
+    () => initialDraft?.newSkillLabel ?? "",
+  );
+  const [newSkillDescription, setNewSkillDescription] = useState(
+    () => initialDraft?.newSkillDescription ?? "",
+  );
+  const [skillErrorMessage, setSkillErrorMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<ResolvePromptResponse | null>(null);
@@ -63,25 +75,66 @@ export function PlaySurface({
   const requiresOverflowDecision = mindMemories.length >= 5;
 
   useEffect(() => {
-    if (!playerEntry && !experienceText) {
+    const hasAnyDraftContent =
+      Boolean(playerEntry) ||
+      Boolean(experienceText) ||
+      Boolean(newSkillLabel) ||
+      Boolean(newSkillDescription) ||
+      isAddingSkill;
+
+    if (!hasAnyDraftContent) {
       return;
     }
 
     savePromptDraft(chronicleId, {
       experienceText,
+      newSkillDescription,
+      newSkillLabel,
       playerEntry,
+      shouldCreateSkill: isAddingSkill,
     });
-  }, [chronicleId, experienceText, playerEntry]);
+  }, [
+    chronicleId,
+    experienceText,
+    isAddingSkill,
+    newSkillDescription,
+    newSkillLabel,
+    playerEntry,
+  ]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage(null);
+    setSkillErrorMessage(null);
 
     if (requiresOverflowDecision && (!overflowMode || !selectedOverflowMemoryId)) {
       setErrorMessage(
         "Choose which memory to forget or move into the diary before continuing.",
       );
       return;
+    }
+
+    const normalizedExistingSkillLabels = existingSkillLabels.map((label) =>
+      label.trim(),
+    );
+
+    if (isAddingSkill) {
+      const normalizedNewSkillLabel = newSkillLabel.trim();
+      const normalizedNewSkillDescription = newSkillDescription.trim();
+
+      if (!normalizedNewSkillLabel || !normalizedNewSkillDescription) {
+        setSkillErrorMessage(
+          "Name the skill and explain why this prompt gave it shape.",
+        );
+        return;
+      }
+
+      if (normalizedExistingSkillLabels.includes(normalizedNewSkillLabel)) {
+        setSkillErrorMessage(
+          "That skill name is already in the chronicle. Choose different wording.",
+        );
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -101,6 +154,12 @@ export function PlaySurface({
                 : {
                     mode: "create-new",
                   },
+            newSkill: isAddingSkill
+              ? {
+                  description: newSkillDescription,
+                  label: newSkillLabel,
+                }
+              : undefined,
             playerEntry,
             sessionId: initialSessionId,
             traitMutations: {
@@ -121,6 +180,14 @@ export function PlaySurface({
       };
 
       if (!response.ok) {
+        if (
+          payload.error ===
+          "That skill name is already in the chronicle. Choose different wording."
+        ) {
+          setSkillErrorMessage(payload.error);
+          return;
+        }
+
         setErrorMessage(payload.error || "The prompt could not be resolved.");
         return;
       }
@@ -138,6 +205,10 @@ export function PlaySurface({
       }
       setPlayerEntry("");
       setExperienceText("");
+      setIsAddingSkill(false);
+      setNewSkillDescription("");
+      setNewSkillLabel("");
+      setSkillErrorMessage(null);
       setOverflowMode(null);
       setSelectedOverflowMemoryId(null);
       clearPromptDraft(chronicleId);
@@ -194,6 +265,18 @@ export function PlaySurface({
             value={experienceText}
             onChange={setExperienceText}
             placeholder="Distill the lasting consequence into a single sentence."
+          />
+          <PromptSkillComposer
+            description={newSkillDescription}
+            errorMessage={skillErrorMessage}
+            isOpen={isAddingSkill}
+            label={newSkillLabel}
+            onDescriptionChange={setNewSkillDescription}
+            onLabelChange={setNewSkillLabel}
+            onToggle={() => {
+              setIsAddingSkill((value) => !value);
+              setSkillErrorMessage(null);
+            }}
           />
           {requiresOverflowDecision ? (
             <MemoryDecisionPanel
