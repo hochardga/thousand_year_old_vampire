@@ -259,6 +259,74 @@ beforeEach(() => {
 });
 
 describe("archive rule enforcement", () => {
+  it("returns joined memory entries from the e2e mock archive query", async () => {
+    const client = createAuthedClient();
+    const inserted = await client
+      .from("chronicles")
+      .insert({ title: "The Long Night" })
+      .select("id")
+      .single();
+    const chronicleId = inserted.data?.id as string;
+
+    const setup = await client.rpc("complete_chronicle_setup", {
+      setup_memories: [
+        {
+          entryText: "The bell rang once each dawn until I forgot her voice.",
+          title: "The bell below the crypt",
+        },
+      ],
+      target_chronicle_id: chronicleId,
+    });
+
+    expect(setup.error).toBeNull();
+
+    const memories = await client
+      .from("memories")
+      .select(
+        "id, title, location, diary_id, slot_index, memory_entries(id, position, entry_text)",
+      )
+      .eq("chronicle_id", chronicleId);
+
+    expect(memories.data?.[0]).toMatchObject({
+      memory_entries: [
+        {
+          entry_text: "The bell rang once each dawn until I forgot her voice.",
+          position: 1,
+        },
+      ],
+      title: "The bell below the crypt",
+    });
+  });
+
+  it("advances the e2e mock from Prompt 4 to the next available prompt", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle();
+
+    state.prompt_catalog.push({
+      encounter_index: 1,
+      prompt_markdown: "A later prompt waits beyond the first withdrawal.",
+      prompt_number: 7,
+      prompt_version: "base",
+    });
+
+    const firstResult = await resolvePromptRun(client, chronicleId, sessionId, {
+      mode: "create-new",
+    });
+
+    expect(firstResult.data?.nextPrompt).toMatchObject({
+      encounterIndex: 1,
+      promptNumber: 4,
+    });
+
+    const secondResult = await resolvePromptRun(client, chronicleId, sessionId, {
+      mode: "create-new",
+    });
+
+    expect(secondResult.data?.nextPrompt).toMatchObject({
+      encounterIndex: 1,
+      promptNumber: 7,
+    });
+  });
+
   it("stores setup-era skills in e2e state so later play-time reads can load them", async () => {
     const initialSkills = [
       {

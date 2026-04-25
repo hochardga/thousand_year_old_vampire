@@ -246,6 +246,13 @@ const promptCatalogSeed: PromptCatalogRow[] = [
     prompt_number: 4,
     prompt_version: "base",
   },
+  {
+    encounter_index: 1,
+    prompt_markdown:
+      "The centuries press onward. What mortal custom do you fail to recognize, and who notices?",
+    prompt_number: 7,
+    prompt_version: "base",
+  },
 ];
 
 function buildInitialState(): E2EState {
@@ -291,17 +298,65 @@ function timestamp() {
   return new Date().toISOString();
 }
 
+function splitSelectColumns(columns: string) {
+  const result: string[] = [];
+  let current = "";
+  let depth = 0;
+
+  for (const character of columns) {
+    if (character === "(") {
+      depth += 1;
+    }
+
+    if (character === ")") {
+      depth = Math.max(0, depth - 1);
+    }
+
+    if (character === "," && depth === 0) {
+      if (current.trim()) {
+        result.push(current.trim());
+      }
+
+      current = "";
+      continue;
+    }
+
+    current += character;
+  }
+
+  if (current.trim()) {
+    result.push(current.trim());
+  }
+
+  return result;
+}
+
+function pickMemoryEntries(memoryId: unknown, columns: string) {
+  if (typeof memoryId !== "string") {
+    return [];
+  }
+
+  return getState().memory_entries
+    .filter((entry) => entry.memory_id === memoryId)
+    .sort((left, right) => left.position - right.position)
+    .map((entry) => pickColumns(entry as unknown as Record<string, unknown>, columns));
+}
+
 function pickColumns<T extends Record<string, unknown>>(row: T, columns: string) {
   if (columns === "*" || !columns.trim()) {
     return row;
   }
 
-  const selected = columns
-    .split(",")
-    .map((column) => column.trim())
-    .filter(Boolean);
+  const selected = splitSelectColumns(columns);
 
   return selected.reduce<Record<string, unknown>>((result, column) => {
+    const nestedMatch = column.match(/^([a-z_]+)\((.*)\)$/);
+
+    if (nestedMatch?.[1] === "memory_entries") {
+      result.memory_entries = pickMemoryEntries(row.id, nestedMatch[2]);
+      return result;
+    }
+
     result[column] = row[column];
     return result;
   }, {});
@@ -565,6 +620,53 @@ function getCurrentPrompt(
         prompt.encounter_index === chronicle.current_prompt_encounter,
     ) || state.prompt_catalog[0]
   );
+}
+
+function findNextPromptPosition(
+  state: E2EState,
+  chronicle: ChronicleRow,
+  movement: number,
+) {
+  let candidatePromptNumber = Math.max(
+    1,
+    chronicle.current_prompt_number + movement,
+  );
+
+  while (candidatePromptNumber <= 500) {
+    const existingEncounters = state.prompt_runs
+      .filter(
+        (run) =>
+          run.chronicle_id === chronicle.id &&
+          run.prompt_number === candidatePromptNumber,
+      )
+      .map((run) => run.encounter_index);
+    const minimumEncounter =
+      candidatePromptNumber === chronicle.current_prompt_number
+        ? chronicle.current_prompt_encounter
+        : 0;
+    const encounterIndex =
+      Math.max(minimumEncounter, 0, ...existingEncounters) + 1;
+    const prompt = state.prompt_catalog.find(
+      (row) =>
+        row.prompt_number === candidatePromptNumber &&
+        row.encounter_index === encounterIndex &&
+        row.prompt_version === chronicle.prompt_version,
+    );
+
+    if (prompt) {
+      return {
+        encounterIndex,
+        promptNumber: candidatePromptNumber,
+      };
+    }
+
+    candidatePromptNumber += 1;
+  }
+
+  return {
+    encounterIndex: chronicle.current_prompt_encounter,
+    promptNumber: chronicle.current_prompt_number,
+  };
 }
 
 function ensureActiveDiary(
@@ -1011,6 +1113,12 @@ function applyPromptResolution(args: Record<string, unknown>) {
   const now = timestamp();
   const currentPrompt = getCurrentPrompt(state, chronicle);
   const promptRunId = randomUUID();
+  const rolled = {
+    d10: 7,
+    d6: 4,
+    movement: 3,
+  };
+  const nextPrompt = findNextPromptPosition(state, chronicle, rolled.movement);
   const experienceText =
     typeof args.experience_text === "string" ? args.experience_text : "";
   const playerEntry =
@@ -1229,27 +1337,27 @@ function applyPromptResolution(args: Record<string, unknown>) {
   state.prompt_runs.push({
     chronicle_id: chronicle.id,
     created_at: now,
-    d10_roll: 7,
-    d6_roll: 4,
+    d10_roll: rolled.d10,
+    d6_roll: rolled.d6,
     encounter_index: chronicle.current_prompt_encounter,
     experience_text: experienceText,
     id: promptRunId,
-    movement: 3,
-    next_prompt_encounter: 1,
-    next_prompt_number: 4,
+    movement: rolled.movement,
+    next_prompt_encounter: nextPrompt.encounterIndex,
+    next_prompt_number: nextPrompt.promptNumber,
     player_entry: playerEntry,
     prompt_markdown: currentPrompt?.prompt_markdown || "",
     prompt_number: chronicle.current_prompt_number,
     session_id: session.id,
   });
-  chronicle.current_prompt_number = 4;
-  chronicle.current_prompt_encounter = 1;
+  chronicle.current_prompt_number = nextPrompt.promptNumber;
+  chronicle.current_prompt_encounter = nextPrompt.encounterIndex;
   chronicle.last_played_at = now;
   chronicle.updated_at = now;
   session.snapshot_json = {
     ...session.snapshot_json,
-    currentPromptEncounter: 1,
-    currentPromptNumber: 4,
+    currentPromptEncounter: nextPrompt.encounterIndex,
+    currentPromptNumber: nextPrompt.promptNumber,
   };
   appendArchiveEvents(state, chronicle.id, session.id, eventPayload, now);
 
@@ -1257,15 +1365,11 @@ function applyPromptResolution(args: Record<string, unknown>) {
     data: {
       archiveEvents: eventPayload,
       nextPrompt: {
-        encounterIndex: 1,
-        promptNumber: 4,
+        encounterIndex: nextPrompt.encounterIndex,
+        promptNumber: nextPrompt.promptNumber,
       },
       promptRunId,
-      rolled: {
-        d10: 7,
-        d6: 4,
-        movement: 3,
-      },
+      rolled,
     },
     error: null,
   };

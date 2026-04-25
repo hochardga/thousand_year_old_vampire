@@ -215,5 +215,5 @@ test("beta smoke flow covers sign-in, setup, play, memory overflow, archive, rec
   await page.getByRole("link", { name: "Resume the current prompt" }).click();
 
   await expect(page).toHaveURL(/\/chronicles\/.+\/play/);
-  await expect(page.getByRole("heading", { name: "Prompt 4" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Prompt 7" })).toBeVisible();
 });

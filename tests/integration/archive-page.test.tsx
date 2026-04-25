@@ -312,6 +312,8 @@ describe("archive page", () => {
       screen.getByText("1 of 4 memories sheltered here."),
     ).toBeInTheDocument();
     expect(screen.getByText("Archive event 1")).toBeInTheDocument();
+    expect(screen.getByText("Current place: Prompt 7")).toBeInTheDocument();
+    expect(screen.queryByText("Current place: prompt 7.1")).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Read older prompt entries" }),
     ).toBeInTheDocument();

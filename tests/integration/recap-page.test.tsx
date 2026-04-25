@@ -121,6 +121,8 @@ describe("recap page", () => {
         "The Long Night waits at prompt 7.1 with the chapel smoke still in its lungs.",
       ),
     ).toBeInTheDocument();
+    expect(screen.getByText("Current place: Prompt 7")).toBeInTheDocument();
+    expect(screen.queryByText("Current place: prompt 7.1")).not.toBeInTheDocument();
     expect(
       screen.getByText("An old memory has been surrendered to the dark."),
     ).toBeInTheDocument();
