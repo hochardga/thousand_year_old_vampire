@@ -164,6 +164,14 @@ function buildSupabaseClient() {
       slot_index: null,
       title: "Elsewhere bound memory",
     },
+    {
+      chronicle_id: "chronicle-1",
+      id: "memory-5",
+      location: "mind",
+      memory_entries: [],
+      slot_index: 2,
+      title: "A memory without joined entries",
+    },
   ];
   const diaries = [
     {
@@ -291,6 +299,13 @@ describe("archive page", () => {
       content.indexOf("Prompt 1"),
     );
     expect(screen.getByText("Winter bells")).toBeInTheDocument();
+    expect(
+      screen.getByText("A memory without joined entries"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Entry text has not been joined to this memory yet."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("0 entries kept here")).not.toBeInTheDocument();
     expect(screen.getByText("Diary-kept vow")).toBeInTheDocument();
     expect(screen.getByText("Elsewhere bound memory")).toBeInTheDocument();
     expect(

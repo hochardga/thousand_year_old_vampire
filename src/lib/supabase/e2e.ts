@@ -529,6 +529,14 @@ function normalizeResourceText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizeCharacterText(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeMarkText(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
 function nextOpenMindSlot(state: E2EState, chronicleId: string) {
   for (let slot = 1; slot <= 5; slot += 1) {
     const occupied = state.memories.some(
@@ -729,12 +737,16 @@ function selectRowsForTable(table: string) {
   switch (table) {
     case "archive_events":
       return state.archive_events;
+    case "characters":
+      return state.characters;
     case "chronicles":
       return state.chronicles;
     case "diaries":
       return state.diaries;
     case "feedback_submissions":
       return state.feedback_submissions;
+    case "marks":
+      return state.marks;
     case "memory_entries":
       return state.memory_entries;
     case "memories":
@@ -807,6 +819,34 @@ function applySetupCompletion(args: Record<string, unknown>) {
       description?: string;
       label?: string;
     }>) || [];
+  const initialResources =
+    (args.initial_resources as Array<{
+      description?: string;
+      isStationary?: boolean;
+      label?: string;
+    }>) || [];
+  const initialCharacters =
+    (args.initial_characters as Array<{
+      description?: string;
+      kind?: "mortal" | "immortal";
+      name?: string;
+    }>) || [];
+  const immortalCharacter =
+    (args.immortal_character as
+      | {
+          description?: string;
+          kind?: "mortal" | "immortal";
+          name?: string;
+        }
+      | undefined) ?? {};
+  const mark =
+    (args.mark as
+      | {
+          description?: string;
+          isConcealed?: boolean;
+          label?: string;
+        }
+      | undefined) ?? {};
 
   setupMemories.forEach((memory, index) => {
     const memoryId = randomUUID();
@@ -834,21 +874,95 @@ function applySetupCompletion(args: Record<string, unknown>) {
   });
 
   initialSkills.forEach((skill, index) => {
+    const label = normalizeSkillText(skill.label);
+
+    if (!label) {
+      return;
+    }
+
     state.skills.push({
       chronicle_id: chronicle.id,
       description: normalizeSkillText(skill.description),
       id: randomUUID(),
-      label: normalizeSkillText(skill.label),
+      label,
       sort_order: index,
       status: "active",
     });
   });
 
+  initialResources.forEach((resource, index) => {
+    const label = normalizeResourceText(resource.label);
+
+    if (!label) {
+      return;
+    }
+
+    state.resources.push({
+      chronicle_id: chronicle.id,
+      description: normalizeResourceText(resource.description),
+      id: randomUUID(),
+      is_stationary: Boolean(resource.isStationary),
+      label,
+      sort_order: index,
+      status: "active",
+    });
+  });
+
+  initialCharacters.forEach((character) => {
+    const name = normalizeCharacterText(character.name);
+
+    if (!name) {
+      return;
+    }
+
+    state.characters.push({
+      chronicle_id: chronicle.id,
+      description: normalizeCharacterText(character.description),
+      id: randomUUID(),
+      introduced_at: now,
+      kind: character.kind ?? "mortal",
+      name,
+      status: "active",
+    });
+  });
+
+  const immortalName = normalizeCharacterText(immortalCharacter.name);
+
+  if (immortalName) {
+    state.characters.push({
+      chronicle_id: chronicle.id,
+      description: normalizeCharacterText(immortalCharacter.description),
+      id: randomUUID(),
+      introduced_at: now,
+      kind: immortalCharacter.kind ?? "immortal",
+      name: immortalName,
+      status: "active",
+    });
+  }
+
+  const markLabel = normalizeMarkText(mark.label);
+
+  if (markLabel) {
+    state.marks.push({
+      chronicle_id: chronicle.id,
+      created_at: now,
+      description: normalizeMarkText(mark.description),
+      id: randomUUID(),
+      is_active: true,
+      is_concealed: Boolean(mark.isConcealed),
+      label: markLabel,
+    });
+  }
+
   const createdEntities = {
-    characters: ((args.initial_characters as unknown[])?.length || 0) + 1,
+    characters: state.characters.filter(
+      (character) => character.chronicle_id === chronicle.id,
+    ).length,
     memories: setupMemories.length,
-    resources: (args.initial_resources as unknown[])?.length || 0,
-    skills: (args.initial_skills as unknown[])?.length || 0,
+    resources: state.resources.filter(
+      (resource) => resource.chronicle_id === chronicle.id,
+    ).length,
+    skills: state.skills.filter((skill) => skill.chronicle_id === chronicle.id).length,
   };
 
   return {

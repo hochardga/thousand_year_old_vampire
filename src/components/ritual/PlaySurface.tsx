@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ActiveDiarySummary } from "@/types/chronicle";
 import { trackAnalyticsEvent } from "@/lib/analytics/posthog";
+import type { PromptEffectGuidance } from "@/lib/prompts/effects";
 import { ConsequencePanel } from "@/components/ritual/ConsequencePanel";
 import { MemoryDecisionPanel } from "@/components/ritual/MemoryDecisionPanel";
 import { PromptResourceComposer } from "@/components/ritual/PromptResourceComposer";
@@ -26,10 +27,15 @@ type ResolvePromptResponse = {
   };
 };
 
+type ActiveResolvePromptResponse = ResolvePromptResponse & {
+  resolvedPromptNumber: number;
+  resolvedSessionId: string | null;
+};
+
 type PlaySurfaceProps = {
   activeDiary?: ActiveDiarySummary | null;
   chronicleId: string;
-  currentPromptNumber: number;
+  currentPromptNumber?: number;
   existingResourceLabels?: string[];
   existingSkillLabels?: string[];
   initialSessionId: string | null;
@@ -38,16 +44,18 @@ type PlaySurfaceProps = {
     slotIndex: number | null;
     title: string;
   }>;
+  promptEffect?: PromptEffectGuidance | null;
 };
 
 export function PlaySurface({
   activeDiary = null,
   chronicleId,
-  currentPromptNumber,
+  currentPromptNumber = 1,
   existingResourceLabels = [],
   existingSkillLabels = [],
   initialSessionId,
   mindMemories = [],
+  promptEffect = null,
 }: PlaySurfaceProps) {
   const hasTrackedFirstPromptResolved = useRef(false);
   const initialDraft = loadPromptDraft(chronicleId);
@@ -80,7 +88,7 @@ export function PlaySurface({
   const [skillErrorMessage, setSkillErrorMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [result, setResult] = useState<ResolvePromptResponse | null>(null);
+  const [result, setResult] = useState<ActiveResolvePromptResponse | null>(null);
   const [overflowMode, setOverflowMode] = useState<
     "forget-existing" | "move-to-diary" | null
   >(null);
@@ -90,64 +98,67 @@ export function PlaySurface({
 
   const requiresOverflowDecision = mindMemories.length >= 5;
 
-  function syncPromptDraft(
-    overrides: Partial<{
-      experienceText: string;
-      newResourceDescription: string;
-      newResourceIsStationary: boolean;
-      newResourceLabel: string;
-      newSkillDescription: string;
-      newSkillLabel: string;
-      playerEntry: string;
-      shouldCreateResource: boolean;
-      shouldCreateSkill: boolean;
-    }> = {},
-  ) {
-    const nextDraft = {
+  const syncPromptDraft = useCallback(
+    (
+      overrides: Partial<{
+        experienceText: string;
+        newResourceDescription: string;
+        newResourceIsStationary: boolean;
+        newResourceLabel: string;
+        newSkillDescription: string;
+        newSkillLabel: string;
+        playerEntry: string;
+        shouldCreateResource: boolean;
+        shouldCreateSkill: boolean;
+      }> = {},
+    ) => {
+      const nextDraft = {
+        experienceText,
+        newResourceDescription,
+        newResourceIsStationary,
+        newResourceLabel,
+        newSkillDescription,
+        newSkillLabel,
+        playerEntry,
+        shouldCreateResource: isAddingResource,
+        shouldCreateSkill: isAddingSkill,
+        ...overrides,
+      };
+
+      const hasAnyDraftContent =
+        Boolean(nextDraft.playerEntry) ||
+        Boolean(nextDraft.experienceText) ||
+        Boolean(nextDraft.newResourceLabel) ||
+        Boolean(nextDraft.newResourceDescription) ||
+        Boolean(nextDraft.newSkillLabel) ||
+        Boolean(nextDraft.newSkillDescription) ||
+        nextDraft.shouldCreateResource ||
+        nextDraft.shouldCreateSkill;
+
+      if (!hasAnyDraftContent) {
+        clearPromptDraft(chronicleId);
+        return;
+      }
+
+      savePromptDraft(chronicleId, nextDraft);
+    },
+    [
+      chronicleId,
       experienceText,
+      isAddingResource,
+      isAddingSkill,
       newResourceDescription,
       newResourceIsStationary,
       newResourceLabel,
       newSkillDescription,
       newSkillLabel,
       playerEntry,
-      shouldCreateResource: isAddingResource,
-      shouldCreateSkill: isAddingSkill,
-      ...overrides,
-    };
-
-    const hasAnyDraftContent =
-      Boolean(nextDraft.playerEntry) ||
-      Boolean(nextDraft.experienceText) ||
-      Boolean(nextDraft.newResourceLabel) ||
-      Boolean(nextDraft.newResourceDescription) ||
-      Boolean(nextDraft.newSkillLabel) ||
-      Boolean(nextDraft.newSkillDescription) ||
-      nextDraft.shouldCreateResource ||
-      nextDraft.shouldCreateSkill;
-
-    if (!hasAnyDraftContent) {
-      clearPromptDraft(chronicleId);
-      return;
-    }
-
-    savePromptDraft(chronicleId, nextDraft);
-  }
+    ],
+  );
 
   useEffect(() => {
     syncPromptDraft();
-  }, [
-    chronicleId,
-    experienceText,
-    isAddingResource,
-    isAddingSkill,
-    newResourceDescription,
-    newResourceIsStationary,
-    newResourceLabel,
-    newSkillDescription,
-    newSkillLabel,
-    playerEntry,
-  ]);
+  }, [syncPromptDraft]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -277,7 +288,11 @@ export function PlaySurface({
         return;
       }
 
-      setResult(payload);
+      setResult({
+        ...payload,
+        resolvedPromptNumber: currentPromptNumber,
+        resolvedSessionId: initialSessionId,
+      });
       if (
         currentPromptNumber === 1 &&
         !hasTrackedFirstPromptResolved.current
@@ -309,8 +324,14 @@ export function PlaySurface({
     }
   }
 
-  const consequenceSummary = result?.archiveEvents?.[0]?.summary;
-  const nextPromptNumber = result?.nextPrompt?.promptNumber;
+  const activeResult =
+    result?.resolvedPromptNumber === currentPromptNumber &&
+    result.resolvedSessionId === initialSessionId
+      ? result
+      : null;
+  const consequenceSummary = activeResult?.archiveEvents?.[0]?.summary;
+  const nextPromptNumber = activeResult?.nextPrompt?.promptNumber;
+  const hasResolvedPrompt = Boolean(activeResult);
 
   function handleSkillComposerToggle() {
     if (isAddingSkill) {
@@ -329,6 +350,13 @@ export function PlaySurface({
 
     setIsAddingSkill(true);
     setSkillErrorMessage(null);
+    if (promptEffect?.skill?.label && !newSkillLabel.trim()) {
+      setNewSkillLabel(promptEffect.skill.label);
+      syncPromptDraft({
+        newSkillLabel: promptEffect.skill.label,
+        shouldCreateSkill: true,
+      });
+    }
   }
 
   function handleResourceComposerToggle() {
@@ -350,6 +378,13 @@ export function PlaySurface({
 
     setIsAddingResource(true);
     setResourceErrorMessage(null);
+    if (promptEffect?.resource?.isStationary && !newResourceIsStationary) {
+      setNewResourceIsStationary(true);
+      syncPromptDraft({
+        newResourceIsStationary: true,
+        shouldCreateResource: true,
+      });
+    }
   }
 
   return (
@@ -371,17 +406,29 @@ export function PlaySurface({
         </SurfacePanel>
       ) : null}
 
-      <SurfacePanel className="space-y-5 px-6 py-6 sm:px-8">
-        <div>
+      {!hasResolvedPrompt && promptEffect?.guidance ? (
+        <SurfacePanel className="border-gold/20 bg-gold/8 px-5 py-4">
           <p className="font-mono text-xs uppercase tracking-[0.22em] text-ink-muted">
-            Writing surface
+            Prompt requirement
           </p>
-          <h2 className="mt-3 font-heading text-3xl text-ink">
-            Set down what happened, then what it became.
-          </h2>
-        </div>
+          <p className="mt-2 text-sm leading-relaxed text-ink">
+            {promptEffect.guidance}
+          </p>
+        </SurfacePanel>
+      ) : null}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+      {!hasResolvedPrompt ? (
+        <SurfacePanel className="space-y-5 px-6 py-6 sm:px-8">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.22em] text-ink-muted">
+              Writing surface
+            </p>
+            <h2 className="mt-3 font-heading text-3xl text-ink">
+              Set down what happened, then what it became.
+            </h2>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
           <RitualTextarea
             label="Player entry"
             name="playerEntry"
@@ -433,8 +480,9 @@ export function PlaySurface({
           >
             {isSubmitting ? "Setting the entry into memory..." : "Set the entry into memory"}
           </button>
-        </form>
-      </SurfacePanel>
+          </form>
+        </SurfacePanel>
+      ) : null}
     </div>
   );
 }

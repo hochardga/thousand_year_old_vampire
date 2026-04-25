@@ -71,6 +71,7 @@ describe("guided setup flow", () => {
 
     expect(
       screen.getByRole("heading", {
+        level: 2,
         name: "Begin with the life you had before.",
       }),
     ).toBeInTheDocument();
@@ -801,9 +802,10 @@ describe("guided setup flow", () => {
 
     const { PlaySurface } = await import("@/components/ritual/PlaySurface");
 
-    render(
+    const view = render(
       <PlaySurface
         chronicleId="chronicle-1"
+        currentPromptNumber={1}
         initialSessionId="session-1"
       />,
     );
@@ -835,8 +837,93 @@ describe("guided setup flow", () => {
         name: "Continue to prompt 4",
       }),
     ).toHaveAttribute("href", "/chronicles/chronicle-1/play");
+    expect(screen.queryByLabelText("Player entry")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    ).not.toBeInTheDocument();
+
+    view.rerender(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={4}
+        initialSessionId="session-1"
+      />,
+    );
+
+    expect(
+      screen.queryByText("The entry has been set into memory."),
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Player entry")).toBeInTheDocument();
 
     fetchMock.mockRestore();
+  });
+
+  it("surfaces known prompt skill effects and prefills Prompt 1's required skill", async () => {
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        initialSessionId="session-1"
+        promptEffect={{
+          guidance:
+            "This prompt requires a new skill: Bloodthirsty. Add it before setting the entry into memory.",
+          skill: {
+            label: "Bloodthirsty",
+          },
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        "This prompt requires a new skill: Bloodthirsty. Add it before setting the entry into memory.",
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a skill from this prompt",
+      }),
+    );
+
+    expect(screen.getByLabelText("Skill name")).toHaveValue("Bloodthirsty");
+  });
+
+  it("surfaces known prompt resource effects and preselects stationary resources", async () => {
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={4}
+        initialSessionId="session-1"
+        promptEffect={{
+          guidance:
+            "This prompt requires a new stationary resource. Add the place that now shelters the chronicle.",
+          resource: {
+            isStationary: true,
+          },
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        "This prompt requires a new stationary resource. Add the place that now shelters the chronicle.",
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a resource from this prompt",
+      }),
+    );
+
+    expect(screen.getByLabelText("Stationary")).toBeChecked();
   });
 
   it("reveals prompt-created skill fields on demand and sends newSkill in the request body", async () => {
