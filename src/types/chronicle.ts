@@ -9,6 +9,12 @@ export type SetupSkillInput = SkillTextInput;
 
 export type PromptCreatedSkillInput = SkillTextInput;
 
+export type PromptCreatedResourceInput = {
+  description: string;
+  isStationary: boolean;
+  label: string;
+};
+
 export type SetupResourceInput = {
   description: string;
   isStationary: boolean;
@@ -100,6 +106,7 @@ export type TraitMutationsPayload = {
 export type PromptResolutionPayload = {
   experienceText: string;
   memoryDecision: MemoryDecisionPayload;
+  newResource?: PromptCreatedResourceInput;
   newSkill?: PromptCreatedSkillInput;
   playerEntry: string;
   sessionId: string;

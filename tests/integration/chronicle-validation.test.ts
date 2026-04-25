@@ -154,6 +154,130 @@ describe("chronicle validation", () => {
     });
   });
 
+  it("keeps prompt-created resources in the parsed prompt resolution payload", () => {
+    const result = promptResolutionSchema.safeParse({
+      experienceText:
+        "I made a refuge of the ruin before dawn found me.",
+      memoryDecision: {
+        mode: "create-new",
+      },
+      newResource: {
+        description: "A roofed crypt where I can feed and vanish.",
+        isStationary: true,
+        label: "The Marsh House",
+      },
+      playerEntry:
+        "I buried myself inside the old stones and named them home.",
+      sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+      traitMutations: {
+        characters: [],
+        marks: [],
+        resources: [],
+        skills: [],
+      },
+    });
+
+    expect(result.success).toBe(true);
+
+    if (!result.success) {
+      throw new Error("Expected prompt-created resource payload to parse.");
+    }
+
+    expect(result.data.newResource).toEqual({
+      description: "A roofed crypt where I can feed and vanish.",
+      isStationary: true,
+      label: "The Marsh House",
+    });
+  });
+
+  it("trims prompt-created resource fields in the parsed payload", () => {
+    const result = promptResolutionSchema.safeParse({
+      experienceText:
+        "I made a refuge of the ruin before dawn found me.",
+      memoryDecision: {
+        mode: "create-new",
+      },
+      newResource: {
+        description: "  A roofed crypt where I can feed and vanish.  ",
+        isStationary: true,
+        label: "  The Marsh House  ",
+      },
+      playerEntry:
+        "I buried myself inside the old stones and named them home.",
+      sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+      traitMutations: {
+        characters: [],
+        marks: [],
+        resources: [],
+        skills: [],
+      },
+    });
+
+    expect(result.success).toBe(true);
+
+    if (!result.success) {
+      throw new Error("Expected trimmed prompt-created resource payload to parse.");
+    }
+
+    expect(result.data.newResource).toEqual({
+      description: "A roofed crypt where I can feed and vanish.",
+      isStationary: true,
+      label: "The Marsh House",
+    });
+  });
+
+  it("rejects prompt-created resources with missing description text", () => {
+    const result = promptResolutionSchema.safeParse({
+      experienceText:
+        "I made a refuge of the ruin before dawn found me.",
+      memoryDecision: {
+        mode: "create-new",
+      },
+      newResource: {
+        description: "",
+        isStationary: true,
+        label: "The Marsh House",
+      },
+      playerEntry:
+        "I buried myself inside the old stones and named them home.",
+      sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+      traitMutations: {
+        characters: [],
+        marks: [],
+        resources: [],
+        skills: [],
+      },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects prompt-created resources with labels longer than 120 characters", () => {
+    const result = promptResolutionSchema.safeParse({
+      experienceText:
+        "I made a refuge of the ruin before dawn found me.",
+      memoryDecision: {
+        mode: "create-new",
+      },
+      newResource: {
+        description: "A roofed crypt where I can feed and vanish.",
+        isStationary: true,
+        label: "R".repeat(121),
+      },
+      playerEntry:
+        "I buried myself inside the old stones and named them home.",
+      sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+      traitMutations: {
+        characters: [],
+        marks: [],
+        resources: [],
+        skills: [],
+      },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("trims prompt-created skill fields in the parsed payload", () => {
     const result = promptResolutionSchema.safeParse({
       experienceText:

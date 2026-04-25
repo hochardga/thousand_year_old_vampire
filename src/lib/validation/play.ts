@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type {
+  PromptCreatedResourceInput,
   PromptCreatedSkillInput,
   PromptResolutionPayload,
   TraitMutationsPayload,
@@ -67,6 +68,12 @@ const newSkillSchema: z.ZodType<PromptCreatedSkillInput> = z.object({
   label: z.string().trim().min(1).max(120),
 });
 
+const newResourceSchema: z.ZodType<PromptCreatedResourceInput> = z.object({
+  description: z.string().trim().min(1).max(280),
+  isStationary: z.boolean(),
+  label: z.string().trim().min(1).max(120),
+});
+
 const traitMutationsSchema: z.ZodType<TraitMutationsPayload> = z.object({
   characters: z.array(characterMutationSchema).default([]),
   marks: z.array(markMutationSchema).default([]),
@@ -78,6 +85,7 @@ export const promptResolutionSchema: z.ZodType<PromptResolutionPayload> =
   z.object({
     experienceText: z.string().trim().min(1).max(1600),
     memoryDecision: memoryDecisionSchema.default({ mode: "create-new" }),
+    newResource: newResourceSchema.optional(),
     newSkill: newSkillSchema.optional(),
     playerEntry: z.string().trim().min(1).max(4000),
     sessionId: uuidSchema,

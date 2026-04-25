@@ -116,6 +116,16 @@ type SkillRow = {
   status: "active" | "checked" | "lost";
 };
 
+type ResourceRow = {
+  chronicle_id: string;
+  description: string;
+  id: string;
+  is_stationary: boolean;
+  label: string;
+  sort_order: number;
+  status: "active" | "checked" | "lost";
+};
+
 type E2EState = {
   archive_events: ArchiveEventRow[];
   characters: Array<Record<string, unknown>>;
@@ -128,7 +138,7 @@ type E2EState = {
   prompt_catalog: PromptCatalogRow[];
   prompt_runs: PromptRunRow[];
   profiles: ProfileRow[];
-  resources: Array<Record<string, unknown>>;
+  resources: ResourceRow[];
   sessions: SessionRow[];
   skills: SkillRow[];
 };
@@ -499,7 +509,23 @@ function nextSkillSortOrder(state: E2EState, chronicleId: string) {
   );
 }
 
+function nextResourceSortOrder(state: E2EState, chronicleId: string) {
+  return (
+    state.resources.reduce((highestSortOrder, resource) => {
+      if (resource.chronicle_id !== chronicleId) {
+        return highestSortOrder;
+      }
+
+      return Math.max(highestSortOrder, resource.sort_order);
+    }, -1) + 1
+  );
+}
+
 function normalizeSkillText(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeResourceText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
@@ -719,6 +745,8 @@ function selectRowsForTable(table: string) {
       return state.prompt_runs;
     case "profiles":
       return state.profiles;
+    case "resources":
+      return state.resources;
     case "sessions":
       return state.sessions;
     case "skills":
@@ -891,10 +919,21 @@ function applyPromptResolution(args: Record<string, unknown>) {
     args.new_skill && typeof args.new_skill === "object"
       ? (args.new_skill as Record<string, unknown>)
       : null;
+  const rawNewResource =
+    args.new_resource && typeof args.new_resource === "object"
+      ? (args.new_resource as Record<string, unknown>)
+      : null;
   const newSkill = rawNewSkill
     ? {
         description: normalizeSkillText(rawNewSkill.description),
         label: normalizeSkillText(rawNewSkill.label),
+      }
+    : null;
+  const newResource = rawNewResource
+    ? {
+        description: normalizeResourceText(rawNewResource.description),
+        isStationary: Boolean(rawNewResource.isStationary),
+        label: normalizeResourceText(rawNewResource.label),
       }
     : null;
 
@@ -915,6 +954,25 @@ function applyPromptResolution(args: Record<string, unknown>) {
     )
   ) {
     return createRpcError("A skill with this name already exists.");
+  }
+
+  if (newResource && !newResource.label) {
+    return createRpcError("A resource name is required.");
+  }
+
+  if (newResource && !newResource.description) {
+    return createRpcError("A resource description is required.");
+  }
+
+  if (
+    newResource &&
+    state.resources.some(
+      (resource) =>
+        resource.chronicle_id === chronicle.id &&
+        normalizeResourceText(resource.label) === newResource.label,
+    )
+  ) {
+    return createRpcError("A resource with this name already exists.");
   }
 
   if ((memoryDecision.mode ?? "create-new") === "append-existing") {
@@ -1038,6 +1096,18 @@ function applyPromptResolution(args: Record<string, unknown>) {
       id: randomUUID(),
       label: newSkill.label,
       sort_order: nextSkillSortOrder(state, chronicle.id),
+      status: "active",
+    });
+  }
+
+  if (newResource) {
+    state.resources.push({
+      chronicle_id: chronicle.id,
+      description: newResource.description,
+      id: randomUUID(),
+      is_stationary: newResource.isStationary,
+      label: newResource.label,
+      sort_order: nextResourceSortOrder(state, chronicle.id),
       status: "active",
     });
   }
