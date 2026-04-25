@@ -1,9 +1,13 @@
 export type PromptVersion = "base" | "alternate_appendix_i";
 
-export type SetupSkillInput = {
+type SkillTextInput = {
   description: string;
   label: string;
 };
+
+export type SetupSkillInput = SkillTextInput;
+
+export type PromptCreatedSkillInput = SkillTextInput;
 
 export type SetupResourceInput = {
   description: string;
@@ -96,6 +100,7 @@ export type TraitMutationsPayload = {
 export type PromptResolutionPayload = {
   experienceText: string;
   memoryDecision: MemoryDecisionPayload;
+  newSkill?: PromptCreatedSkillInput;
   playerEntry: string;
   sessionId: string;
   traitMutations: TraitMutationsPayload;

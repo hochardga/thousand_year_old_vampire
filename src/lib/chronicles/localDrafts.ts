@@ -5,7 +5,10 @@ const promptDraftPrefix = "tyov.prompt.";
 
 export type PromptDraft = {
   experienceText: string;
+  newSkillDescription: string;
+  newSkillLabel: string;
   playerEntry: string;
+  shouldCreateSkill: boolean;
 };
 
 function canUseStorage() {

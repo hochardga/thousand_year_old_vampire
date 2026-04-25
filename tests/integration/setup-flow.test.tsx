@@ -465,6 +465,17 @@ describe("guided setup flow", () => {
     const diariesEqStatus = vi.fn(() => ({ maybeSingle: diariesMaybeSingle }));
     const diariesEqChronicle = vi.fn(() => ({ eq: diariesEqStatus }));
     const diariesSelect = vi.fn(() => ({ eq: diariesEqChronicle }));
+    const skillsOrder = vi.fn().mockResolvedValue({
+      data: [
+        {
+          chronicle_id: "chronicle-1",
+          label: "Quiet Devotion",
+        },
+      ],
+      error: null,
+    });
+    const skillsEqChronicle = vi.fn(() => ({ order: skillsOrder }));
+    const skillsSelect = vi.fn(() => ({ eq: skillsEqChronicle }));
     const from = vi.fn((table: string) => {
       if (table === "chronicles") {
         return { select: chronicleSelect };
@@ -474,7 +485,15 @@ describe("guided setup flow", () => {
         return { select: memoriesSelect };
       }
 
-      return { select: diariesSelect };
+      if (table === "diaries") {
+        return { select: diariesSelect };
+      }
+
+      if (table === "skills") {
+        return { select: skillsSelect };
+      }
+
+      throw new Error(`Unsupported table in play page test: ${table}`);
     });
 
     createServerSupabaseClient.mockResolvedValue({
@@ -620,6 +639,75 @@ describe("guided setup flow", () => {
     });
   });
 
+  it("passes prompt-created skill payloads through the resolve route", async () => {
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user-1" } },
+        }),
+      },
+    });
+    resolvePrompt.mockResolvedValue({
+      archiveEvents: [],
+      nextPrompt: {
+        encounterIndex: 1,
+        promptNumber: 4,
+      },
+      promptRunId: "run-1",
+      rolled: {
+        d10: 7,
+        d6: 4,
+        movement: 3,
+      },
+    });
+
+    const { POST } = await import(
+      "@/app/api/chronicles/[chronicleId]/play/resolve/route"
+    );
+    await POST(
+      new Request("http://localhost/api/chronicles/chronicle-1/play/resolve", {
+        body: JSON.stringify({
+          experienceText:
+            "I left the chapel with blood under my nails and a prayer I could not finish.",
+          memoryDecision: {
+            mode: "create-new",
+          },
+          newSkill: {
+            description: "I learned to feed first and mourn later.",
+            label: "Bloodthirsty",
+          },
+          playerEntry:
+            "I answered the bells by dragging the sexton into the thawing graveyard.",
+          sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+          traitMutations: {
+            characters: [],
+            marks: [],
+            resources: [],
+            skills: [],
+          },
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      }),
+      {
+        params: Promise.resolve({ chronicleId: "chronicle-1" }),
+      } as never,
+    );
+
+    expect(resolvePrompt).toHaveBeenCalledWith(
+      expect.anything(),
+      "chronicle-1",
+      expect.objectContaining({
+        newSkill: {
+          description: "I learned to feed first and mourn later.",
+          label: "Bloodthirsty",
+        },
+      }),
+    );
+  });
+
   it("rejects an invalid prompt resolution payload with the standard error shape", async () => {
     createServerSupabaseClient.mockResolvedValue({
       auth: {
@@ -736,6 +824,290 @@ describe("guided setup flow", () => {
     fetchMock.mockRestore();
   });
 
+  it("reveals prompt-created skill fields on demand and sends newSkill in the request body", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            archiveEvents: [
+              {
+                eventType: "prompt_resolved",
+                summary: "The entry has been set into memory.",
+              },
+            ],
+            nextPrompt: {
+              encounterIndex: 1,
+              promptNumber: 4,
+            },
+            promptRunId: "run-1",
+            rolled: {
+              d10: 7,
+              d6: 4,
+              movement: 3,
+            },
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            status: 200,
+          },
+        ),
+      );
+
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingSkillLabels={["Quiet Devotion"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    expect(screen.queryByLabelText("Skill name")).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a skill from this prompt",
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText("Skill name"), {
+      target: { value: "Bloodthirsty" },
+    });
+    fireEvent.change(screen.getByLabelText("Why this skill now"), {
+      target: { value: "I learned to feed first and mourn later." },
+    });
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: {
+        value: "I answered the bells by dragging the sexton into the thawing graveyard.",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: {
+        value:
+          "I left the chapel with blood under my nails and a prayer I could not finish.",
+      },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const payload = JSON.parse(String(request.body)) as {
+      newSkill?: {
+        description: string;
+        label: string;
+      };
+    };
+
+    expect(payload.newSkill).toEqual({
+      description: "I learned to feed first and mourn later.",
+      label: "Bloodthirsty",
+    });
+
+    fetchMock.mockRestore();
+  });
+
+  it("blocks duplicate prompt-created skill labels before submitting", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingSkillLabels={["Quiet Devotion", "Bloodthirsty"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a skill from this prompt",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("Skill name"), {
+      target: { value: "Bloodthirsty" },
+    });
+    fireEvent.change(screen.getByLabelText("Why this skill now"), {
+      target: { value: "I learned to feed first and mourn later." },
+    });
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: { value: "I answered the prompt." },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: { value: "I carried the consequence forward." },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    expect(
+      screen.getByText(
+        "That skill name is already in the chronicle. Choose different wording.",
+      ),
+    ).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    fetchMock.mockRestore();
+  });
+
+  it("preserves prompt-created skill draft fields after a failed submission", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: "That skill name is already in the chronicle. Choose different wording.",
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            status: 500,
+          },
+        ),
+      );
+
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+    const view = render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingSkillLabels={["Quiet Devotion"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a skill from this prompt",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("Skill name"), {
+      target: { value: "Bloodthirsty" },
+    });
+    fireEvent.change(screen.getByLabelText("Why this skill now"), {
+      target: { value: "I learned to feed first and mourn later." },
+    });
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: { value: "I answered the prompt." },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: { value: "I carried the consequence forward." },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "That skill name is already in the chronicle. Choose different wording.",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    view.unmount();
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingSkillLabels={["Quiet Devotion"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    expect(screen.getByLabelText("Skill name")).toHaveValue("Bloodthirsty");
+    expect(screen.getByLabelText("Why this skill now")).toHaveValue(
+      "I learned to feed first and mourn later.",
+    );
+
+    fetchMock.mockRestore();
+  });
+
+  it("clears prompt-created skill draft fields when the skill is removed", async () => {
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+    const view = render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingSkillLabels={["Quiet Devotion"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a skill from this prompt",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("Skill name"), {
+      target: { value: "Bloodthirsty" },
+    });
+    fireEvent.change(screen.getByLabelText("Why this skill now"), {
+      target: { value: "I learned to feed first and mourn later." },
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Remove the new skill",
+      }),
+    );
+
+    expect(screen.queryByLabelText("Skill name")).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a skill from this prompt",
+      }),
+    );
+
+    expect(screen.getByLabelText("Skill name")).toHaveValue("");
+    expect(screen.getByLabelText("Why this skill now")).toHaveValue("");
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Remove the new skill",
+      }),
+    );
+
+    view.unmount();
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingSkillLabels={["Quiet Devotion"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a skill from this prompt",
+      }),
+    );
+
+    expect(screen.getByLabelText("Skill name")).toHaveValue("");
+    expect(screen.getByLabelText("Why this skill now")).toHaveValue("");
+  });
+
   it("shows the memory overflow panel in play and submits a legal overflow decision", async () => {
     const fetchMock = vi
       .spyOn(globalThis, "fetch")
@@ -835,6 +1207,99 @@ describe("guided setup flow", () => {
     });
 
     fetchMock.mockRestore();
+  });
+
+  it("loads chronicle skill labels on the play page for duplicate checking", async () => {
+    const chronicleSingle = vi.fn().mockResolvedValue({
+      data: {
+        current_prompt_encounter: 1,
+        current_prompt_number: 1,
+        current_session_id: "session-1",
+        id: "chronicle-1",
+        prompt_version: "base",
+        status: "active",
+        title: "The Long Night",
+      },
+      error: null,
+    });
+    const chronicleEq = vi.fn(() => ({ single: chronicleSingle }));
+    const chronicleSelect = vi.fn(() => ({ eq: chronicleEq }));
+    const memoriesEqChronicle = vi.fn().mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    const memoriesSelect = vi.fn(() => ({ eq: memoriesEqChronicle }));
+    const diariesMaybeSingle = vi.fn().mockResolvedValue({
+      data: null,
+      error: null,
+    });
+    const diariesEqStatus = vi.fn(() => ({ maybeSingle: diariesMaybeSingle }));
+    const diariesEqChronicle = vi.fn(() => ({ eq: diariesEqStatus }));
+    const diariesSelect = vi.fn(() => ({ eq: diariesEqChronicle }));
+    const skillsOrder = vi.fn().mockResolvedValue({
+      data: [
+        {
+          chronicle_id: "chronicle-1",
+          label: "Quiet Devotion",
+        },
+      ],
+      error: null,
+    });
+    const skillsEqChronicle = vi.fn(() => ({ order: skillsOrder }));
+    const skillsSelect = vi.fn(() => ({ eq: skillsEqChronicle }));
+
+    const from = vi.fn((table: string) => {
+      if (table === "chronicles") {
+        return { select: chronicleSelect };
+      }
+
+      if (table === "memories") {
+        return { select: memoriesSelect };
+      }
+
+      if (table === "diaries") {
+        return { select: diariesSelect };
+      }
+
+      if (table === "skills") {
+        return { select: skillsSelect };
+      }
+
+      throw new Error(`Unsupported table in play page test: ${table}`);
+    });
+
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user-1" } },
+        }),
+      },
+      from,
+    });
+    getPromptByPosition.mockResolvedValue({
+      encounter_index: 1,
+      prompt_markdown:
+        "In your blood-hunger you destroy someone close to you. Kill a mortal Character.",
+      prompt_number: 1,
+      prompt_version: "base",
+    });
+
+    const { default: PlayPage } = await import(
+      "@/app/(app)/chronicles/[chronicleId]/play/page"
+    );
+
+    render(
+      await PlayPage({
+        params: Promise.resolve({ chronicleId: "chronicle-1" }),
+      } as never),
+    );
+
+    expect(skillsOrder).toHaveBeenCalledTimes(1);
+    expect(
+      screen.getByRole("button", {
+        name: "Add a skill from this prompt",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("disables diary overflow when the active diary is already full", async () => {

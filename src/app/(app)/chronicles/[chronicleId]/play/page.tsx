@@ -83,6 +83,26 @@ type ActiveDiaryMaybeSingleClient = {
   };
 };
 
+type SkillLabelRecord = {
+  label: string;
+};
+
+type SkillLookupClient = {
+  from: (table: "skills") => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        order: (
+          column: string,
+          options: { ascending: boolean },
+        ) => Promise<{
+          data: SkillLabelRecord[] | null;
+          error: { message: string } | null;
+        }>;
+      };
+    };
+  };
+};
+
 export default async function ChroniclePlayPage({ params }: PlayPageProps) {
   const { chronicleId } = await params;
   const supabase = await createServerSupabaseClient();
@@ -114,6 +134,7 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
 
   const memoryClient = supabase as unknown as MemoryLookupClient;
   const diaryClient = supabase as unknown as ActiveDiaryMaybeSingleClient;
+  const skillClient = supabase as unknown as SkillLookupClient;
   const promptPromise = getPromptByPosition(
     supabase as never,
     chronicle.current_prompt_number,
@@ -121,7 +142,7 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
     chronicle.prompt_version,
   );
 
-  const [mindMemoriesResult, diaryResult, prompt] = await Promise.all([
+  const [mindMemoriesResult, diaryResult, skillsResult, prompt] = await Promise.all([
     memoryClient
       .from("memories")
       .select("id, title, slot_index, location, diary_id")
@@ -132,6 +153,11 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
       .eq("chronicle_id", chronicleId)
       .eq("status", "active")
       .maybeSingle(),
+    skillClient
+      .from("skills")
+      .select("label")
+      .eq("chronicle_id", chronicleId)
+      .order("sort_order", { ascending: true }),
     promptPromise,
   ] as const) as [
     {
@@ -139,6 +165,10 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
       error: { message: string } | null;
     },
     ActiveDiaryLookupResult,
+    {
+      data: SkillLabelRecord[] | null;
+      error: { message: string } | null;
+    },
     Awaited<ReturnType<typeof getPromptByPosition>>,
   ];
 
@@ -193,6 +223,7 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
           activeDiary={activeDiary}
           chronicleId={chronicleId}
           currentPromptNumber={chronicle.current_prompt_number}
+          existingSkillLabels={(skillsResult.data ?? []).map((skill) => skill.label)}
           initialSessionId={chronicle.current_session_id}
           mindMemories={mindMemories.map((memory) => ({
             id: memory.id,
