@@ -66,7 +66,8 @@ export function PlaySurface({
     () => initialDraft?.experienceText ?? "",
   );
   const [isAddingResource, setIsAddingResource] = useState(
-    () => initialDraft?.shouldCreateResource ?? requiresPromptResource,
+    () =>
+      requiresPromptResource ? true : (initialDraft?.shouldCreateResource ?? false),
   );
   const [newResourceLabel, setNewResourceLabel] = useState(
     () => initialDraft?.newResourceLabel ?? "",
@@ -76,15 +77,18 @@ export function PlaySurface({
   );
   const [newResourceIsStationary, setNewResourceIsStationary] = useState(
     () =>
-      initialDraft?.newResourceIsStationary ??
-      promptEffect?.resource?.isStationary ??
-      false,
+      requiresPromptResource
+        ? (promptEffect?.resource?.isStationary ?? false)
+        : (initialDraft?.newResourceIsStationary ?? false),
   );
   const [isAddingSkill, setIsAddingSkill] = useState(
-    () => initialDraft?.shouldCreateSkill ?? requiresPromptSkill,
+    () => (requiresPromptSkill ? true : (initialDraft?.shouldCreateSkill ?? false)),
   );
   const [newSkillLabel, setNewSkillLabel] = useState(
-    () => initialDraft?.newSkillLabel ?? promptEffect?.skill?.label ?? "",
+    () =>
+      requiresPromptSkill
+        ? (initialDraft?.newSkillLabel?.trim() || promptEffect?.skill?.label || "")
+        : (initialDraft?.newSkillLabel ?? ""),
   );
   const [newSkillDescription, setNewSkillDescription] = useState(
     () => initialDraft?.newSkillDescription ?? "",

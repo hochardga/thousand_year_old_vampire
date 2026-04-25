@@ -327,6 +327,33 @@ describe("archive rule enforcement", () => {
     });
   });
 
+  it("fails the e2e mock prompt resolution when no next prompt exists", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle();
+
+    state.prompt_catalog = state.prompt_catalog.filter(
+      (prompt) => prompt.prompt_number <= 7,
+    );
+
+    const firstResult = await resolvePromptRun(client, chronicleId, sessionId, {
+      mode: "create-new",
+    });
+    const secondResult = await resolvePromptRun(client, chronicleId, sessionId, {
+      mode: "create-new",
+    });
+    const thirdResult = await resolvePromptRun(client, chronicleId, sessionId, {
+      mode: "create-new",
+    });
+
+    expect(firstResult.error).toBeNull();
+    expect(secondResult.error).toBeNull();
+    expect(thirdResult).toMatchObject({
+      data: null,
+      error: {
+        message: "No next prompt is available in the prompt catalog.",
+      },
+    });
+  });
+
   it("stores setup-era skills in e2e state so later play-time reads can load them", async () => {
     const initialSkills = [
       {

@@ -332,5 +332,5 @@ test("mobile return flow supports diary overflow, forgotten memories, and recap 
   await page.getByRole("link", { name: "Resume the current prompt" }).click();
 
   await expect(page).toHaveURL(/\/chronicles\/.+\/play/);
-  await expect(page.getByRole("heading", { name: "Prompt 7" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Prompt 19" })).toBeVisible();
 });

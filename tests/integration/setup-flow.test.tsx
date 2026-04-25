@@ -913,6 +913,42 @@ describe("guided setup flow", () => {
     fetchMock.mockRestore();
   });
 
+  it("keeps required prompt skill fields open when a stale draft disabled skill creation", async () => {
+    window.localStorage.setItem(
+      "tyov.prompt.chronicle-1",
+      JSON.stringify({
+        experienceText: "",
+        newResourceDescription: "",
+        newResourceIsStationary: false,
+        newResourceLabel: "",
+        newSkillDescription: "",
+        newSkillLabel: "",
+        playerEntry: "",
+        shouldCreateResource: false,
+        shouldCreateSkill: false,
+      }),
+    );
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        initialSessionId="session-1"
+        promptEffect={{
+          guidance:
+            "This prompt requires a new skill: Bloodthirsty. Add it before setting the entry into memory.",
+          skill: {
+            label: "Bloodthirsty",
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByLabelText("Skill name")).toHaveValue("Bloodthirsty");
+    expect(screen.getByRole("button", { name: "Required by this prompt" })).toBeDisabled();
+  });
+
   it("surfaces known prompt resource effects and preselects stationary resources", async () => {
     const { PlaySurface } = await import("@/components/ritual/PlaySurface");
     const fetchMock = vi.spyOn(globalThis, "fetch");
@@ -965,6 +1001,42 @@ describe("guided setup flow", () => {
     expect(fetchMock).not.toHaveBeenCalled();
 
     fetchMock.mockRestore();
+  });
+
+  it("keeps required prompt resource fields open when a stale draft disabled resource creation", async () => {
+    window.localStorage.setItem(
+      "tyov.prompt.chronicle-1",
+      JSON.stringify({
+        experienceText: "",
+        newResourceDescription: "",
+        newResourceIsStationary: false,
+        newResourceLabel: "",
+        newSkillDescription: "",
+        newSkillLabel: "",
+        playerEntry: "",
+        shouldCreateResource: false,
+        shouldCreateSkill: false,
+      }),
+    );
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={4}
+        initialSessionId="session-1"
+        promptEffect={{
+          guidance:
+            "This prompt requires a new stationary resource. Add the place that now shelters the chronicle.",
+          resource: {
+            isStationary: true,
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByLabelText("Stationary")).toBeChecked();
+    expect(screen.getByRole("button", { name: "Required by this prompt" })).toBeDisabled();
   });
 
   it("reveals prompt-created skill fields on demand and sends newSkill in the request body", async () => {

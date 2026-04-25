@@ -253,6 +253,41 @@ const promptCatalogSeed: PromptCatalogRow[] = [
     prompt_number: 7,
     prompt_version: "base",
   },
+  {
+    encounter_index: 1,
+    prompt_markdown:
+      "A new hunger changes the shape of your nights. What do you take that you once would have spared?",
+    prompt_number: 10,
+    prompt_version: "base",
+  },
+  {
+    encounter_index: 1,
+    prompt_markdown:
+      "Someone remembers you incorrectly. What false story do they tell, and why does it endure?",
+    prompt_number: 13,
+    prompt_version: "base",
+  },
+  {
+    encounter_index: 1,
+    prompt_markdown:
+      "A refuge fails you. What sign tells you it is no longer safe?",
+    prompt_number: 16,
+    prompt_version: "base",
+  },
+  {
+    encounter_index: 1,
+    prompt_markdown:
+      "You lose track of a mortal custom. Who corrects you, and what do you do with the shame?",
+    prompt_number: 19,
+    prompt_version: "base",
+  },
+  {
+    encounter_index: 1,
+    prompt_markdown:
+      "An old debt returns wearing a new face. What do you still owe?",
+    prompt_number: 22,
+    prompt_version: "base",
+  },
 ];
 
 function buildInitialState(): E2EState {
@@ -626,7 +661,7 @@ function findNextPromptPosition(
   state: E2EState,
   chronicle: ChronicleRow,
   movement: number,
-) {
+): { encounterIndex: number; promptNumber: number } | null {
   let candidatePromptNumber = Math.max(
     1,
     chronicle.current_prompt_number + movement,
@@ -663,10 +698,7 @@ function findNextPromptPosition(
     candidatePromptNumber += 1;
   }
 
-  return {
-    encounterIndex: chronicle.current_prompt_encounter,
-    promptNumber: chronicle.current_prompt_number,
-  };
+  return null;
 }
 
 function ensureActiveDiary(
@@ -1119,6 +1151,11 @@ function applyPromptResolution(args: Record<string, unknown>) {
     movement: 3,
   };
   const nextPrompt = findNextPromptPosition(state, chronicle, rolled.movement);
+
+  if (!nextPrompt) {
+    return createRpcError("No next prompt is available in the prompt catalog.");
+  }
+
   const experienceText =
     typeof args.experience_text === "string" ? args.experience_text : "";
   const playerEntry =
