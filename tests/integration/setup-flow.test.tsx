@@ -862,6 +862,7 @@ describe("guided setup flow", () => {
 
   it("surfaces known prompt skill effects and prefills Prompt 1's required skill", async () => {
     const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+    const fetchMock = vi.spyOn(globalThis, "fetch");
 
     render(
       <PlaySurface
@@ -884,17 +885,37 @@ describe("guided setup flow", () => {
       ),
     ).toBeInTheDocument();
 
+    expect(screen.getByLabelText("Skill name")).toHaveValue("Bloodthirsty");
+
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: {
+        value:
+          "I answered the bells by dragging the sexton into the thawing graveyard.",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: {
+        value:
+          "I left the chapel with blood under my nails and a prayer I could not finish.",
+      },
+    });
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Add a skill from this prompt",
+        name: "Set the entry into memory",
       }),
     );
 
-    expect(screen.getByLabelText("Skill name")).toHaveValue("Bloodthirsty");
+    expect(
+      screen.getByText("Name the skill and explain why this prompt gave it shape."),
+    ).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    fetchMock.mockRestore();
   });
 
   it("surfaces known prompt resource effects and preselects stationary resources", async () => {
     const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+    const fetchMock = vi.spyOn(globalThis, "fetch");
 
     render(
       <PlaySurface
@@ -917,13 +938,33 @@ describe("guided setup flow", () => {
       ),
     ).toBeInTheDocument();
 
+    expect(screen.getByLabelText("Stationary")).toBeChecked();
+
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: {
+        value:
+          "I learned to keep hunger hidden behind a church door and a careful smile.",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: {
+        value: "Second consequence kept in mind.",
+      },
+    });
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Add a resource from this prompt",
+        name: "Set the entry into memory",
       }),
     );
 
-    expect(screen.getByLabelText("Stationary")).toBeChecked();
+    expect(
+      screen.getByText(
+        "Name the resource and explain why this prompt made it matter.",
+      ),
+    ).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    fetchMock.mockRestore();
   });
 
   it("reveals prompt-created skill fields on demand and sends newSkill in the request body", async () => {
@@ -1708,9 +1749,10 @@ describe("guided setup flow", () => {
     expect(resourcesOrder).toHaveBeenCalledTimes(1);
     expect(
       screen.getByRole("button", {
-        name: "Add a skill from this prompt",
+        name: "Required by this prompt",
       }),
     ).toBeInTheDocument();
+    expect(screen.getByLabelText("Skill name")).toHaveValue("Bloodthirsty");
     expect(
       screen.getByRole("button", {
         name: "Add a resource from this prompt",

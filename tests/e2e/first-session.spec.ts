@@ -218,6 +218,10 @@ test("sign-in to first resolved prompt stays inside the ritual flow", async ({
     .fill(
       "I left the chapel with blood under my nails and a prayer I could not finish.",
     );
+  await expect(page.getByLabel("Skill name")).toHaveValue("Bloodthirsty");
+  await page
+    .getByLabel("Why this skill now")
+    .fill("I learned to feed first and mourn later.");
   if (chronicleId) {
     await expect
       .poll(

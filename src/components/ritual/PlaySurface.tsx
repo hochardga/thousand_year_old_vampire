@@ -59,12 +59,14 @@ export function PlaySurface({
 }: PlaySurfaceProps) {
   const hasTrackedFirstPromptResolved = useRef(false);
   const initialDraft = loadPromptDraft(chronicleId);
+  const requiresPromptResource = Boolean(promptEffect?.resource);
+  const requiresPromptSkill = Boolean(promptEffect?.skill);
   const [playerEntry, setPlayerEntry] = useState(() => initialDraft?.playerEntry ?? "");
   const [experienceText, setExperienceText] = useState(
     () => initialDraft?.experienceText ?? "",
   );
   const [isAddingResource, setIsAddingResource] = useState(
-    () => initialDraft?.shouldCreateResource ?? false,
+    () => initialDraft?.shouldCreateResource ?? requiresPromptResource,
   );
   const [newResourceLabel, setNewResourceLabel] = useState(
     () => initialDraft?.newResourceLabel ?? "",
@@ -73,13 +75,16 @@ export function PlaySurface({
     () => initialDraft?.newResourceDescription ?? "",
   );
   const [newResourceIsStationary, setNewResourceIsStationary] = useState(
-    () => initialDraft?.newResourceIsStationary ?? false,
+    () =>
+      initialDraft?.newResourceIsStationary ??
+      promptEffect?.resource?.isStationary ??
+      false,
   );
   const [isAddingSkill, setIsAddingSkill] = useState(
-    () => initialDraft?.shouldCreateSkill ?? false,
+    () => initialDraft?.shouldCreateSkill ?? requiresPromptSkill,
   );
   const [newSkillLabel, setNewSkillLabel] = useState(
-    () => initialDraft?.newSkillLabel ?? "",
+    () => initialDraft?.newSkillLabel ?? promptEffect?.skill?.label ?? "",
   );
   const [newSkillDescription, setNewSkillDescription] = useState(
     () => initialDraft?.newSkillDescription ?? "",
@@ -334,6 +339,10 @@ export function PlaySurface({
   const hasResolvedPrompt = Boolean(activeResult);
 
   function handleSkillComposerToggle() {
+    if (requiresPromptSkill) {
+      return;
+    }
+
     if (isAddingSkill) {
       syncPromptDraft({
         newSkillDescription: "",
@@ -360,6 +369,10 @@ export function PlaySurface({
   }
 
   function handleResourceComposerToggle() {
+    if (requiresPromptResource) {
+      return;
+    }
+
     if (isAddingResource) {
       syncPromptDraft({
         newResourceDescription: "",
@@ -447,6 +460,7 @@ export function PlaySurface({
             description={newSkillDescription}
             errorMessage={skillErrorMessage}
             isOpen={isAddingSkill}
+            isRequired={requiresPromptSkill}
             label={newSkillLabel}
             onDescriptionChange={setNewSkillDescription}
             onLabelChange={setNewSkillLabel}
@@ -456,6 +470,7 @@ export function PlaySurface({
             description={newResourceDescription}
             errorMessage={resourceErrorMessage}
             isOpen={isAddingResource}
+            isRequired={requiresPromptResource}
             isStationary={newResourceIsStationary}
             label={newResourceLabel}
             onDescriptionChange={setNewResourceDescription}

@@ -7,6 +7,7 @@ type PromptResourceComposerProps = {
   description: string;
   errorMessage?: string | null;
   isOpen: boolean;
+  isRequired?: boolean;
   isStationary: boolean;
   label: string;
   onDescriptionChange: (value: string) => void;
@@ -19,6 +20,7 @@ export function PromptResourceComposer({
   description,
   errorMessage = null,
   isOpen,
+  isRequired = false,
   isStationary,
   label,
   onDescriptionChange,
@@ -39,10 +41,15 @@ export function PromptResourceComposer({
         </div>
         <button
           className="inline-flex min-h-11 items-center justify-center rounded-soft border border-ink/10 px-4 py-2 text-sm font-medium text-ink transition-colors duration-160 ease-ritual hover:border-gold/40"
+          disabled={isRequired}
           onClick={onToggle}
           type="button"
         >
-          {isOpen ? "Remove the new resource" : "Add a resource from this prompt"}
+          {isRequired
+            ? "Required by this prompt"
+            : isOpen
+              ? "Remove the new resource"
+              : "Add a resource from this prompt"}
         </button>
       </div>
 

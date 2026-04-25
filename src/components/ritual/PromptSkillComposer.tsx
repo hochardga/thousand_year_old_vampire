@@ -7,6 +7,7 @@ type PromptSkillComposerProps = {
   description: string;
   errorMessage?: string | null;
   isOpen: boolean;
+  isRequired?: boolean;
   label: string;
   onDescriptionChange: (value: string) => void;
   onLabelChange: (value: string) => void;
@@ -17,6 +18,7 @@ export function PromptSkillComposer({
   description,
   errorMessage = null,
   isOpen,
+  isRequired = false,
   label,
   onDescriptionChange,
   onLabelChange,
@@ -35,10 +37,15 @@ export function PromptSkillComposer({
         </div>
         <button
           className="inline-flex min-h-11 items-center justify-center rounded-soft border border-ink/10 px-4 py-2 text-sm font-medium text-ink transition-colors duration-160 ease-ritual hover:border-gold/40"
+          disabled={isRequired}
           onClick={onToggle}
           type="button"
         >
-          {isOpen ? "Remove the new skill" : "Add a skill from this prompt"}
+          {isRequired
+            ? "Required by this prompt"
+            : isOpen
+              ? "Remove the new skill"
+              : "Add a skill from this prompt"}
         </button>
       </div>
 
