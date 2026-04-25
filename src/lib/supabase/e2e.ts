@@ -246,6 +246,48 @@ const promptCatalogSeed: PromptCatalogRow[] = [
     prompt_number: 4,
     prompt_version: "base",
   },
+  {
+    encounter_index: 1,
+    prompt_markdown:
+      "The centuries press onward. What mortal custom do you fail to recognize, and who notices?",
+    prompt_number: 7,
+    prompt_version: "base",
+  },
+  {
+    encounter_index: 1,
+    prompt_markdown:
+      "A new hunger changes the shape of your nights. What do you take that you once would have spared?",
+    prompt_number: 10,
+    prompt_version: "base",
+  },
+  {
+    encounter_index: 1,
+    prompt_markdown:
+      "Someone remembers you incorrectly. What false story do they tell, and why does it endure?",
+    prompt_number: 13,
+    prompt_version: "base",
+  },
+  {
+    encounter_index: 1,
+    prompt_markdown:
+      "A refuge fails you. What sign tells you it is no longer safe?",
+    prompt_number: 16,
+    prompt_version: "base",
+  },
+  {
+    encounter_index: 1,
+    prompt_markdown:
+      "You lose track of a mortal custom. Who corrects you, and what do you do with the shame?",
+    prompt_number: 19,
+    prompt_version: "base",
+  },
+  {
+    encounter_index: 1,
+    prompt_markdown:
+      "An old debt returns wearing a new face. What do you still owe?",
+    prompt_number: 22,
+    prompt_version: "base",
+  },
 ];
 
 function buildInitialState(): E2EState {
@@ -291,17 +333,65 @@ function timestamp() {
   return new Date().toISOString();
 }
 
+function splitSelectColumns(columns: string) {
+  const result: string[] = [];
+  let current = "";
+  let depth = 0;
+
+  for (const character of columns) {
+    if (character === "(") {
+      depth += 1;
+    }
+
+    if (character === ")") {
+      depth = Math.max(0, depth - 1);
+    }
+
+    if (character === "," && depth === 0) {
+      if (current.trim()) {
+        result.push(current.trim());
+      }
+
+      current = "";
+      continue;
+    }
+
+    current += character;
+  }
+
+  if (current.trim()) {
+    result.push(current.trim());
+  }
+
+  return result;
+}
+
+function pickMemoryEntries(memoryId: unknown, columns: string) {
+  if (typeof memoryId !== "string") {
+    return [];
+  }
+
+  return getState().memory_entries
+    .filter((entry) => entry.memory_id === memoryId)
+    .sort((left, right) => left.position - right.position)
+    .map((entry) => pickColumns(entry as unknown as Record<string, unknown>, columns));
+}
+
 function pickColumns<T extends Record<string, unknown>>(row: T, columns: string) {
   if (columns === "*" || !columns.trim()) {
     return row;
   }
 
-  const selected = columns
-    .split(",")
-    .map((column) => column.trim())
-    .filter(Boolean);
+  const selected = splitSelectColumns(columns);
 
   return selected.reduce<Record<string, unknown>>((result, column) => {
+    const nestedMatch = column.match(/^([a-z_]+)\((.*)\)$/);
+
+    if (nestedMatch?.[1] === "memory_entries") {
+      result.memory_entries = pickMemoryEntries(row.id, nestedMatch[2]);
+      return result;
+    }
+
     result[column] = row[column];
     return result;
   }, {});
@@ -529,6 +619,14 @@ function normalizeResourceText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizeCharacterText(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeMarkText(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
 function nextOpenMindSlot(state: E2EState, chronicleId: string) {
   for (let slot = 1; slot <= 5; slot += 1) {
     const occupied = state.memories.some(
@@ -557,6 +655,50 @@ function getCurrentPrompt(
         prompt.encounter_index === chronicle.current_prompt_encounter,
     ) || state.prompt_catalog[0]
   );
+}
+
+function findNextPromptPosition(
+  state: E2EState,
+  chronicle: ChronicleRow,
+  movement: number,
+): { encounterIndex: number; promptNumber: number } | null {
+  let candidatePromptNumber = Math.max(
+    1,
+    chronicle.current_prompt_number + movement,
+  );
+
+  while (candidatePromptNumber <= 500) {
+    const existingEncounters = state.prompt_runs
+      .filter(
+        (run) =>
+          run.chronicle_id === chronicle.id &&
+          run.prompt_number === candidatePromptNumber,
+      )
+      .map((run) => run.encounter_index);
+    const minimumEncounter =
+      candidatePromptNumber === chronicle.current_prompt_number
+        ? chronicle.current_prompt_encounter
+        : 0;
+    const encounterIndex =
+      Math.max(minimumEncounter, 0, ...existingEncounters) + 1;
+    const prompt = state.prompt_catalog.find(
+      (row) =>
+        row.prompt_number === candidatePromptNumber &&
+        row.encounter_index === encounterIndex &&
+        row.prompt_version === chronicle.prompt_version,
+    );
+
+    if (prompt) {
+      return {
+        encounterIndex,
+        promptNumber: candidatePromptNumber,
+      };
+    }
+
+    candidatePromptNumber += 1;
+  }
+
+  return null;
 }
 
 function ensureActiveDiary(
@@ -729,12 +871,16 @@ function selectRowsForTable(table: string) {
   switch (table) {
     case "archive_events":
       return state.archive_events;
+    case "characters":
+      return state.characters;
     case "chronicles":
       return state.chronicles;
     case "diaries":
       return state.diaries;
     case "feedback_submissions":
       return state.feedback_submissions;
+    case "marks":
+      return state.marks;
     case "memory_entries":
       return state.memory_entries;
     case "memories":
@@ -807,6 +953,34 @@ function applySetupCompletion(args: Record<string, unknown>) {
       description?: string;
       label?: string;
     }>) || [];
+  const initialResources =
+    (args.initial_resources as Array<{
+      description?: string;
+      isStationary?: boolean;
+      label?: string;
+    }>) || [];
+  const initialCharacters =
+    (args.initial_characters as Array<{
+      description?: string;
+      kind?: "mortal" | "immortal";
+      name?: string;
+    }>) || [];
+  const immortalCharacter =
+    (args.immortal_character as
+      | {
+          description?: string;
+          kind?: "mortal" | "immortal";
+          name?: string;
+        }
+      | undefined) ?? {};
+  const mark =
+    (args.mark as
+      | {
+          description?: string;
+          isConcealed?: boolean;
+          label?: string;
+        }
+      | undefined) ?? {};
 
   setupMemories.forEach((memory, index) => {
     const memoryId = randomUUID();
@@ -834,21 +1008,95 @@ function applySetupCompletion(args: Record<string, unknown>) {
   });
 
   initialSkills.forEach((skill, index) => {
+    const label = normalizeSkillText(skill.label);
+
+    if (!label) {
+      return;
+    }
+
     state.skills.push({
       chronicle_id: chronicle.id,
       description: normalizeSkillText(skill.description),
       id: randomUUID(),
-      label: normalizeSkillText(skill.label),
+      label,
       sort_order: index,
       status: "active",
     });
   });
 
+  initialResources.forEach((resource, index) => {
+    const label = normalizeResourceText(resource.label);
+
+    if (!label) {
+      return;
+    }
+
+    state.resources.push({
+      chronicle_id: chronicle.id,
+      description: normalizeResourceText(resource.description),
+      id: randomUUID(),
+      is_stationary: Boolean(resource.isStationary),
+      label,
+      sort_order: index,
+      status: "active",
+    });
+  });
+
+  initialCharacters.forEach((character) => {
+    const name = normalizeCharacterText(character.name);
+
+    if (!name) {
+      return;
+    }
+
+    state.characters.push({
+      chronicle_id: chronicle.id,
+      description: normalizeCharacterText(character.description),
+      id: randomUUID(),
+      introduced_at: now,
+      kind: character.kind ?? "mortal",
+      name,
+      status: "active",
+    });
+  });
+
+  const immortalName = normalizeCharacterText(immortalCharacter.name);
+
+  if (immortalName) {
+    state.characters.push({
+      chronicle_id: chronicle.id,
+      description: normalizeCharacterText(immortalCharacter.description),
+      id: randomUUID(),
+      introduced_at: now,
+      kind: immortalCharacter.kind ?? "immortal",
+      name: immortalName,
+      status: "active",
+    });
+  }
+
+  const markLabel = normalizeMarkText(mark.label);
+
+  if (markLabel) {
+    state.marks.push({
+      chronicle_id: chronicle.id,
+      created_at: now,
+      description: normalizeMarkText(mark.description),
+      id: randomUUID(),
+      is_active: true,
+      is_concealed: Boolean(mark.isConcealed),
+      label: markLabel,
+    });
+  }
+
   const createdEntities = {
-    characters: ((args.initial_characters as unknown[])?.length || 0) + 1,
+    characters: state.characters.filter(
+      (character) => character.chronicle_id === chronicle.id,
+    ).length,
     memories: setupMemories.length,
-    resources: (args.initial_resources as unknown[])?.length || 0,
-    skills: (args.initial_skills as unknown[])?.length || 0,
+    resources: state.resources.filter(
+      (resource) => resource.chronicle_id === chronicle.id,
+    ).length,
+    skills: state.skills.filter((skill) => skill.chronicle_id === chronicle.id).length,
   };
 
   return {
@@ -897,6 +1145,17 @@ function applyPromptResolution(args: Record<string, unknown>) {
   const now = timestamp();
   const currentPrompt = getCurrentPrompt(state, chronicle);
   const promptRunId = randomUUID();
+  const rolled = {
+    d10: 7,
+    d6: 4,
+    movement: 3,
+  };
+  const nextPrompt = findNextPromptPosition(state, chronicle, rolled.movement);
+
+  if (!nextPrompt) {
+    return createRpcError("No next prompt is available in the prompt catalog.");
+  }
+
   const experienceText =
     typeof args.experience_text === "string" ? args.experience_text : "";
   const playerEntry =
@@ -1115,27 +1374,27 @@ function applyPromptResolution(args: Record<string, unknown>) {
   state.prompt_runs.push({
     chronicle_id: chronicle.id,
     created_at: now,
-    d10_roll: 7,
-    d6_roll: 4,
+    d10_roll: rolled.d10,
+    d6_roll: rolled.d6,
     encounter_index: chronicle.current_prompt_encounter,
     experience_text: experienceText,
     id: promptRunId,
-    movement: 3,
-    next_prompt_encounter: 1,
-    next_prompt_number: 4,
+    movement: rolled.movement,
+    next_prompt_encounter: nextPrompt.encounterIndex,
+    next_prompt_number: nextPrompt.promptNumber,
     player_entry: playerEntry,
     prompt_markdown: currentPrompt?.prompt_markdown || "",
     prompt_number: chronicle.current_prompt_number,
     session_id: session.id,
   });
-  chronicle.current_prompt_number = 4;
-  chronicle.current_prompt_encounter = 1;
+  chronicle.current_prompt_number = nextPrompt.promptNumber;
+  chronicle.current_prompt_encounter = nextPrompt.encounterIndex;
   chronicle.last_played_at = now;
   chronicle.updated_at = now;
   session.snapshot_json = {
     ...session.snapshot_json,
-    currentPromptEncounter: 1,
-    currentPromptNumber: 4,
+    currentPromptEncounter: nextPrompt.encounterIndex,
+    currentPromptNumber: nextPrompt.promptNumber,
   };
   appendArchiveEvents(state, chronicle.id, session.id, eventPayload, now);
 
@@ -1143,15 +1402,11 @@ function applyPromptResolution(args: Record<string, unknown>) {
     data: {
       archiveEvents: eventPayload,
       nextPrompt: {
-        encounterIndex: 1,
-        promptNumber: 4,
+        encounterIndex: nextPrompt.encounterIndex,
+        promptNumber: nextPrompt.promptNumber,
       },
       promptRunId,
-      rolled: {
-        d10: 7,
-        d6: 4,
-        movement: 3,
-      },
+      rolled,
     },
     error: null,
   };

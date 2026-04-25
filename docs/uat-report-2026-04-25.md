@@ -26,12 +26,12 @@ Environment:
 
 | Check | Result | Notes |
 | --- | --- | --- |
-| `npm install` | Passed | Installed missing local dependencies. `npm audit` reports 2 moderate advisories. |
-| `npm run lint` | Passed with warning | One React hooks dependency warning in `src/components/ritual/PlaySurface.tsx`. |
-| `npm run test` | Passed | 26 test files, 135 tests. |
-| `npm run test:e2e` | Passed | 5 Chromium e2e tests. |
+| `npm install` | Passed | Installed local dependencies. `npm audit` reports the tracked 2 moderate advisories. |
+| `npm run lint` | Passed | React hooks dependency warning in `src/components/ritual/PlaySurface.tsx` is resolved. |
+| `npm run test` | Passed | 26 test files, 138 tests. |
+| `npm run test:e2e` | Passed | 5 Chromium e2e tests, including stale play-state and setup-ledger assertions. |
 | `npm run build` | Passed | Production build completed successfully. |
-| `npm audit --audit-level=moderate` | Failed | Moderate PostCSS advisory via Next's nested dependency; suggested forced fix would downgrade/install an incompatible Next version. |
+| `npm audit --audit-level=moderate` | Failed | Tracked moderate PostCSS advisory via Next's nested dependency; suggested forced fix would install `next@9.3.3`, which is a breaking/inappropriate path. |
 
 ## Findings
 
@@ -62,6 +62,10 @@ Recommendation:
 - Clear the consequence/result state when the active prompt number changes, or redirect/navigate in a way that remounts the play surface after prompt advancement.
 - Consider hiding the writing form once a prompt is successfully resolved until the user advances.
 
+Resolution:
+
+- Fixed in this branch. The post-resolve form is hidden, the consequence link performs a fresh navigation to the play route, and the client result state is cleared when the active prompt/session context changes.
+
 ### P1 - Current-state memory count is stale immediately after resolving a prompt
 
 After resolving Prompt 1, the play route's `Current state` still displayed `1 memory held in mind` even though the archive later showed the setup memory plus the resolved prompt memory. After resolving Prompt 4, the play route still displayed `2 memories held in mind` while the archive showed 3 held memories.
@@ -85,6 +89,10 @@ Recommendation:
 
 - Refresh/revalidate the memory summary after a successful resolve.
 - If the product intentionally waits for the user to advance before recomputing state, adjust the success state copy so the pending update is clear.
+
+Resolution:
+
+- Fixed in this branch. Continuing after resolution reloads the play route from server state, so the `Current state` memory count reflects the newly created memory on the next prompt.
 
 ### P1 - Setup-created characters and marks do not appear in the ledger
 
@@ -114,6 +122,10 @@ Recommendation:
 - Ensure `complete_chronicle_setup` persists initial characters, immortal maker, and mark into the same tables read by the ledger.
 - Add e2e coverage that completes setup and asserts characters/marks are visible on the ledger.
 
+Resolution:
+
+- Fixed in this branch for the test-auth/mock path that produced the UAT finding. The SQL RPC already persisted these rows; the E2E mock now persists setup-created resources, characters, immortal maker, and mark into the same mock tables read by the ledger, with E2E coverage for ledger visibility.
+
 ### P2 - Archive memory cards show "0 entries kept here" for memories created from entries
 
 The archive memory stack showed each held memory with `0 entries kept here`, including memories created from resolved prompt experiences. The prompt history correctly showed the full player entry and experience text.
@@ -135,6 +147,10 @@ Recommendation:
 - Either store the corresponding entry text in `memory_entries`, or revise the memory-card language so a single-title memory does not imply missing content.
 - Consider surfacing the prompt-run entry inside the memory card when the memory came from a resolved prompt.
 
+Resolution:
+
+- Fixed in this branch. Prompt-created memories continue to store memory entries, and the archive card now uses neutral fallback copy when an entry join is absent instead of claiming `0 entries kept here`.
+
 ### P2 - Recap copy exposes internal mechanics and reads awkwardly
 
 The recap successfully summarized the session, but the generated prose included mechanical phrasing:
@@ -155,6 +171,10 @@ Recommendation:
 - Prefer the concrete prompt entry/experience over repeated generic archive event summaries.
 - Consider "You are at Prompt 4" unless the encounter index is meaningful to the player.
 
+Resolution:
+
+- Fixed in this branch. Recap prose now says `Prompt N`, summarizes concrete prompt experiences, deduplicates archive changes, and filters repeated generic prompt-resolved event summaries when prompt runs are available.
+
 ### P2 - Prompt-required trait changes are not guided strongly enough
 
 Prompt 1 instructs the user to `Take the skill Bloodthirsty`, and Prompt 4 instructs the user to create a stationary resource. The UI offers generic `Add a skill from this prompt` and `Add a resource from this prompt` controls, but it does not pre-fill, highlight, or enforce the specific instruction.
@@ -171,6 +191,10 @@ Recommendation:
 - For known prompt effects, pre-fill labels such as `Bloodthirsty` and pre-check `Stationary` where appropriate.
 - If enforcement is out of scope, add inline confirmation that the player has handled the prompt's trait/resource instruction.
 
+Resolution:
+
+- Fixed in this branch for known base prompts. Prompt 1 now highlights `Bloodthirsty` and pre-fills the prompt-created skill composer; Prompt 4 highlights the stationary resource requirement and preselects `Stationary`.
+
 ### P2 - Prompt resolve form remains active after successful submission
 
 After a successful prompt resolve, the form is cleared and the `Set the entry into memory` button becomes active again while the success panel is still visible.
@@ -184,6 +208,10 @@ Recommendation:
 
 - Disable or hide the form once a prompt has been resolved and show a single next action.
 - Alternatively, immediately refresh into the next prompt state.
+
+Resolution:
+
+- Fixed in this branch. The resolve form is hidden after successful submission and the consequence panel is the only active next action.
 
 ### P3 - Setup page has repeated high-level headings in the DOM
 
@@ -199,6 +227,10 @@ Recommendation:
 - Keep one page-level `h1`, then use consistent `h2` headings for individual setup steps.
 - Add an accessibility assertion around heading outline if feasible.
 
+Resolution:
+
+- Fixed in this branch. Setup step headings now render as `h2`, matching the final checkpoint and preserving the page-level `h1`.
+
 ### P3 - Lint warning in play surface
 
 `npm run lint` passes but reports:
@@ -213,6 +245,10 @@ Why this matters:
 Recommendation:
 
 - Stabilize `syncPromptDraft` with `useCallback`, move it inside the effect, or otherwise satisfy the hook dependency rule deliberately.
+
+Resolution:
+
+- Fixed in this branch. `syncPromptDraft` is stabilized with `useCallback` and the draft persistence effect depends on the stable callback.
 
 ### P3 - Dependency audit reports moderate PostCSS advisory through Next
 
@@ -231,6 +267,10 @@ Recommendation:
 
 - Track the upstream Next/PostCSS resolution.
 - Avoid `npm audit fix --force` unless the dependency graph is reviewed manually.
+
+Resolution:
+
+- Tracked intentionally. The forced audit fix is still unsafe for this app; verification records the remaining upstream advisory instead of applying `npm audit fix --force`.
 
 ## Positive UAT Notes
 

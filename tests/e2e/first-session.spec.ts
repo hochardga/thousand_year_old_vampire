@@ -218,6 +218,10 @@ test("sign-in to first resolved prompt stays inside the ritual flow", async ({
     .fill(
       "I left the chapel with blood under my nails and a prayer I could not finish.",
     );
+  await expect(page.getByLabel("Skill name")).toHaveValue("Bloodthirsty");
+  await page
+    .getByLabel("Why this skill now")
+    .fill("I learned to feed first and mourn later.");
   if (chronicleId) {
     await expect
       .poll(
@@ -250,4 +254,19 @@ test("sign-in to first resolved prompt stays inside the ritual flow", async ({
   await expect(
     page.getByRole("link", { name: "Continue to prompt 4" }),
   ).toBeVisible();
+  await page.getByRole("link", { name: "Continue to prompt 4" }).click();
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByRole("heading", { name: "Prompt 4" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Continue to prompt 4" }),
+  ).not.toBeVisible();
+  await expect(page.getByText("2 memories held in mind")).toBeVisible();
+
+  if (chronicleId) {
+    await page.goto(`/chronicles/${chronicleId}/ledger`);
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByText("Marta")).toBeVisible();
+    await expect(page.getByText("Aurelia")).toBeVisible();
+    await expect(page.getByText("Unsteady Reflection")).toBeVisible();
+  }
 });

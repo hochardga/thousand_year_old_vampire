@@ -52,9 +52,11 @@ export function MemoryCard({
           {title}
         </h3>
         <p className="mt-2 text-sm text-ink-muted">
-          {entries.length === 1
-            ? "1 entry kept here"
-            : `${entries.length} entries kept here`}
+          {entries.length === 0
+            ? "Entry text pending"
+            : entries.length === 1
+              ? "1 entry kept here"
+              : `${entries.length} entries kept here`}
         </p>
         <span className="sr-only">
           Press Enter or Space to expand or collapse this memory.
@@ -64,7 +66,7 @@ export function MemoryCard({
       <div className="mt-5 space-y-3 border-t border-ink/8 pt-5">
         {entries.length === 0 ? (
           <p className="text-sm leading-relaxed text-ink-muted">
-            No entry has been preserved in this memory yet.
+            Entry text has not been joined to this memory yet.
           </p>
         ) : (
           entries.map((entry) => (

@@ -103,6 +103,21 @@ async function resolvePrompt(
   await page.getByLabel("Player entry").fill(options.playerEntry);
   await page.getByLabel("Experience text").fill(options.experienceText);
 
+  if (await page.getByLabel("Why this skill now").isVisible().catch(() => false)) {
+    await expect(page.getByLabel("Skill name")).toHaveValue("Bloodthirsty");
+    await page
+      .getByLabel("Why this skill now")
+      .fill("I learned to feed first and mourn later.");
+  }
+
+  if (await page.getByLabel("Resource name").isVisible().catch(() => false)) {
+    await page.getByLabel("Resource name").fill("A trusted resting place");
+    await page
+      .getByLabel("Why it matters")
+      .fill("It sheltered me while I learned to survive outside mortal company.");
+    await expect(page.getByLabel("Stationary")).toBeChecked();
+  }
+
   if (options.overflowMode) {
     if (!options.overflowChoiceTitle) {
       throw new Error("overflowChoiceTitle is required with overflowMode");
@@ -215,5 +230,5 @@ test("beta smoke flow covers sign-in, setup, play, memory overflow, archive, rec
   await page.getByRole("link", { name: "Resume the current prompt" }).click();
 
   await expect(page).toHaveURL(/\/chronicles\/.+\/play/);
-  await expect(page.getByRole("heading", { name: "Prompt 4" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Prompt 16" })).toBeVisible();
 });

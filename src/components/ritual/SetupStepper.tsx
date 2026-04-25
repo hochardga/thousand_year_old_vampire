@@ -293,9 +293,9 @@ export function SetupStepper({
             Step {stepIndex + 1} of {stepDefinitions.length}
           </p>
           {isSafetyStep ? null : (
-            <h1 className="mt-3 font-heading text-4xl leading-tight text-ink">
+            <h2 className="mt-3 font-heading text-4xl leading-tight text-ink">
               {currentStep.heading}
-            </h1>
+            </h2>
           )}
         </div>
 

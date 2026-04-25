@@ -197,6 +197,21 @@ async function resolvePrompt(
   await experienceField.fill(options.experienceText);
   await expect(experienceField).toHaveValue(options.experienceText);
 
+  if (await page.getByLabel("Why this skill now").isVisible().catch(() => false)) {
+    await expect(page.getByLabel("Skill name")).toHaveValue("Bloodthirsty");
+    await page
+      .getByLabel("Why this skill now")
+      .fill("I learned to feed first and mourn later.");
+  }
+
+  if (await page.getByLabel("Resource name").isVisible().catch(() => false)) {
+    await page.getByLabel("Resource name").fill("A trusted resting place");
+    await page
+      .getByLabel("Why it matters")
+      .fill("It sheltered me while I learned to survive outside mortal company.");
+    await expect(page.getByLabel("Stationary")).toBeChecked();
+  }
+
   const chronicleId = page.url().match(/\/chronicles\/([^/]+)\//)?.[1];
 
   if (chronicleId) {
@@ -317,5 +332,5 @@ test("mobile return flow supports diary overflow, forgotten memories, and recap 
   await page.getByRole("link", { name: "Resume the current prompt" }).click();
 
   await expect(page).toHaveURL(/\/chronicles\/.+\/play/);
-  await expect(page.getByRole("heading", { name: "Prompt 4" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Prompt 19" })).toBeVisible();
 });

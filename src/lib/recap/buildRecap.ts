@@ -20,37 +20,45 @@ type BuildRecapInput = {
   promptRuns: RecapPromptRun[];
 };
 
-function formatMovement(movement: number) {
-  if (movement > 0) {
-    return `forward by ${movement}`;
-  }
-
-  if (movement < 0) {
-    return `back by ${Math.abs(movement)}`;
-  }
-
-  return "without changing position";
-}
-
 function formatPromptLine(promptRun: RecapPromptRun) {
-  return `Prompt ${promptRun.prompt_number}.${promptRun.encounter_index} moved the chronicle ${formatMovement(promptRun.movement)} and left ${promptRun.experience_text}`;
+  return `Prompt ${promptRun.prompt_number} left this memory: ${promptRun.experience_text}`;
 }
 
-export function buildRecap({
-  archiveEvents,
-  chronicleTitle,
-  currentPromptEncounter,
-  currentPromptNumber,
-  promptRuns,
-}: BuildRecapInput) {
+function uniqueUsefulEvents(
+  archiveEvents: RecapArchiveEvent[],
+  hasPromptRuns: boolean,
+) {
+  const seen = new Set<string>();
+
+  return archiveEvents.filter((event) => {
+    if (
+      hasPromptRuns &&
+      event.event_type === "prompt_resolved" &&
+      event.summary === "The entry has been set into memory."
+    ) {
+      return false;
+    }
+
+    if (seen.has(event.summary)) {
+      return false;
+    }
+
+    seen.add(event.summary);
+    return true;
+  });
+}
+
+export function buildRecap(input: BuildRecapInput) {
+  const { archiveEvents, chronicleTitle, currentPromptNumber, promptRuns } = input;
   const promptSummary =
     promptRuns.length > 0
       ? promptRuns.map(formatPromptLine).join(" ")
       : "No recent prompt run could be recovered, so the chronicle must be resumed from its current place alone.";
+  const usefulEvents = uniqueUsefulEvents(archiveEvents, promptRuns.length > 0);
   const eventSummary =
-    archiveEvents.length > 0
-      ? archiveEvents.map((event) => event.summary).join(" ")
-      : "No recent archive event was recorded beyond the ordinary movement of play.";
+    usefulEvents.length > 0
+      ? `Recent archive changes: ${usefulEvents.map((event) => event.summary).join(" ")}`
+      : "No unusual archive changes were recorded beyond the prompt memories.";
 
-  return `${chronicleTitle} now waits at prompt ${currentPromptNumber}.${currentPromptEncounter}.\n\n${promptSummary}\n\nThe latest changes around the archive: ${eventSummary}`;
+  return `${chronicleTitle} now waits at Prompt ${currentPromptNumber}.\n\n${promptSummary}\n\n${eventSummary}`;
 }

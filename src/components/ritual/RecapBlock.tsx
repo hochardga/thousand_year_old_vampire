@@ -7,7 +7,7 @@ import Link from "next/link";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 
 type RecapBlockProps = {
-  currentPromptEncounter: number;
+  currentPromptEncounter?: number;
   currentPromptNumber: number;
   chronicleId?: string;
   latestEvents: Array<{
@@ -21,7 +21,6 @@ type RecapBlockProps = {
 };
 
 export function RecapBlock({
-  currentPromptEncounter,
   currentPromptNumber,
   chronicleId,
   latestEvents,
@@ -41,7 +40,7 @@ export function RecapBlock({
             Return with the thread still in hand.
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-ink-muted">
-            Current place: prompt {currentPromptNumber}.{currentPromptEncounter}
+            Current place: Prompt {currentPromptNumber}
           </p>
         </div>
 

@@ -351,8 +351,7 @@ export default async function ChronicleArchivePage({
             Return to the current prompt
           </Link>
           <p className="inline-flex min-h-11 items-center rounded-soft border border-surface/14 px-4 py-3 text-sm text-surface/78">
-            Current place: prompt {(chronicle as ChronicleRecord).current_prompt_number}
-            .{(chronicle as ChronicleRecord).current_prompt_encounter}
+            Current place: Prompt {(chronicle as ChronicleRecord).current_prompt_number}
           </p>
         </div>
       </SurfacePanel>
