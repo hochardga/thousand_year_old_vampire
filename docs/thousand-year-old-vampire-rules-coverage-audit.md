@@ -35,7 +35,7 @@ What is only partly covered:
 | Partly covered area | Why it is only partial |
 | --- | --- |
 | Setup fidelity | The data model can hold more than the UI currently gathers, but the guided setup only asks for one skill, one resource, one mortal, one mark, and one memory. |
-| Trait changes during play | The payload format can mutate existing traits, but the play UI submits empty trait mutations and offers no normal controls for most prompt-driven trait updates. |
+| Trait changes during play | The play UI now supports prompt-created skills and resources, but it still submits empty mutation arrays and offers no normal controls for most prompt-driven checks, losses, character changes, or mark updates. |
 | Character and mark upkeep | Existing characters and marks can be edited after the fact in the ledger, but creation and many prompt-specific changes are not surfaced in active play. |
 
 What is still missing or materially incomplete:
@@ -124,21 +124,21 @@ The biggest memory gap is also an important one: the book expects the player to 
 
 | Rule from source text | Status | Assessment | Evidence |
 | --- | --- | --- | --- |
-| Skills are named capabilities tied to context. | Partial | Skills exist in setup, schema, and ledger storage, but the guided setup only asks for one skill and there is no in-play creation UI. | `src/components/ritual/SetupStepper.tsx`, `src/lib/validation/setup.ts`, `supabase/migrations/0002_core_gameplay_schema.sql` |
+| Skills are named capabilities tied to context. | Partial | Skills exist in setup, schema, ledger storage, and prompt resolution, but the guided setup still only asks for one initial skill instead of the book's fuller starting state. | `src/components/ritual/SetupStepper.tsx`, `src/lib/validation/setup.ts`, `src/components/ritual/PromptSkillComposer.tsx`, `supabase/migrations/0010_prompt_created_skills.sql` |
 | A Skill may be checked once. | Partial | The model has a `checked` state, so repeated checkmarks are not represented, but there is no play UI enforcing legal check choices. | `supabase/migrations/0002_core_gameplay_schema.sql`, `src/app/api/chronicles/[chronicleId]/skills/[skillId]/route.ts` |
 | Losing a Skill strikes it out but keeps it readable. | Partial | The status model supports `lost`, but there is no first-party play UI for prompt-driven skill loss. | `src/types/chronicle.ts`, `src/app/api/chronicles/[chronicleId]/skills/[skillId]/route.ts`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
 | Checked skills flavor later prompt answers. | Manual | This remains entirely with the player. | No automation |
-| Prompts can create new Skills during play. | Missing | The active play payload only mutates existing skills by `id`; it cannot create new ones. The only skill route is an item-level `PATCH` route. | `src/types/chronicle.ts`, `src/lib/validation/play.ts`, `src/app/api/chronicles/[chronicleId]/skills/[skillId]/route.ts` |
+| Prompts can create new Skills during play. | Automated | The play surface exposes an optional prompt-created skill flow, and prompt resolution persists the new skill transactionally with the prompt answer. | `src/components/ritual/PromptSkillComposer.tsx`, `src/components/ritual/PlaySurface.tsx`, `src/lib/validation/play.ts`, `supabase/migrations/0010_prompt_created_skills.sql` |
 
 ### 6. Resources
 
 | Rule from source text | Status | Assessment | Evidence |
 | --- | --- | --- | --- |
-| Resources are named assets that matter mechanically. | Partial | Resources exist in the schema and setup, but the guided setup only asks for one resource and there is no in-play creation UI. | `src/components/ritual/SetupStepper.tsx`, `src/lib/validation/setup.ts`, `supabase/migrations/0002_core_gameplay_schema.sql` |
+| Resources are named assets that matter mechanically. | Partial | Resources exist in the schema, setup, ledger, and prompt resolution, but the guided setup still only asks for one initial resource instead of the book's fuller starting state. | `src/components/ritual/SetupStepper.tsx`, `src/lib/validation/setup.ts`, `src/components/ritual/PromptResourceComposer.tsx`, `supabase/migrations/0011_prompt_created_resources.sql` |
 | Resources can be stationary. | Automated | `is_stationary` is modeled and surfaced in the ledger. | `src/types/chronicle.ts`, `src/lib/validation/setup.ts`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
 | Losing a Resource strikes it out but keeps it readable. | Partial | The status model supports `lost`, but the normal play UI has no resource-loss controls. | `src/types/chronicle.ts`, `src/app/api/chronicles/[chronicleId]/resources/[resourceId]/route.ts`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
 | Not every fictional possession must be a Resource. | Manual | This remains a player judgment call. | No automation |
-| Prompts can create new Resources during play. | Missing | The play payload only mutates existing resources; there is no create flow in active play. The only resource route is an item-level `PATCH` route. | `src/types/chronicle.ts`, `src/lib/validation/play.ts`, `src/app/api/chronicles/[chronicleId]/resources/[resourceId]/route.ts` |
+| Prompts can create new Resources during play. | Automated | The play surface now supports prompt-created resources, including stationary resources, and prompt resolution persists them transactionally with the prompt answer. | `src/components/ritual/PromptResourceComposer.tsx`, `src/components/ritual/PlaySurface.tsx`, `src/lib/validation/play.ts`, `supabase/migrations/0011_prompt_created_resources.sql` |
 
 ### 7. Characters
 
@@ -252,7 +252,7 @@ These are the highest-value mismatches between the source rules and the current 
 | --- | --- |
 | No normal UI for `append-existing` memory placement | This changes the core rhythm of how memories are supposed to form. The book expects clustering into thematic memories; the current play UI mostly pushes toward one new memory per prompt until overflow. |
 | Guided setup does not produce the book's required starting state | A player who only uses the first-party setup flow begins with a simpler chronicle than the rules describe. |
-| No in-play creation of new skills, resources, characters, or marks | Many prompt outcomes in the book depend on creating new traits, not just mutating existing ones. |
+| No in-play creation of characters or marks | Skills and resources now have first-party prompt-resolution flows, but many prompts still depend on creating characters or marks in active play. |
 | No skill/resource substitution engine | The game-ending pressure around dwindling traits is one of the book's core mechanics, and it is currently absent. |
 | Diary loss and cascading memory loss are still missing | Diary capacity pressure now exists, but losing the diary and the memories preserved in it is still absent from the rules loop. |
 | No end-game flow | The app has statuses for `completed`, but no prompt-driven or rules-driven completion path in play. |

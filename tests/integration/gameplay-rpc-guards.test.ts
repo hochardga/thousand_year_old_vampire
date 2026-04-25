@@ -18,6 +18,10 @@ const promptCreatedSkillsMigrationPath = path.join(
   process.cwd(),
   "supabase/migrations/0010_prompt_created_skills.sql",
 );
+const promptCreatedResourcesMigrationPath = path.join(
+  process.cwd(),
+  "supabase/migrations/0011_prompt_created_resources.sql",
+);
 const samePromptEncounterHotfixPath = path.join(
   process.cwd(),
   "supabase/migrations/0006_fix_same_prompt_encounter_progression.sql",
@@ -37,6 +41,10 @@ function readDiaryCapacityMigration() {
 
 function readPromptCreatedSkillsMigration() {
   return fs.readFileSync(promptCreatedSkillsMigrationPath, "utf8");
+}
+
+function readPromptCreatedResourcesMigration() {
+  return fs.readFileSync(promptCreatedResourcesMigrationPath, "utf8");
 }
 
 function readSamePromptEncounterHotfix() {
@@ -209,6 +217,31 @@ describe("gameplay RPC safety guards", () => {
     );
     expect(sql).toMatch(
       /create or replace function public\.create_prompt_skill[\s\S]*?select \*\s*into locked_chronicle\s*from public\.chronicles[\s\S]*?for update;[\s\S]*?if exists \([\s\S]*?btrim\(label\) = new_skill_label[\s\S]*?end if;[\s\S]*?select coalesce\(max\(sort_order\), -1\) \+ 1[\s\S]*?into new_sort_order[\s\S]*?from public\.skills[\s\S]*?where chronicle_id = target_chronicle_id;/i,
+    );
+  });
+
+  it("adds a prompt-created resource helper and wires a new_resource argument into resolve_prompt_run", () => {
+    const sql = readPromptCreatedResourcesMigration();
+
+    expect(sql).toMatch(
+      /create or replace function public\.create_prompt_resource\(\s*target_chronicle_id uuid,\s*new_resource jsonb\s*\)[\s\S]*?if new_resource is null then[\s\S]*?return null;[\s\S]*?select \*\s*into locked_chronicle\s*from public\.chronicles[\s\S]*?where id = target_chronicle_id[\s\S]*?for update;/i,
+    );
+    expect(sql).toMatch(
+      /create or replace function public\.resolve_prompt_run\(\s*target_chronicle_id uuid,\s*target_session_id uuid,\s*player_entry text,\s*experience_text text,\s*memory_decision jsonb default null,\s*trait_mutations jsonb default '\{\}'::jsonb,\s*new_skill jsonb default null,\s*new_resource jsonb default null\s*\)/i,
+    );
+    expect(sql).toMatch(
+      /perform public\.create_prompt_skill\(target_chronicle_id, new_skill\);\s*perform public\.create_prompt_resource\(target_chronicle_id, new_resource\);\s*insert into public\.archive_events/i,
+    );
+  });
+
+  it("rejects duplicate resource labels and assigns the next resource sort order", () => {
+    const sql = readPromptCreatedResourcesMigration();
+
+    expect(sql).toMatch(
+      /create or replace function public\.create_prompt_resource[\s\S]*?if exists \([\s\S]*?from public\.resources[\s\S]*?where chronicle_id = target_chronicle_id[\s\S]*?and btrim\(label\) = new_resource_label[\s\S]*?\) then[\s\S]*?raise exception 'A resource with this name already exists\.'[\s\S]*?end if;/i,
+    );
+    expect(sql).toMatch(
+      /create or replace function public\.create_prompt_resource[\s\S]*?select coalesce\(max\(sort_order\), -1\) \+ 1[\s\S]*?into new_sort_order[\s\S]*?from public\.resources[\s\S]*?where chronicle_id = target_chronicle_id;/i,
     );
   });
 

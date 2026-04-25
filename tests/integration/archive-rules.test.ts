@@ -61,6 +61,16 @@ type SkillStateRow = {
   status: "active" | "checked" | "lost";
 };
 
+type ResourceStateRow = {
+  chronicle_id: string;
+  description: string | null;
+  id: string;
+  is_stationary: boolean;
+  label: string;
+  sort_order: number;
+  status: "active" | "checked" | "lost";
+};
+
 type PromptRunRpcResult = Awaited<
   ReturnType<
     ReturnType<typeof createE2EServerSupabaseClient>["rpc"]
@@ -74,6 +84,7 @@ type TestState = {
   memories: MemoryStateRow[];
   memory_entries?: MemoryEntryStateRow[];
   prompt_runs: Array<Record<string, unknown>>;
+  resources: ResourceStateRow[];
   sessions: SessionStateRow[];
   skills: SkillStateRow[];
 };
@@ -115,11 +126,17 @@ function buildResolveArgs(
     description: string;
     label: string;
   },
+  newResource?: {
+    description: string;
+    isStationary: boolean;
+    label: string;
+  },
 ) {
   return {
     experience_text:
       "I set down the shape of this moment before it can leave me again.",
     memory_decision: memoryDecision,
+    new_resource: newResource ?? null,
     new_skill: newSkill ?? null,
     player_entry:
       "I answer the prompt with something measured enough to survive rereading.",
@@ -219,10 +236,21 @@ async function resolvePromptRun(
     description: string;
     label: string;
   },
+  newResource?: {
+    description: string;
+    isStationary: boolean;
+    label: string;
+  },
 ): Promise<PromptRunRpcResult> {
   return client.rpc(
     "resolve_prompt_run",
-    buildResolveArgs(chronicleId, sessionId, memoryDecision, newSkill),
+    buildResolveArgs(
+      chronicleId,
+      sessionId,
+      memoryDecision,
+      newSkill,
+      newResource,
+    ),
   );
 }
 
@@ -397,6 +425,135 @@ describe("archive rule enforcement", () => {
       message: "A skill description is required.",
     });
     expect(state.skills).toHaveLength(1);
+    expect(state.prompt_runs).toHaveLength(0);
+  });
+
+  it("creates prompt-created resources at the next sort order", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle(
+      1,
+      [],
+    );
+
+    state.resources.push({
+      chronicle_id: chronicleId,
+      description: "A safe house kept by bribes and silence.",
+      id: randomUUID(),
+      is_stationary: false,
+      label: "Pilgrim Road Inn",
+      sort_order: 0,
+      status: "active",
+    });
+
+    const result = await resolvePromptRun(
+      client,
+      chronicleId,
+      sessionId,
+      { mode: "create-new" },
+      undefined,
+      {
+        description: "  A roofed crypt where I can feed and vanish.  ",
+        isStationary: true,
+        label: "  The Marsh House  ",
+      },
+    );
+
+    expect(result.error).toBeNull();
+    expect(state.resources).toHaveLength(2);
+    expect(state.resources.at(-1)).toMatchObject({
+      chronicle_id: chronicleId,
+      description: "A roofed crypt where I can feed and vanish.",
+      is_stationary: true,
+      label: "The Marsh House",
+      sort_order: 1,
+      status: "active",
+    });
+  });
+
+  it("rejects duplicate prompt-created resource labels within the same chronicle", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle(
+      1,
+      [],
+    );
+
+    state.resources.push({
+      chronicle_id: chronicleId,
+      description: "A safe house kept by bribes and silence.",
+      id: randomUUID(),
+      is_stationary: false,
+      label: "The Marsh House",
+      sort_order: 0,
+      status: "active",
+    });
+
+    const result = await resolvePromptRun(
+      client,
+      chronicleId,
+      sessionId,
+      { mode: "create-new" },
+      undefined,
+      {
+        description: "  A roofed crypt where I can feed and vanish.  ",
+        isStationary: true,
+        label: "  The Marsh House  ",
+      },
+    );
+
+    expect(result.error).toMatchObject({
+      message: "A resource with this name already exists.",
+    });
+    expect(state.resources).toHaveLength(1);
+    expect(state.prompt_runs).toHaveLength(0);
+  });
+
+  it("rejects prompt-created resources with a blank trimmed label", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle(
+      1,
+      [],
+    );
+
+    const result = await resolvePromptRun(
+      client,
+      chronicleId,
+      sessionId,
+      { mode: "create-new" },
+      undefined,
+      {
+        description: "A safe place made meaningful by repetition and hunger.",
+        isStationary: true,
+        label: "   ",
+      },
+    );
+
+    expect(result.error).toMatchObject({
+      message: "A resource name is required.",
+    });
+    expect(state.resources).toHaveLength(0);
+    expect(state.prompt_runs).toHaveLength(0);
+  });
+
+  it("rejects prompt-created resources with a blank trimmed description", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle(
+      1,
+      [],
+    );
+
+    const result = await resolvePromptRun(
+      client,
+      chronicleId,
+      sessionId,
+      { mode: "create-new" },
+      undefined,
+      {
+        description: "   ",
+        isStationary: true,
+        label: "The Marsh House",
+      },
+    );
+
+    expect(result.error).toMatchObject({
+      message: "A resource description is required.",
+    });
+    expect(state.resources).toHaveLength(0);
     expect(state.prompt_runs).toHaveLength(0);
   });
 

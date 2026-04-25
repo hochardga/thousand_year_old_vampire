@@ -61,6 +61,49 @@ describe("resolvePrompt", () => {
     );
   });
 
+  it("passes prompt-created resources into the resolve_prompt_run RPC payload", async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        archiveEvents: [],
+        nextPrompt: {
+          encounterIndex: 1,
+          promptNumber: 4,
+        },
+        promptRunId: "run-1",
+        rolled: {
+          d10: 7,
+          d6: 4,
+          movement: 3,
+        },
+      },
+      error: null,
+    });
+
+    await resolvePrompt(
+      { rpc },
+      "chronicle-1",
+      {
+        ...payload,
+        newResource: {
+          description: "A roofed crypt where I can feed and vanish.",
+          isStationary: true,
+          label: "The Marsh House",
+        },
+      },
+    );
+
+    expect(rpc).toHaveBeenCalledWith(
+      "resolve_prompt_run",
+      expect.objectContaining({
+        new_resource: {
+          description: "A roofed crypt where I can feed and vanish.",
+          isStationary: true,
+          label: "The Marsh House",
+        },
+      }),
+    );
+  });
+
   it("normalizes known memory-rule failures into calm product copy", async () => {
     const supabase = {
       rpc: async () => ({
@@ -98,6 +141,30 @@ describe("resolvePrompt", () => {
       }),
     ).rejects.toThrow(
       "That skill name is already in the chronicle. Choose different wording.",
+    );
+  });
+
+  it("normalizes duplicate prompt-created resource failures into calm copy", async () => {
+    const supabase = {
+      rpc: async () => ({
+        data: null,
+        error: {
+          message: "A resource with this name already exists.",
+        },
+      }),
+    };
+
+    await expect(
+      resolvePrompt(supabase, "chronicle-1", {
+        ...payload,
+        newResource: {
+          description: "A roofed crypt where I can feed and vanish.",
+          isStationary: true,
+          label: "The Marsh House",
+        },
+      }),
+    ).rejects.toThrow(
+      "That resource name is already in the chronicle. Choose different wording.",
     );
   });
 });

@@ -5,6 +5,7 @@ import type { ActiveDiarySummary } from "@/types/chronicle";
 import { trackAnalyticsEvent } from "@/lib/analytics/posthog";
 import { ConsequencePanel } from "@/components/ritual/ConsequencePanel";
 import { MemoryDecisionPanel } from "@/components/ritual/MemoryDecisionPanel";
+import { PromptResourceComposer } from "@/components/ritual/PromptResourceComposer";
 import { PromptSkillComposer } from "@/components/ritual/PromptSkillComposer";
 import { RitualTextarea } from "@/components/ritual/RitualTextarea";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
@@ -29,6 +30,7 @@ type PlaySurfaceProps = {
   activeDiary?: ActiveDiarySummary | null;
   chronicleId: string;
   currentPromptNumber: number;
+  existingResourceLabels?: string[];
   existingSkillLabels?: string[];
   initialSessionId: string | null;
   mindMemories?: Array<{
@@ -42,6 +44,7 @@ export function PlaySurface({
   activeDiary = null,
   chronicleId,
   currentPromptNumber,
+  existingResourceLabels = [],
   existingSkillLabels = [],
   initialSessionId,
   mindMemories = [],
@@ -52,6 +55,18 @@ export function PlaySurface({
   const [experienceText, setExperienceText] = useState(
     () => initialDraft?.experienceText ?? "",
   );
+  const [isAddingResource, setIsAddingResource] = useState(
+    () => initialDraft?.shouldCreateResource ?? false,
+  );
+  const [newResourceLabel, setNewResourceLabel] = useState(
+    () => initialDraft?.newResourceLabel ?? "",
+  );
+  const [newResourceDescription, setNewResourceDescription] = useState(
+    () => initialDraft?.newResourceDescription ?? "",
+  );
+  const [newResourceIsStationary, setNewResourceIsStationary] = useState(
+    () => initialDraft?.newResourceIsStationary ?? false,
+  );
   const [isAddingSkill, setIsAddingSkill] = useState(
     () => initialDraft?.shouldCreateSkill ?? false,
   );
@@ -61,6 +76,7 @@ export function PlaySurface({
   const [newSkillDescription, setNewSkillDescription] = useState(
     () => initialDraft?.newSkillDescription ?? "",
   );
+  const [resourceErrorMessage, setResourceErrorMessage] = useState<string | null>(null);
   const [skillErrorMessage, setSkillErrorMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -74,30 +90,60 @@ export function PlaySurface({
 
   const requiresOverflowDecision = mindMemories.length >= 5;
 
-  useEffect(() => {
+  function syncPromptDraft(
+    overrides: Partial<{
+      experienceText: string;
+      newResourceDescription: string;
+      newResourceIsStationary: boolean;
+      newResourceLabel: string;
+      newSkillDescription: string;
+      newSkillLabel: string;
+      playerEntry: string;
+      shouldCreateResource: boolean;
+      shouldCreateSkill: boolean;
+    }> = {},
+  ) {
+    const nextDraft = {
+      experienceText,
+      newResourceDescription,
+      newResourceIsStationary,
+      newResourceLabel,
+      newSkillDescription,
+      newSkillLabel,
+      playerEntry,
+      shouldCreateResource: isAddingResource,
+      shouldCreateSkill: isAddingSkill,
+      ...overrides,
+    };
+
     const hasAnyDraftContent =
-      Boolean(playerEntry) ||
-      Boolean(experienceText) ||
-      Boolean(newSkillLabel) ||
-      Boolean(newSkillDescription) ||
-      isAddingSkill;
+      Boolean(nextDraft.playerEntry) ||
+      Boolean(nextDraft.experienceText) ||
+      Boolean(nextDraft.newResourceLabel) ||
+      Boolean(nextDraft.newResourceDescription) ||
+      Boolean(nextDraft.newSkillLabel) ||
+      Boolean(nextDraft.newSkillDescription) ||
+      nextDraft.shouldCreateResource ||
+      nextDraft.shouldCreateSkill;
 
     if (!hasAnyDraftContent) {
       clearPromptDraft(chronicleId);
       return;
     }
 
-    savePromptDraft(chronicleId, {
-      experienceText,
-      newSkillDescription,
-      newSkillLabel,
-      playerEntry,
-      shouldCreateSkill: isAddingSkill,
-    });
+    savePromptDraft(chronicleId, nextDraft);
+  }
+
+  useEffect(() => {
+    syncPromptDraft();
   }, [
     chronicleId,
     experienceText,
+    isAddingResource,
     isAddingSkill,
+    newResourceDescription,
+    newResourceIsStationary,
+    newResourceLabel,
     newSkillDescription,
     newSkillLabel,
     playerEntry,
@@ -106,6 +152,7 @@ export function PlaySurface({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage(null);
+    setResourceErrorMessage(null);
     setSkillErrorMessage(null);
 
     if (requiresOverflowDecision && (!overflowMode || !selectedOverflowMemoryId)) {
@@ -115,9 +162,31 @@ export function PlaySurface({
       return;
     }
 
+    const normalizedExistingResourceLabels = existingResourceLabels.map((label) =>
+      label.trim(),
+    );
     const normalizedExistingSkillLabels = existingSkillLabels.map((label) =>
       label.trim(),
     );
+
+    if (isAddingResource) {
+      const normalizedNewResourceLabel = newResourceLabel.trim();
+      const normalizedNewResourceDescription = newResourceDescription.trim();
+
+      if (!normalizedNewResourceLabel || !normalizedNewResourceDescription) {
+        setResourceErrorMessage(
+          "Name the resource and explain why this prompt made it matter.",
+        );
+        return;
+      }
+
+      if (normalizedExistingResourceLabels.includes(normalizedNewResourceLabel)) {
+        setResourceErrorMessage(
+          "That resource name is already in the chronicle. Choose different wording.",
+        );
+        return;
+      }
+    }
 
     if (isAddingSkill) {
       const normalizedNewSkillLabel = newSkillLabel.trim();
@@ -155,6 +224,13 @@ export function PlaySurface({
                 : {
                     mode: "create-new",
                   },
+            newResource: isAddingResource
+              ? {
+                  description: newResourceDescription,
+                  isStationary: newResourceIsStationary,
+                  label: newResourceLabel,
+                }
+              : undefined,
             newSkill: isAddingSkill
               ? {
                   description: newSkillDescription,
@@ -183,6 +259,14 @@ export function PlaySurface({
       if (!response.ok) {
         if (
           payload.error ===
+          "That resource name is already in the chronicle. Choose different wording."
+        ) {
+          setResourceErrorMessage(payload.error);
+          return;
+        }
+
+        if (
+          payload.error ===
           "That skill name is already in the chronicle. Choose different wording."
         ) {
           setSkillErrorMessage(payload.error);
@@ -206,6 +290,11 @@ export function PlaySurface({
       }
       setPlayerEntry("");
       setExperienceText("");
+      setIsAddingResource(false);
+      setNewResourceDescription("");
+      setNewResourceIsStationary(false);
+      setNewResourceLabel("");
+      setResourceErrorMessage(null);
       setIsAddingSkill(false);
       setNewSkillDescription("");
       setNewSkillLabel("");
@@ -225,17 +314,11 @@ export function PlaySurface({
 
   function handleSkillComposerToggle() {
     if (isAddingSkill) {
-      if (playerEntry || experienceText) {
-        savePromptDraft(chronicleId, {
-          experienceText,
-          newSkillDescription: "",
-          newSkillLabel: "",
-          playerEntry,
-          shouldCreateSkill: false,
-        });
-      } else {
-        clearPromptDraft(chronicleId);
-      }
+      syncPromptDraft({
+        newSkillDescription: "",
+        newSkillLabel: "",
+        shouldCreateSkill: false,
+      });
 
       setIsAddingSkill(false);
       setNewSkillLabel("");
@@ -246,6 +329,27 @@ export function PlaySurface({
 
     setIsAddingSkill(true);
     setSkillErrorMessage(null);
+  }
+
+  function handleResourceComposerToggle() {
+    if (isAddingResource) {
+      syncPromptDraft({
+        newResourceDescription: "",
+        newResourceIsStationary: false,
+        newResourceLabel: "",
+        shouldCreateResource: false,
+      });
+
+      setIsAddingResource(false);
+      setNewResourceDescription("");
+      setNewResourceIsStationary(false);
+      setNewResourceLabel("");
+      setResourceErrorMessage(null);
+      return;
+    }
+
+    setIsAddingResource(true);
+    setResourceErrorMessage(null);
   }
 
   return (
@@ -300,6 +404,17 @@ export function PlaySurface({
             onDescriptionChange={setNewSkillDescription}
             onLabelChange={setNewSkillLabel}
             onToggle={handleSkillComposerToggle}
+          />
+          <PromptResourceComposer
+            description={newResourceDescription}
+            errorMessage={resourceErrorMessage}
+            isOpen={isAddingResource}
+            isStationary={newResourceIsStationary}
+            label={newResourceLabel}
+            onDescriptionChange={setNewResourceDescription}
+            onLabelChange={setNewResourceLabel}
+            onStationaryChange={setNewResourceIsStationary}
+            onToggle={handleResourceComposerToggle}
           />
           {requiresOverflowDecision ? (
             <MemoryDecisionPanel

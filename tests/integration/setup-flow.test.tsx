@@ -476,6 +476,17 @@ describe("guided setup flow", () => {
     });
     const skillsEqChronicle = vi.fn(() => ({ order: skillsOrder }));
     const skillsSelect = vi.fn(() => ({ eq: skillsEqChronicle }));
+    const resourcesOrder = vi.fn().mockResolvedValue({
+      data: [
+        {
+          chronicle_id: "chronicle-1",
+          label: "Pilgrim Road Inn",
+        },
+      ],
+      error: null,
+    });
+    const resourcesEqChronicle = vi.fn(() => ({ order: resourcesOrder }));
+    const resourcesSelect = vi.fn(() => ({ eq: resourcesEqChronicle }));
     const from = vi.fn((table: string) => {
       if (table === "chronicles") {
         return { select: chronicleSelect };
@@ -491,6 +502,10 @@ describe("guided setup flow", () => {
 
       if (table === "skills") {
         return { select: skillsSelect };
+      }
+
+      if (table === "resources") {
+        return { select: resourcesSelect };
       }
 
       throw new Error(`Unsupported table in play page test: ${table}`);
@@ -1108,6 +1123,299 @@ describe("guided setup flow", () => {
     expect(screen.getByLabelText("Why this skill now")).toHaveValue("");
   });
 
+  it("reveals prompt-created resource fields on demand and sends newResource in the request body", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            archiveEvents: [
+              {
+                eventType: "prompt_resolved",
+                summary: "The entry has been set into memory.",
+              },
+            ],
+            nextPrompt: {
+              encounterIndex: 1,
+              promptNumber: 4,
+            },
+            promptRunId: "run-1",
+            rolled: {
+              d10: 7,
+              d6: 4,
+              movement: 3,
+            },
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            status: 200,
+          },
+        ),
+      );
+
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingResourceLabels={["Pilgrim Road Inn"]}
+        existingSkillLabels={["Quiet Devotion"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    expect(screen.queryByLabelText("Resource name")).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a resource from this prompt",
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText("Resource name"), {
+      target: { value: "The Marsh House" },
+    });
+    fireEvent.change(screen.getByLabelText("Why it matters"), {
+      target: { value: "It keeps hunters and daylight equally far from me." },
+    });
+    fireEvent.click(screen.getByLabelText("Stationary"));
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: {
+        value: "I buried myself inside the old stones and named them home.",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: {
+        value: "I made a refuge of the ruin before dawn found me.",
+      },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const payload = JSON.parse(String(request.body)) as {
+      newResource?: {
+        description: string;
+        isStationary: boolean;
+        label: string;
+      };
+    };
+
+    expect(payload.newResource).toEqual({
+      description: "It keeps hunters and daylight equally far from me.",
+      isStationary: true,
+      label: "The Marsh House",
+    });
+
+    fetchMock.mockRestore();
+  });
+
+  it("blocks duplicate prompt-created resource labels before submitting", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingResourceLabels={["Pilgrim Road Inn", "The Marsh House"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a resource from this prompt",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("Resource name"), {
+      target: { value: "The Marsh House" },
+    });
+    fireEvent.change(screen.getByLabelText("Why it matters"), {
+      target: { value: "It keeps hunters and daylight equally far from me." },
+    });
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: { value: "I answered the prompt." },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: { value: "I carried the consequence forward." },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    expect(
+      screen.getByText(
+        "That resource name is already in the chronicle. Choose different wording.",
+      ),
+    ).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    fetchMock.mockRestore();
+  });
+
+  it("preserves prompt-created resource draft fields after a failed submission", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error:
+              "That resource name is already in the chronicle. Choose different wording.",
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            status: 500,
+          },
+        ),
+      );
+
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+    const view = render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingResourceLabels={["Pilgrim Road Inn"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a resource from this prompt",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("Resource name"), {
+      target: { value: "The Marsh House" },
+    });
+    fireEvent.change(screen.getByLabelText("Why it matters"), {
+      target: { value: "It keeps hunters and daylight equally far from me." },
+    });
+    fireEvent.click(screen.getByLabelText("Stationary"));
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: { value: "I answered the prompt." },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: { value: "I carried the consequence forward." },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "That resource name is already in the chronicle. Choose different wording.",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    view.unmount();
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingResourceLabels={["Pilgrim Road Inn"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    expect(screen.getByLabelText("Resource name")).toHaveValue("The Marsh House");
+    expect(screen.getByLabelText("Why it matters")).toHaveValue(
+      "It keeps hunters and daylight equally far from me.",
+    );
+    expect(screen.getByLabelText("Stationary")).toBeChecked();
+
+    fetchMock.mockRestore();
+  });
+
+  it("clears prompt-created resource draft fields when the resource is removed", async () => {
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+    const view = render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingResourceLabels={["Pilgrim Road Inn"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a resource from this prompt",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("Resource name"), {
+      target: { value: "The Marsh House" },
+    });
+    fireEvent.change(screen.getByLabelText("Why it matters"), {
+      target: { value: "It keeps hunters and daylight equally far from me." },
+    });
+    fireEvent.click(screen.getByLabelText("Stationary"));
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Remove the new resource",
+      }),
+    );
+
+    expect(screen.queryByLabelText("Resource name")).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a resource from this prompt",
+      }),
+    );
+
+    expect(screen.getByLabelText("Resource name")).toHaveValue("");
+    expect(screen.getByLabelText("Why it matters")).toHaveValue("");
+    expect(screen.getByLabelText("Stationary")).not.toBeChecked();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Remove the new resource",
+      }),
+    );
+
+    view.unmount();
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingResourceLabels={["Pilgrim Road Inn"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a resource from this prompt",
+      }),
+    );
+
+    expect(screen.getByLabelText("Resource name")).toHaveValue("");
+    expect(screen.getByLabelText("Why it matters")).toHaveValue("");
+    expect(screen.getByLabelText("Stationary")).not.toBeChecked();
+  });
+
   it("shows the memory overflow panel in play and submits a legal overflow decision", async () => {
     const fetchMock = vi
       .spyOn(globalThis, "fetch")
@@ -1209,7 +1517,7 @@ describe("guided setup flow", () => {
     fetchMock.mockRestore();
   });
 
-  it("loads chronicle skill labels on the play page for duplicate checking", async () => {
+  it("loads chronicle skill and resource labels on the play page for duplicate checking", async () => {
     const chronicleSingle = vi.fn().mockResolvedValue({
       data: {
         current_prompt_encounter: 1,
@@ -1247,6 +1555,17 @@ describe("guided setup flow", () => {
     });
     const skillsEqChronicle = vi.fn(() => ({ order: skillsOrder }));
     const skillsSelect = vi.fn(() => ({ eq: skillsEqChronicle }));
+    const resourcesOrder = vi.fn().mockResolvedValue({
+      data: [
+        {
+          chronicle_id: "chronicle-1",
+          label: "Pilgrim Road Inn",
+        },
+      ],
+      error: null,
+    });
+    const resourcesEqChronicle = vi.fn(() => ({ order: resourcesOrder }));
+    const resourcesSelect = vi.fn(() => ({ eq: resourcesEqChronicle }));
 
     const from = vi.fn((table: string) => {
       if (table === "chronicles") {
@@ -1263,6 +1582,10 @@ describe("guided setup flow", () => {
 
       if (table === "skills") {
         return { select: skillsSelect };
+      }
+
+      if (table === "resources") {
+        return { select: resourcesSelect };
       }
 
       throw new Error(`Unsupported table in play page test: ${table}`);
@@ -1295,9 +1618,15 @@ describe("guided setup flow", () => {
     );
 
     expect(skillsOrder).toHaveBeenCalledTimes(1);
+    expect(resourcesOrder).toHaveBeenCalledTimes(1);
     expect(
       screen.getByRole("button", {
         name: "Add a skill from this prompt",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Add a resource from this prompt",
       }),
     ).toBeInTheDocument();
   });
