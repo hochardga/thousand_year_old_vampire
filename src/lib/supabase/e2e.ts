@@ -670,6 +670,10 @@ function normalizeCharacterText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizeCharacterKind(value: unknown): CharacterRow["kind"] {
+  return value === "immortal" || value === "mortal" ? value : "mortal";
+}
+
 function normalizeMarkText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -1265,10 +1269,7 @@ function applyPromptResolution(args: Record<string, unknown>) {
   const newCharacter = rawNewCharacter
     ? {
         description: normalizeCharacterText(rawNewCharacter.description),
-        kind:
-          rawNewCharacter.kind === "immortal" || rawNewCharacter.kind === "mortal"
-            ? rawNewCharacter.kind
-            : "mortal",
+        kind: normalizeCharacterKind(rawNewCharacter.kind),
         name: normalizeCharacterText(rawNewCharacter.name),
       }
     : null;
