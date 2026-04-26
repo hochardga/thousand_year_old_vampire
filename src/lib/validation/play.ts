@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type {
+  PromptCreatedCharacterInput,
   PromptCreatedMarkInput,
   PromptCreatedResourceInput,
   PromptCreatedSkillInput,
@@ -81,6 +82,12 @@ const newMarkSchema: z.ZodType<PromptCreatedMarkInput> = z.object({
   label: z.string().trim().min(1).max(120),
 });
 
+const newCharacterSchema: z.ZodType<PromptCreatedCharacterInput> = z.object({
+  description: z.string().trim().min(1).max(280),
+  kind: z.enum(["mortal", "immortal"]),
+  name: z.string().trim().min(1).max(120),
+});
+
 const traitMutationsSchema: z.ZodType<TraitMutationsPayload> = z.object({
   characters: z.array(characterMutationSchema).default([]),
   marks: z.array(markMutationSchema).default([]),
@@ -92,6 +99,7 @@ export const promptResolutionSchema: z.ZodType<PromptResolutionPayload> =
   z.object({
     experienceText: z.string().trim().min(1).max(1600),
     memoryDecision: memoryDecisionSchema.default({ mode: "create-new" }),
+    newCharacter: newCharacterSchema.optional(),
     newMark: newMarkSchema.optional(),
     newResource: newResourceSchema.optional(),
     newSkill: newSkillSchema.optional(),

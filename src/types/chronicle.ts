@@ -21,6 +21,12 @@ export type PromptCreatedMarkInput = {
   label: string;
 };
 
+export type PromptCreatedCharacterInput = {
+  description: string;
+  kind: "mortal" | "immortal";
+  name: string;
+};
+
 export type SetupResourceInput = {
   description: string;
   isStationary: boolean;
@@ -112,6 +118,7 @@ export type TraitMutationsPayload = {
 export type PromptResolutionPayload = {
   experienceText: string;
   memoryDecision: MemoryDecisionPayload;
+  newCharacter?: PromptCreatedCharacterInput;
   newMark?: PromptCreatedMarkInput;
   newResource?: PromptCreatedResourceInput;
   newSkill?: PromptCreatedSkillInput;
