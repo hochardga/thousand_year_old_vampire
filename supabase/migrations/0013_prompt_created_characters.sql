@@ -17,8 +17,31 @@ where public.characters.id = ordered_characters.id
   and public.characters.sort_order is null;
 
 alter table public.characters
-  alter column sort_order set default 0,
+  alter column sort_order drop default,
   alter column sort_order set not null;
+
+create or replace function public.assign_character_sort_order()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.sort_order is null then
+    select coalesce(max(sort_order), -1) + 1
+    into new.sort_order
+    from public.characters
+    where chronicle_id = new.chronicle_id;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists assign_character_sort_order on public.characters;
+
+create trigger assign_character_sort_order
+before insert on public.characters
+for each row
+execute function public.assign_character_sort_order();
 
 create or replace function public.create_prompt_character(
   target_chronicle_id uuid,

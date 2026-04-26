@@ -329,6 +329,20 @@ describe("gameplay RPC safety guards", () => {
     );
   });
 
+  it("fills omitted character sort order before setup-created characters are inserted", () => {
+    const sql = readPromptCreatedCharactersMigration();
+
+    expect(sql).toMatch(
+      /alter table public\.characters[\s\S]*?alter column sort_order drop default[\s\S]*?alter column sort_order set not null/i,
+    );
+    expect(sql).toMatch(
+      /create or replace function public\.assign_character_sort_order\(\)[\s\S]*?if new\.sort_order is null then[\s\S]*?select coalesce\(max\(sort_order\), -1\) \+ 1[\s\S]*?into new\.sort_order[\s\S]*?where chronicle_id = new\.chronicle_id/i,
+    );
+    expect(sql).toMatch(
+      /create trigger assign_character_sort_order\s*before insert on public\.characters\s*for each row\s*execute function public\.assign_character_sort_order\(\);/i,
+    );
+  });
+
   it("keeps the e2e gameplay mock aligned with the setup and active-session guards", async () => {
     const client = createE2EServerSupabaseClient({
       get(name) {
