@@ -278,6 +278,26 @@ describe("gameplay RPC safety guards", () => {
     );
   });
 
+  it("adds mark sort order schema support before prompt-created marks read it", () => {
+    const sql = readPromptCreatedMarksMigration();
+    const schemaSupportIndex = sql.search(
+      /alter table public\.marks[\s\S]*?add column if not exists sort_order integer/i,
+    );
+    const helperIndex = sql.indexOf(
+      "create or replace function public.create_prompt_mark",
+    );
+
+    expect(schemaSupportIndex).toBeGreaterThanOrEqual(0);
+    expect(helperIndex).toBeGreaterThanOrEqual(0);
+    expect(schemaSupportIndex).toBeLessThan(helperIndex);
+    expect(sql).toMatch(
+      /row_number\(\) over \(\s*partition by chronicle_id\s*order by created_at, id\s*\) - 1/i,
+    );
+    expect(sql).toMatch(
+      /alter table public\.marks[\s\S]*?alter column sort_order set default 0[\s\S]*?alter column sort_order set not null/i,
+    );
+  });
+
   it("keeps the e2e gameplay mock aligned with the setup and active-session guards", async () => {
     const client = createE2EServerSupabaseClient({
       get(name) {

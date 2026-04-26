@@ -1,3 +1,25 @@
+alter table public.marks
+  add column if not exists sort_order integer;
+
+with ordered_marks as (
+  select
+    id,
+    row_number() over (
+      partition by chronicle_id
+      order by created_at, id
+    ) - 1 as backfilled_sort_order
+  from public.marks
+)
+update public.marks
+set sort_order = ordered_marks.backfilled_sort_order
+from ordered_marks
+where public.marks.id = ordered_marks.id
+  and public.marks.sort_order is null;
+
+alter table public.marks
+  alter column sort_order set default 0,
+  alter column sort_order set not null;
+
 create or replace function public.create_prompt_mark(
   target_chronicle_id uuid,
   new_mark jsonb
