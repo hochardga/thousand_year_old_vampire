@@ -5,12 +5,16 @@ const promptDraftPrefix = "tyov.prompt.";
 
 export type PromptDraft = {
   experienceText: string;
+  newMarkDescription: string;
+  newMarkIsConcealed: boolean;
+  newMarkLabel: string;
   newResourceDescription: string;
   newResourceIsStationary: boolean;
   newResourceLabel: string;
   newSkillDescription: string;
   newSkillLabel: string;
   playerEntry: string;
+  shouldCreateMark: boolean;
   shouldCreateResource: boolean;
   shouldCreateSkill: boolean;
 };

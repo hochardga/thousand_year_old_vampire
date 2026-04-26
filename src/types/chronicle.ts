@@ -15,6 +15,12 @@ export type PromptCreatedResourceInput = {
   label: string;
 };
 
+export type PromptCreatedMarkInput = {
+  description: string;
+  isConcealed: boolean;
+  label: string;
+};
+
 export type SetupResourceInput = {
   description: string;
   isStationary: boolean;
@@ -106,6 +112,7 @@ export type TraitMutationsPayload = {
 export type PromptResolutionPayload = {
   experienceText: string;
   memoryDecision: MemoryDecisionPayload;
+  newMark?: PromptCreatedMarkInput;
   newResource?: PromptCreatedResourceInput;
   newSkill?: PromptCreatedSkillInput;
   playerEntry: string;

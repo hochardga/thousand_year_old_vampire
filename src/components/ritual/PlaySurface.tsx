@@ -6,6 +6,7 @@ import { trackAnalyticsEvent } from "@/lib/analytics/posthog";
 import type { PromptEffectGuidance } from "@/lib/prompts/effects";
 import { ConsequencePanel } from "@/components/ritual/ConsequencePanel";
 import { MemoryDecisionPanel } from "@/components/ritual/MemoryDecisionPanel";
+import { PromptMarkComposer } from "@/components/ritual/PromptMarkComposer";
 import { PromptResourceComposer } from "@/components/ritual/PromptResourceComposer";
 import { PromptSkillComposer } from "@/components/ritual/PromptSkillComposer";
 import { RitualTextarea } from "@/components/ritual/RitualTextarea";
@@ -36,6 +37,7 @@ type PlaySurfaceProps = {
   activeDiary?: ActiveDiarySummary | null;
   chronicleId: string;
   currentPromptNumber?: number;
+  existingMarkLabels?: string[];
   existingResourceLabels?: string[];
   existingSkillLabels?: string[];
   initialSessionId: string | null;
@@ -51,6 +53,7 @@ export function PlaySurface({
   activeDiary = null,
   chronicleId,
   currentPromptNumber = 1,
+  existingMarkLabels = [],
   existingResourceLabels = [],
   existingSkillLabels = [],
   initialSessionId,
@@ -81,6 +84,18 @@ export function PlaySurface({
         ? (promptEffect?.resource?.isStationary ?? false)
         : (initialDraft?.newResourceIsStationary ?? false),
   );
+  const [isAddingMark, setIsAddingMark] = useState(
+    () => initialDraft?.shouldCreateMark ?? false,
+  );
+  const [newMarkLabel, setNewMarkLabel] = useState(
+    () => initialDraft?.newMarkLabel ?? "",
+  );
+  const [newMarkDescription, setNewMarkDescription] = useState(
+    () => initialDraft?.newMarkDescription ?? "",
+  );
+  const [newMarkIsConcealed, setNewMarkIsConcealed] = useState(
+    () => initialDraft?.newMarkIsConcealed ?? false,
+  );
   const [isAddingSkill, setIsAddingSkill] = useState(
     () => (requiresPromptSkill ? true : (initialDraft?.shouldCreateSkill ?? false)),
   );
@@ -94,6 +109,7 @@ export function PlaySurface({
     () => initialDraft?.newSkillDescription ?? "",
   );
   const [resourceErrorMessage, setResourceErrorMessage] = useState<string | null>(null);
+  const [markErrorMessage, setMarkErrorMessage] = useState<string | null>(null);
   const [skillErrorMessage, setSkillErrorMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -111,24 +127,32 @@ export function PlaySurface({
     (
       overrides: Partial<{
         experienceText: string;
+        newMarkDescription: string;
+        newMarkIsConcealed: boolean;
+        newMarkLabel: string;
         newResourceDescription: string;
         newResourceIsStationary: boolean;
         newResourceLabel: string;
         newSkillDescription: string;
         newSkillLabel: string;
         playerEntry: string;
+        shouldCreateMark: boolean;
         shouldCreateResource: boolean;
         shouldCreateSkill: boolean;
       }> = {},
     ) => {
       const nextDraft = {
         experienceText,
+        newMarkDescription,
+        newMarkIsConcealed,
+        newMarkLabel,
         newResourceDescription,
         newResourceIsStationary,
         newResourceLabel,
         newSkillDescription,
         newSkillLabel,
         playerEntry,
+        shouldCreateMark: isAddingMark,
         shouldCreateResource: isAddingResource,
         shouldCreateSkill: isAddingSkill,
         ...overrides,
@@ -137,10 +161,13 @@ export function PlaySurface({
       const hasAnyDraftContent =
         Boolean(nextDraft.playerEntry) ||
         Boolean(nextDraft.experienceText) ||
+        Boolean(nextDraft.newMarkLabel) ||
+        Boolean(nextDraft.newMarkDescription) ||
         Boolean(nextDraft.newResourceLabel) ||
         Boolean(nextDraft.newResourceDescription) ||
         Boolean(nextDraft.newSkillLabel) ||
         Boolean(nextDraft.newSkillDescription) ||
+        nextDraft.shouldCreateMark ||
         nextDraft.shouldCreateResource ||
         nextDraft.shouldCreateSkill;
 
@@ -154,8 +181,12 @@ export function PlaySurface({
     [
       chronicleId,
       experienceText,
+      isAddingMark,
       isAddingResource,
       isAddingSkill,
+      newMarkDescription,
+      newMarkIsConcealed,
+      newMarkLabel,
       newResourceDescription,
       newResourceIsStationary,
       newResourceLabel,
@@ -172,6 +203,7 @@ export function PlaySurface({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage(null);
+    setMarkErrorMessage(null);
     setResourceErrorMessage(null);
     setSkillErrorMessage(null);
 
@@ -183,6 +215,9 @@ export function PlaySurface({
     }
 
     const normalizedExistingResourceLabels = existingResourceLabels.map((label) =>
+      label.trim(),
+    );
+    const normalizedExistingMarkLabels = existingMarkLabels.map((label) =>
       label.trim(),
     );
     const normalizedExistingSkillLabels = existingSkillLabels.map((label) =>
@@ -203,6 +238,25 @@ export function PlaySurface({
       if (normalizedExistingResourceLabels.includes(normalizedNewResourceLabel)) {
         setResourceErrorMessage(
           "That resource name is already in the chronicle. Choose different wording.",
+        );
+        return;
+      }
+    }
+
+    if (isAddingMark) {
+      const normalizedNewMarkLabel = newMarkLabel.trim();
+      const normalizedNewMarkDescription = newMarkDescription.trim();
+
+      if (!normalizedNewMarkLabel || !normalizedNewMarkDescription) {
+        setMarkErrorMessage(
+          "Name the mark and describe what this prompt changed.",
+        );
+        return;
+      }
+
+      if (normalizedExistingMarkLabels.includes(normalizedNewMarkLabel)) {
+        setMarkErrorMessage(
+          "That mark name is already in the chronicle. Choose different wording.",
         );
         return;
       }
@@ -244,6 +298,13 @@ export function PlaySurface({
                 : {
                     mode: "create-new",
                   },
+            newMark: isAddingMark
+              ? {
+                  description: newMarkDescription,
+                  isConcealed: newMarkIsConcealed,
+                  label: newMarkLabel,
+                }
+              : undefined,
             newResource: isAddingResource
               ? {
                   description: newResourceDescription,
@@ -287,6 +348,14 @@ export function PlaySurface({
 
         if (
           payload.error ===
+          "That mark name is already in the chronicle. Choose different wording."
+        ) {
+          setMarkErrorMessage(payload.error);
+          return;
+        }
+
+        if (
+          payload.error ===
           "That skill name is already in the chronicle. Choose different wording."
         ) {
           setSkillErrorMessage(payload.error);
@@ -319,6 +388,11 @@ export function PlaySurface({
       setNewResourceIsStationary(false);
       setNewResourceLabel("");
       setResourceErrorMessage(null);
+      setIsAddingMark(false);
+      setNewMarkDescription("");
+      setNewMarkIsConcealed(false);
+      setNewMarkLabel("");
+      setMarkErrorMessage(null);
       setIsAddingSkill(false);
       setNewSkillDescription("");
       setNewSkillLabel("");
@@ -404,6 +478,27 @@ export function PlaySurface({
     }
   }
 
+  function handleMarkComposerToggle() {
+    if (isAddingMark) {
+      syncPromptDraft({
+        newMarkDescription: "",
+        newMarkIsConcealed: false,
+        newMarkLabel: "",
+        shouldCreateMark: false,
+      });
+
+      setIsAddingMark(false);
+      setNewMarkDescription("");
+      setNewMarkIsConcealed(false);
+      setNewMarkLabel("");
+      setMarkErrorMessage(null);
+      return;
+    }
+
+    setIsAddingMark(true);
+    setMarkErrorMessage(null);
+  }
+
   return (
     <div className="space-y-4">
       {consequenceSummary && nextPromptNumber ? (
@@ -481,6 +576,17 @@ export function PlaySurface({
             onLabelChange={setNewResourceLabel}
             onStationaryChange={setNewResourceIsStationary}
             onToggle={handleResourceComposerToggle}
+          />
+          <PromptMarkComposer
+            description={newMarkDescription}
+            errorMessage={markErrorMessage}
+            isConcealed={newMarkIsConcealed}
+            isOpen={isAddingMark}
+            label={newMarkLabel}
+            onConcealedChange={setNewMarkIsConcealed}
+            onDescriptionChange={setNewMarkDescription}
+            onLabelChange={setNewMarkLabel}
+            onToggle={handleMarkComposerToggle}
           />
           {requiresOverflowDecision ? (
             <MemoryDecisionPanel

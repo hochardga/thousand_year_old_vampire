@@ -71,6 +71,16 @@ type ResourceStateRow = {
   status: "active" | "checked" | "lost";
 };
 
+type MarkStateRow = {
+  chronicle_id: string;
+  description: string | null;
+  id: string;
+  is_active: boolean;
+  is_concealed: boolean;
+  label: string;
+  sort_order: number;
+};
+
 type PromptRunRpcResult = Awaited<
   ReturnType<
     ReturnType<typeof createE2EServerSupabaseClient>["rpc"]
@@ -83,6 +93,7 @@ type TestState = {
   diaries: DiaryStateRow[];
   memories: MemoryStateRow[];
   memory_entries?: MemoryEntryStateRow[];
+  marks: MarkStateRow[];
   prompt_runs: Array<Record<string, unknown>>;
   resources: ResourceStateRow[];
   sessions: SessionStateRow[];
@@ -131,11 +142,17 @@ function buildResolveArgs(
     isStationary: boolean;
     label: string;
   },
+  newMark?: {
+    description: string;
+    isConcealed: boolean;
+    label: string;
+  },
 ) {
   return {
     experience_text:
       "I set down the shape of this moment before it can leave me again.",
     memory_decision: memoryDecision,
+    new_mark: newMark ?? null,
     new_resource: newResource ?? null,
     new_skill: newSkill ?? null,
     player_entry:
@@ -241,6 +258,11 @@ async function resolvePromptRun(
     isStationary: boolean;
     label: string;
   },
+  newMark?: {
+    description: string;
+    isConcealed: boolean;
+    label: string;
+  },
 ): Promise<PromptRunRpcResult> {
   return client.rpc(
     "resolve_prompt_run",
@@ -250,6 +272,7 @@ async function resolvePromptRun(
       memoryDecision,
       newSkill,
       newResource,
+      newMark,
     ),
   );
 }
@@ -649,6 +672,139 @@ describe("archive rule enforcement", () => {
       message: "A resource description is required.",
     });
     expect(state.resources).toHaveLength(0);
+    expect(state.prompt_runs).toHaveLength(0);
+  });
+
+  it("creates prompt-created marks at the next sort order", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle(
+      1,
+      [],
+    );
+
+    state.marks.push({
+      chronicle_id: chronicleId,
+      description: "The first mark left by undeath.",
+      id: randomUUID(),
+      is_active: true,
+      is_concealed: false,
+      label: "Bloodless Reflection",
+      sort_order: 0,
+    });
+
+    const result = await resolvePromptRun(
+      client,
+      chronicleId,
+      sessionId,
+      { mode: "create-new" },
+      undefined,
+      undefined,
+      {
+        description: "  A crescent scar that opens when I hunger.  ",
+        isConcealed: true,
+        label: "  Moon-Scarred Throat  ",
+      },
+    );
+
+    expect(result.error).toBeNull();
+    expect(state.marks).toHaveLength(2);
+    expect(state.marks.at(-1)).toMatchObject({
+      chronicle_id: chronicleId,
+      description: "A crescent scar that opens when I hunger.",
+      is_active: true,
+      is_concealed: true,
+      label: "Moon-Scarred Throat",
+      sort_order: 1,
+    });
+  });
+
+  it("rejects duplicate prompt-created mark labels within the same chronicle", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle(
+      1,
+      [],
+    );
+
+    state.marks.push({
+      chronicle_id: chronicleId,
+      description: "A crescent scar that opens when I hunger.",
+      id: randomUUID(),
+      is_active: true,
+      is_concealed: true,
+      label: "Moon-Scarred Throat",
+      sort_order: 0,
+    });
+
+    const result = await resolvePromptRun(
+      client,
+      chronicleId,
+      sessionId,
+      { mode: "create-new" },
+      undefined,
+      undefined,
+      {
+        description: "  The same wound trying to enter the chronicle twice.  ",
+        isConcealed: true,
+        label: "  Moon-Scarred Throat  ",
+      },
+    );
+
+    expect(result.error).toMatchObject({
+      message: "A mark with this name already exists.",
+    });
+    expect(state.marks).toHaveLength(1);
+    expect(state.prompt_runs).toHaveLength(0);
+  });
+
+  it("rejects prompt-created marks with a blank trimmed label", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle(
+      1,
+      [],
+    );
+
+    const result = await resolvePromptRun(
+      client,
+      chronicleId,
+      sessionId,
+      { mode: "create-new" },
+      undefined,
+      undefined,
+      {
+        description: "A crescent scar that opens when I hunger.",
+        isConcealed: true,
+        label: "   ",
+      },
+    );
+
+    expect(result.error).toMatchObject({
+      message: "A mark name is required.",
+    });
+    expect(state.marks).toHaveLength(0);
+    expect(state.prompt_runs).toHaveLength(0);
+  });
+
+  it("rejects prompt-created marks with a blank trimmed description", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle(
+      1,
+      [],
+    );
+
+    const result = await resolvePromptRun(
+      client,
+      chronicleId,
+      sessionId,
+      { mode: "create-new" },
+      undefined,
+      undefined,
+      {
+        description: "   ",
+        isConcealed: true,
+        label: "Moon-Scarred Throat",
+      },
+    );
+
+    expect(result.error).toMatchObject({
+      message: "A mark description is required.",
+    });
+    expect(state.marks).toHaveLength(0);
     expect(state.prompt_runs).toHaveLength(0);
   });
 

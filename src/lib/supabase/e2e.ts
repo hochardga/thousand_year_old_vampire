@@ -126,13 +126,24 @@ type ResourceRow = {
   status: "active" | "checked" | "lost";
 };
 
+type MarkRow = {
+  chronicle_id: string;
+  created_at?: string;
+  description: string;
+  id: string;
+  is_active: boolean;
+  is_concealed: boolean;
+  label: string;
+  sort_order: number;
+};
+
 type E2EState = {
   archive_events: ArchiveEventRow[];
   characters: Array<Record<string, unknown>>;
   chronicles: ChronicleRow[];
   diaries: DiaryRow[];
   feedback_submissions: FeedbackSubmissionRow[];
-  marks: Array<Record<string, unknown>>;
+  marks: MarkRow[];
   memory_entries: MemoryEntryRow[];
   memories: MemoryRow[];
   prompt_catalog: PromptCatalogRow[];
@@ -611,6 +622,18 @@ function nextResourceSortOrder(state: E2EState, chronicleId: string) {
   );
 }
 
+function nextMarkSortOrder(state: E2EState, chronicleId: string) {
+  return (
+    state.marks.reduce((highestSortOrder, mark) => {
+      if (mark.chronicle_id !== chronicleId) {
+        return highestSortOrder;
+      }
+
+      return Math.max(highestSortOrder, mark.sort_order);
+    }, -1) + 1
+  );
+}
+
 function normalizeSkillText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -1085,6 +1108,7 @@ function applySetupCompletion(args: Record<string, unknown>) {
       is_active: true,
       is_concealed: Boolean(mark.isConcealed),
       label: markLabel,
+      sort_order: nextMarkSortOrder(state, chronicle.id),
     });
   }
 
@@ -1182,6 +1206,10 @@ function applyPromptResolution(args: Record<string, unknown>) {
     args.new_resource && typeof args.new_resource === "object"
       ? (args.new_resource as Record<string, unknown>)
       : null;
+  const rawNewMark =
+    args.new_mark && typeof args.new_mark === "object"
+      ? (args.new_mark as Record<string, unknown>)
+      : null;
   const newSkill = rawNewSkill
     ? {
         description: normalizeSkillText(rawNewSkill.description),
@@ -1193,6 +1221,13 @@ function applyPromptResolution(args: Record<string, unknown>) {
         description: normalizeResourceText(rawNewResource.description),
         isStationary: Boolean(rawNewResource.isStationary),
         label: normalizeResourceText(rawNewResource.label),
+      }
+    : null;
+  const newMark = rawNewMark
+    ? {
+        description: normalizeMarkText(rawNewMark.description),
+        isConcealed: Boolean(rawNewMark.isConcealed),
+        label: normalizeMarkText(rawNewMark.label),
       }
     : null;
 
@@ -1232,6 +1267,25 @@ function applyPromptResolution(args: Record<string, unknown>) {
     )
   ) {
     return createRpcError("A resource with this name already exists.");
+  }
+
+  if (newMark && !newMark.label) {
+    return createRpcError("A mark name is required.");
+  }
+
+  if (newMark && !newMark.description) {
+    return createRpcError("A mark description is required.");
+  }
+
+  if (
+    newMark &&
+    state.marks.some(
+      (mark) =>
+        mark.chronicle_id === chronicle.id &&
+        normalizeMarkText(mark.label) === newMark.label,
+    )
+  ) {
+    return createRpcError("A mark with this name already exists.");
   }
 
   if ((memoryDecision.mode ?? "create-new") === "append-existing") {
@@ -1368,6 +1422,19 @@ function applyPromptResolution(args: Record<string, unknown>) {
       label: newResource.label,
       sort_order: nextResourceSortOrder(state, chronicle.id),
       status: "active",
+    });
+  }
+
+  if (newMark) {
+    state.marks.push({
+      chronicle_id: chronicle.id,
+      created_at: now,
+      description: newMark.description,
+      id: randomUUID(),
+      is_active: true,
+      is_concealed: newMark.isConcealed,
+      label: newMark.label,
+      sort_order: nextMarkSortOrder(state, chronicle.id),
     });
   }
 
