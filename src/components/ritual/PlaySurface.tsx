@@ -7,6 +7,7 @@ import type { PromptEffectGuidance } from "@/lib/prompts/effects";
 import { ConsequencePanel } from "@/components/ritual/ConsequencePanel";
 import { MemoryDecisionPanel } from "@/components/ritual/MemoryDecisionPanel";
 import { MemoryPlacementPanel } from "@/components/ritual/MemoryPlacementPanel";
+import { PromptCharacterComposer } from "@/components/ritual/PromptCharacterComposer";
 import { PromptMarkComposer } from "@/components/ritual/PromptMarkComposer";
 import { PromptResourceComposer } from "@/components/ritual/PromptResourceComposer";
 import { PromptSkillComposer } from "@/components/ritual/PromptSkillComposer";
@@ -38,6 +39,7 @@ type PlaySurfaceProps = {
   activeDiary?: ActiveDiarySummary | null;
   chronicleId: string;
   currentPromptNumber?: number;
+  existingCharacterNames?: string[];
   existingMarkLabels?: string[];
   existingResourceLabels?: string[];
   existingSkillLabels?: string[];
@@ -57,6 +59,7 @@ export function PlaySurface({
   activeDiary = null,
   chronicleId,
   currentPromptNumber = 1,
+  existingCharacterNames = [],
   existingMarkLabels = [],
   existingResourceLabels = [],
   existingSkillLabels = [],
@@ -88,6 +91,18 @@ export function PlaySurface({
         ? (promptEffect?.resource?.isStationary ?? false)
         : (initialDraft?.newResourceIsStationary ?? false),
   );
+  const [isAddingCharacter, setIsAddingCharacter] = useState(
+    () => initialDraft?.shouldCreateCharacter ?? false,
+  );
+  const [newCharacterName, setNewCharacterName] = useState(
+    () => initialDraft?.newCharacterName ?? "",
+  );
+  const [newCharacterDescription, setNewCharacterDescription] = useState(
+    () => initialDraft?.newCharacterDescription ?? "",
+  );
+  const [newCharacterKind, setNewCharacterKind] = useState<
+    "immortal" | "mortal"
+  >(() => initialDraft?.newCharacterKind ?? "mortal");
   const [isAddingMark, setIsAddingMark] = useState(
     () => initialDraft?.shouldCreateMark ?? false,
   );
@@ -112,6 +127,7 @@ export function PlaySurface({
   const [newSkillDescription, setNewSkillDescription] = useState(
     () => initialDraft?.newSkillDescription ?? "",
   );
+  const [characterErrorMessage, setCharacterErrorMessage] = useState<string | null>(null);
   const [resourceErrorMessage, setResourceErrorMessage] = useState<string | null>(null);
   const [markErrorMessage, setMarkErrorMessage] = useState<string | null>(null);
   const [skillErrorMessage, setSkillErrorMessage] = useState<string | null>(null);
@@ -146,6 +162,9 @@ export function PlaySurface({
       overrides: Partial<{
         experienceText: string;
         memoryPlacementMode: MemoryPlacementMode;
+        newCharacterDescription: string;
+        newCharacterKind: "immortal" | "mortal";
+        newCharacterName: string;
         newMarkDescription: string;
         newMarkIsConcealed: boolean;
         newMarkLabel: string;
@@ -156,6 +175,7 @@ export function PlaySurface({
         newSkillLabel: string;
         playerEntry: string;
         selectedAppendMemoryId: string | null;
+        shouldCreateCharacter: boolean;
         shouldCreateMark: boolean;
         shouldCreateResource: boolean;
         shouldCreateSkill: boolean;
@@ -164,6 +184,9 @@ export function PlaySurface({
       const nextDraft = {
         experienceText,
         memoryPlacementMode,
+        newCharacterDescription,
+        newCharacterKind,
+        newCharacterName,
         newMarkDescription,
         newMarkIsConcealed,
         newMarkLabel,
@@ -174,6 +197,7 @@ export function PlaySurface({
         newSkillLabel,
         playerEntry,
         selectedAppendMemoryId,
+        shouldCreateCharacter: isAddingCharacter,
         shouldCreateMark: isAddingMark,
         shouldCreateResource: isAddingResource,
         shouldCreateSkill: isAddingSkill,
@@ -183,6 +207,8 @@ export function PlaySurface({
       const hasAnyDraftContent =
         Boolean(nextDraft.playerEntry) ||
         Boolean(nextDraft.experienceText) ||
+        Boolean(nextDraft.newCharacterName) ||
+        Boolean(nextDraft.newCharacterDescription) ||
         Boolean(nextDraft.newMarkLabel) ||
         Boolean(nextDraft.newMarkDescription) ||
         Boolean(nextDraft.newResourceLabel) ||
@@ -191,6 +217,7 @@ export function PlaySurface({
         Boolean(nextDraft.newSkillDescription) ||
         Boolean(nextDraft.selectedAppendMemoryId) ||
         nextDraft.memoryPlacementMode === "append-existing" ||
+        nextDraft.shouldCreateCharacter ||
         nextDraft.shouldCreateMark ||
         nextDraft.shouldCreateResource ||
         nextDraft.shouldCreateSkill;
@@ -205,10 +232,14 @@ export function PlaySurface({
     [
       chronicleId,
       experienceText,
+      isAddingCharacter,
       isAddingMark,
       isAddingResource,
       isAddingSkill,
       memoryPlacementMode,
+      newCharacterDescription,
+      newCharacterKind,
+      newCharacterName,
       newMarkDescription,
       newMarkIsConcealed,
       newMarkLabel,
@@ -229,6 +260,7 @@ export function PlaySurface({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage(null);
+    setCharacterErrorMessage(null);
     setMarkErrorMessage(null);
     setResourceErrorMessage(null);
     setSkillErrorMessage(null);
@@ -253,6 +285,9 @@ export function PlaySurface({
     const normalizedExistingResourceLabels = existingResourceLabels.map((label) =>
       label.trim(),
     );
+    const normalizedExistingCharacterNames = existingCharacterNames.map((name) =>
+      name.trim(),
+    );
     const normalizedExistingMarkLabels = existingMarkLabels.map((label) =>
       label.trim(),
     );
@@ -274,6 +309,25 @@ export function PlaySurface({
       if (normalizedExistingResourceLabels.includes(normalizedNewResourceLabel)) {
         setResourceErrorMessage(
           "That resource name is already in the chronicle. Choose different wording.",
+        );
+        return;
+      }
+    }
+
+    if (isAddingCharacter) {
+      const normalizedNewCharacterName = newCharacterName.trim();
+      const normalizedNewCharacterDescription = newCharacterDescription.trim();
+
+      if (!normalizedNewCharacterName || !normalizedNewCharacterDescription) {
+        setCharacterErrorMessage(
+          "Name the character and describe who this prompt brought forward.",
+        );
+        return;
+      }
+
+      if (normalizedExistingCharacterNames.includes(normalizedNewCharacterName)) {
+        setCharacterErrorMessage(
+          "That character name is already in the chronicle. Choose different wording.",
         );
         return;
       }
@@ -339,6 +393,13 @@ export function PlaySurface({
                 : {
                     mode: "create-new",
                   },
+            newCharacter: isAddingCharacter
+              ? {
+                  description: newCharacterDescription,
+                  kind: newCharacterKind,
+                  name: newCharacterName,
+                }
+              : undefined,
             newMark: isAddingMark
               ? {
                   description: newMarkDescription,
@@ -379,6 +440,14 @@ export function PlaySurface({
       };
 
       if (!response.ok) {
+        if (
+          payload.error ===
+          "That character name is already in the chronicle. Choose different wording."
+        ) {
+          setCharacterErrorMessage(payload.error);
+          return;
+        }
+
         if (
           payload.error ===
           "That resource name is already in the chronicle. Choose different wording."
@@ -429,6 +498,11 @@ export function PlaySurface({
       setNewResourceIsStationary(false);
       setNewResourceLabel("");
       setResourceErrorMessage(null);
+      setIsAddingCharacter(false);
+      setNewCharacterDescription("");
+      setNewCharacterKind("mortal");
+      setNewCharacterName("");
+      setCharacterErrorMessage(null);
       setIsAddingMark(false);
       setNewMarkDescription("");
       setNewMarkIsConcealed(false);
@@ -519,6 +593,27 @@ export function PlaySurface({
         shouldCreateResource: true,
       });
     }
+  }
+
+  function handleCharacterComposerToggle() {
+    if (isAddingCharacter) {
+      syncPromptDraft({
+        newCharacterDescription: "",
+        newCharacterKind: "mortal",
+        newCharacterName: "",
+        shouldCreateCharacter: false,
+      });
+
+      setIsAddingCharacter(false);
+      setNewCharacterDescription("");
+      setNewCharacterKind("mortal");
+      setNewCharacterName("");
+      setCharacterErrorMessage(null);
+      return;
+    }
+
+    setIsAddingCharacter(true);
+    setCharacterErrorMessage(null);
   }
 
   function handleMarkComposerToggle() {
@@ -650,6 +745,17 @@ export function PlaySurface({
             onLabelChange={setNewResourceLabel}
             onStationaryChange={setNewResourceIsStationary}
             onToggle={handleResourceComposerToggle}
+          />
+          <PromptCharacterComposer
+            description={newCharacterDescription}
+            errorMessage={characterErrorMessage}
+            isOpen={isAddingCharacter}
+            kind={newCharacterKind}
+            name={newCharacterName}
+            onDescriptionChange={setNewCharacterDescription}
+            onKindChange={setNewCharacterKind}
+            onNameChange={setNewCharacterName}
+            onToggle={handleCharacterComposerToggle}
           />
           <PromptMarkComposer
             description={newMarkDescription}

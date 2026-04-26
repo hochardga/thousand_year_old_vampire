@@ -6,6 +6,9 @@ const promptDraftPrefix = "tyov.prompt.";
 export type PromptDraft = {
   experienceText: string;
   memoryPlacementMode?: "append-existing" | "create-new";
+  newCharacterDescription: string;
+  newCharacterKind: "immortal" | "mortal";
+  newCharacterName: string;
   newMarkDescription: string;
   newMarkIsConcealed: boolean;
   newMarkLabel: string;
@@ -16,6 +19,7 @@ export type PromptDraft = {
   newSkillLabel: string;
   playerEntry: string;
   selectedAppendMemoryId?: string | null;
+  shouldCreateCharacter: boolean;
   shouldCreateMark: boolean;
   shouldCreateResource: boolean;
   shouldCreateSkill: boolean;

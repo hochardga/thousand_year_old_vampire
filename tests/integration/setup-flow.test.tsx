@@ -2175,6 +2175,305 @@ describe("guided setup flow", () => {
     expect(screen.getByLabelText("Concealed")).not.toBeChecked();
   });
 
+  it("reveals prompt-created character fields on demand and sends newCharacter in the request body", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            archiveEvents: [
+              {
+                eventType: "prompt_resolved",
+                summary: "The entry has been set into memory.",
+              },
+            ],
+            nextPrompt: {
+              encounterIndex: 1,
+              promptNumber: 4,
+            },
+            promptRunId: "run-1",
+            rolled: {
+              d10: 7,
+              d6: 4,
+              movement: 3,
+            },
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            status: 200,
+          },
+        ),
+      );
+
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingCharacterNames={["Marta"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    expect(screen.queryByLabelText("Character name")).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a character from this prompt",
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText("Character name"), {
+      target: { value: "Elias Voss" },
+    });
+    fireEvent.change(screen.getByLabelText("Who they are"), {
+      target: {
+        value: "A parish clerk who saw my hunger and chose silence.",
+      },
+    });
+    fireEvent.click(screen.getByLabelText("Immortal"));
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: {
+        value: "The clerk saw the blood and chose silence.",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: {
+        value: "I spared Elias so my secret would have a witness.",
+      },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const payload = JSON.parse(String(request.body)) as {
+      newCharacter?: {
+        description: string;
+        kind: "immortal" | "mortal";
+        name: string;
+      };
+    };
+
+    expect(payload.newCharacter).toEqual({
+      description: "A parish clerk who saw my hunger and chose silence.",
+      kind: "immortal",
+      name: "Elias Voss",
+    });
+
+    fetchMock.mockRestore();
+  });
+
+  it("blocks duplicate prompt-created character names before submitting", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingCharacterNames={["Marta", "Elias Voss"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a character from this prompt",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("Character name"), {
+      target: { value: "Elias Voss" },
+    });
+    fireEvent.change(screen.getByLabelText("Who they are"), {
+      target: {
+        value: "A parish clerk who saw my hunger and chose silence.",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: { value: "I answered the prompt." },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: { value: "I carried the consequence forward." },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    expect(
+      screen.getByText(
+        "That character name is already in the chronicle. Choose different wording.",
+      ),
+    ).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    fetchMock.mockRestore();
+  });
+
+  it("preserves prompt-created character draft fields after a failed submission", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: "That character name is already in the chronicle. Choose different wording.",
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            status: 500,
+          },
+        ),
+      );
+
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+    const view = render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingCharacterNames={["Marta"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a character from this prompt",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("Character name"), {
+      target: { value: "Elias Voss" },
+    });
+    fireEvent.change(screen.getByLabelText("Who they are"), {
+      target: {
+        value: "A parish clerk who saw my hunger and chose silence.",
+      },
+    });
+    fireEvent.click(screen.getByLabelText("Immortal"));
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: { value: "I answered the prompt." },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: { value: "I carried the consequence forward." },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "That character name is already in the chronicle. Choose different wording.",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    view.unmount();
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingCharacterNames={["Marta"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    expect(screen.getByLabelText("Character name")).toHaveValue("Elias Voss");
+    expect(screen.getByLabelText("Who they are")).toHaveValue(
+      "A parish clerk who saw my hunger and chose silence.",
+    );
+    expect(screen.getByLabelText("Immortal")).toBeChecked();
+
+    fetchMock.mockRestore();
+  });
+
+  it("clears prompt-created character draft fields when the character is removed", async () => {
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+    const view = render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingCharacterNames={["Marta"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a character from this prompt",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("Character name"), {
+      target: { value: "Elias Voss" },
+    });
+    fireEvent.change(screen.getByLabelText("Who they are"), {
+      target: {
+        value: "A parish clerk who saw my hunger and chose silence.",
+      },
+    });
+    fireEvent.click(screen.getByLabelText("Immortal"));
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Remove the new character",
+      }),
+    );
+
+    expect(screen.queryByLabelText("Character name")).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a character from this prompt",
+      }),
+    );
+
+    expect(screen.getByLabelText("Character name")).toHaveValue("");
+    expect(screen.getByLabelText("Who they are")).toHaveValue("");
+    expect(screen.getByLabelText("Mortal")).toBeChecked();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Remove the new character",
+      }),
+    );
+
+    view.unmount();
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingCharacterNames={["Marta"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a character from this prompt",
+      }),
+    );
+
+    expect(screen.getByLabelText("Character name")).toHaveValue("");
+    expect(screen.getByLabelText("Who they are")).toHaveValue("");
+    expect(screen.getByLabelText("Mortal")).toBeChecked();
+  });
+
   it("shows the memory overflow panel in play and submits a legal overflow decision", async () => {
     const fetchMock = vi
       .spyOn(globalThis, "fetch")
