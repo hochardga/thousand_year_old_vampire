@@ -124,6 +124,26 @@ type ResourceLookupClient = {
   };
 };
 
+type MarkLabelRecord = {
+  label: string;
+};
+
+type MarkLookupClient = {
+  from: (table: "marks") => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        order: (
+          column: string,
+          options: { ascending: boolean },
+        ) => Promise<{
+          data: MarkLabelRecord[] | null;
+          error: { message: string } | null;
+        }>;
+      };
+    };
+  };
+};
+
 export default async function ChroniclePlayPage({ params }: PlayPageProps) {
   const { chronicleId } = await params;
   const supabase = await createServerSupabaseClient();
@@ -155,6 +175,7 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
 
   const memoryClient = supabase as unknown as MemoryLookupClient;
   const diaryClient = supabase as unknown as ActiveDiaryMaybeSingleClient;
+  const markClient = supabase as unknown as MarkLookupClient;
   const resourceClient = supabase as unknown as ResourceLookupClient;
   const skillClient = supabase as unknown as SkillLookupClient;
   const promptPromise = getPromptByPosition(
@@ -164,7 +185,14 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
     chronicle.prompt_version,
   );
 
-  const [mindMemoriesResult, diaryResult, skillsResult, resourcesResult, prompt] = await Promise.all([
+  const [
+    mindMemoriesResult,
+    diaryResult,
+    skillsResult,
+    resourcesResult,
+    marksResult,
+    prompt,
+  ] = await Promise.all([
     memoryClient
       .from("memories")
       .select("id, title, slot_index, location, diary_id")
@@ -185,6 +213,11 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
       .select("label")
       .eq("chronicle_id", chronicleId)
       .order("sort_order", { ascending: true }),
+    markClient
+      .from("marks")
+      .select("label")
+      .eq("chronicle_id", chronicleId)
+      .order("sort_order", { ascending: true }),
     promptPromise,
   ] as const) as [
     {
@@ -198,6 +231,10 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
     },
     {
       data: ResourceLabelRecord[] | null;
+      error: { message: string } | null;
+    },
+    {
+      data: MarkLabelRecord[] | null;
       error: { message: string } | null;
     },
     Awaited<ReturnType<typeof getPromptByPosition>>,
@@ -259,6 +296,7 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
           activeDiary={activeDiary}
           chronicleId={chronicleId}
           currentPromptNumber={chronicle.current_prompt_number}
+          existingMarkLabels={(marksResult.data ?? []).map((mark) => mark.label)}
           existingResourceLabels={(resourcesResult.data ?? []).map(
             (resource) => resource.label,
           )}

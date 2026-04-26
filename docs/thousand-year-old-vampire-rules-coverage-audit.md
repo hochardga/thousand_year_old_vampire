@@ -158,7 +158,7 @@ The biggest memory gap is also an important one: the book expects the player to 
 | The vampire carries a Mark throughout existence. | Partial | Marks are stored durably, but the app also introduces an `is_active` / dormant state that the source rules do not define. | `supabase/migrations/0002_core_gameplay_schema.sql`, `src/components/archive/MarkEditor.tsx` |
 | The player should consider whether the Mark is concealed. | Partial | Concealment exists in the model and ledger editor, but the guided setup does not ask about concealment and defaults to `true`. | `src/components/ritual/SetupStepper.tsx`, `src/lib/validation/setup.ts`, `src/components/archive/MarkEditor.tsx` |
 | Prompts may change a Mark. | Partial | Existing marks can be updated through `traitMutations` or the ledger editor, but there is no normal in-play mark-edit UI. | `src/types/chronicle.ts`, `src/lib/validation/play.ts`, `src/components/archive/MarkEditor.tsx` |
-| Prompts may create a new Mark. | Missing | There is no mark-creation flow during prompt resolution. The only mark route is an item-level `PATCH` route. | `src/app/api/chronicles/[chronicleId]/marks/[markId]/route.ts`, `src/components/ritual/PlaySurface.tsx` |
+| Prompts may create a new Mark. | Automated | The play surface now supports prompt-created marks, including concealed marks, and prompt resolution persists them transactionally with the prompt answer. | `src/components/ritual/PromptMarkComposer.tsx`, `src/components/ritual/PlaySurface.tsx`, `src/lib/validation/play.ts`, `supabase/migrations/0012_prompt_created_marks.sql` |
 
 ### 9. What Counts as a Vampire
 
@@ -252,7 +252,7 @@ These are the highest-value mismatches between the source rules and the current 
 | --- | --- |
 | No normal UI for `append-existing` memory placement | This changes the core rhythm of how memories are supposed to form. The book expects clustering into thematic memories; the current play UI mostly pushes toward one new memory per prompt until overflow. |
 | Guided setup does not produce the book's required starting state | A player who only uses the first-party setup flow begins with a simpler chronicle than the rules describe. |
-| No in-play creation of characters or marks | Skills and resources now have first-party prompt-resolution flows, but many prompts still depend on creating characters or marks in active play. |
+| No in-play creation of characters | Skills, resources, and marks now have first-party prompt-resolution flows, but prompts that require creating mortal Characters still need active-play support. |
 | No skill/resource substitution engine | The game-ending pressure around dwindling traits is one of the book's core mechanics, and it is currently absent. |
 | Diary loss and cascading memory loss are still missing | Diary capacity pressure now exists, but losing the diary and the memories preserved in it is still absent from the rules loop. |
 | No end-game flow | The app has statuses for `completed`, but no prompt-driven or rules-driven completion path in play. |

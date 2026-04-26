@@ -488,6 +488,17 @@ describe("guided setup flow", () => {
     });
     const resourcesEqChronicle = vi.fn(() => ({ order: resourcesOrder }));
     const resourcesSelect = vi.fn(() => ({ eq: resourcesEqChronicle }));
+    const marksOrder = vi.fn().mockResolvedValue({
+      data: [
+        {
+          chronicle_id: "chronicle-1",
+          label: "Bloodless Reflection",
+        },
+      ],
+      error: null,
+    });
+    const marksEqChronicle = vi.fn(() => ({ order: marksOrder }));
+    const marksSelect = vi.fn(() => ({ eq: marksEqChronicle }));
     const from = vi.fn((table: string) => {
       if (table === "chronicles") {
         return { select: chronicleSelect };
@@ -507,6 +518,10 @@ describe("guided setup flow", () => {
 
       if (table === "resources") {
         return { select: resourcesSelect };
+      }
+
+      if (table === "marks") {
+        return { select: marksSelect };
       }
 
       throw new Error(`Unsupported table in play page test: ${table}`);
@@ -1616,6 +1631,297 @@ describe("guided setup flow", () => {
     expect(screen.getByLabelText("Stationary")).not.toBeChecked();
   });
 
+  it("reveals prompt-created mark fields on demand and sends newMark in the request body", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            archiveEvents: [
+              {
+                eventType: "prompt_resolved",
+                summary: "The entry has been set into memory.",
+              },
+            ],
+            nextPrompt: {
+              encounterIndex: 1,
+              promptNumber: 4,
+            },
+            promptRunId: "run-1",
+            rolled: {
+              d10: 7,
+              d6: 4,
+              movement: 3,
+            },
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            status: 200,
+          },
+        ),
+      );
+
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingMarkLabels={["Bloodless Reflection"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    expect(screen.queryByLabelText("Mark name")).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a mark from this prompt",
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText("Mark name"), {
+      target: { value: "Moon-Scarred Throat" },
+    });
+    fireEvent.change(screen.getByLabelText("What changed"), {
+      target: { value: "A crescent scar that opens when I hunger." },
+    });
+    fireEvent.click(screen.getByLabelText("Concealed"));
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: {
+        value: "The prompt leaves my throat remade by silver moonlight.",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: {
+        value: "I learned to hide the wound beneath velvet and ash.",
+      },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const payload = JSON.parse(String(request.body)) as {
+      newMark?: {
+        description: string;
+        isConcealed: boolean;
+        label: string;
+      };
+    };
+
+    expect(payload.newMark).toEqual({
+      description: "A crescent scar that opens when I hunger.",
+      isConcealed: true,
+      label: "Moon-Scarred Throat",
+    });
+
+    fetchMock.mockRestore();
+  });
+
+  it("blocks duplicate prompt-created mark labels before submitting", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingMarkLabels={["Bloodless Reflection", "Moon-Scarred Throat"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a mark from this prompt",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("Mark name"), {
+      target: { value: "Moon-Scarred Throat" },
+    });
+    fireEvent.change(screen.getByLabelText("What changed"), {
+      target: { value: "A crescent scar that opens when I hunger." },
+    });
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: { value: "I answered the prompt." },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: { value: "I carried the consequence forward." },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    expect(
+      screen.getByText(
+        "That mark name is already in the chronicle. Choose different wording.",
+      ),
+    ).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    fetchMock.mockRestore();
+  });
+
+  it("preserves prompt-created mark draft fields after a failed submission", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: "That mark name is already in the chronicle. Choose different wording.",
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            status: 500,
+          },
+        ),
+      );
+
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+    const view = render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingMarkLabels={["Bloodless Reflection"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a mark from this prompt",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("Mark name"), {
+      target: { value: "Moon-Scarred Throat" },
+    });
+    fireEvent.change(screen.getByLabelText("What changed"), {
+      target: { value: "A crescent scar that opens when I hunger." },
+    });
+    fireEvent.click(screen.getByLabelText("Concealed"));
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: { value: "I answered the prompt." },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: { value: "I carried the consequence forward." },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "That mark name is already in the chronicle. Choose different wording.",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    view.unmount();
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingMarkLabels={["Bloodless Reflection"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    expect(screen.getByLabelText("Mark name")).toHaveValue("Moon-Scarred Throat");
+    expect(screen.getByLabelText("What changed")).toHaveValue(
+      "A crescent scar that opens when I hunger.",
+    );
+    expect(screen.getByLabelText("Concealed")).toBeChecked();
+
+    fetchMock.mockRestore();
+  });
+
+  it("clears prompt-created mark draft fields when the mark is removed", async () => {
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+    const view = render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingMarkLabels={["Bloodless Reflection"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a mark from this prompt",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("Mark name"), {
+      target: { value: "Moon-Scarred Throat" },
+    });
+    fireEvent.change(screen.getByLabelText("What changed"), {
+      target: { value: "A crescent scar that opens when I hunger." },
+    });
+    fireEvent.click(screen.getByLabelText("Concealed"));
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Remove the new mark",
+      }),
+    );
+
+    expect(screen.queryByLabelText("Mark name")).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a mark from this prompt",
+      }),
+    );
+
+    expect(screen.getByLabelText("Mark name")).toHaveValue("");
+    expect(screen.getByLabelText("What changed")).toHaveValue("");
+    expect(screen.getByLabelText("Concealed")).not.toBeChecked();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Remove the new mark",
+      }),
+    );
+
+    view.unmount();
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        existingMarkLabels={["Bloodless Reflection"]}
+        initialSessionId="session-1"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a mark from this prompt",
+      }),
+    );
+
+    expect(screen.getByLabelText("Mark name")).toHaveValue("");
+    expect(screen.getByLabelText("What changed")).toHaveValue("");
+    expect(screen.getByLabelText("Concealed")).not.toBeChecked();
+  });
+
   it("shows the memory overflow panel in play and submits a legal overflow decision", async () => {
     const fetchMock = vi
       .spyOn(globalThis, "fetch")
@@ -1717,7 +2023,7 @@ describe("guided setup flow", () => {
     fetchMock.mockRestore();
   });
 
-  it("loads chronicle skill and resource labels on the play page for duplicate checking", async () => {
+  it("loads chronicle skill, resource, and mark labels on the play page for duplicate checking", async () => {
     const chronicleSingle = vi.fn().mockResolvedValue({
       data: {
         current_prompt_encounter: 1,
@@ -1766,6 +2072,17 @@ describe("guided setup flow", () => {
     });
     const resourcesEqChronicle = vi.fn(() => ({ order: resourcesOrder }));
     const resourcesSelect = vi.fn(() => ({ eq: resourcesEqChronicle }));
+    const marksOrder = vi.fn().mockResolvedValue({
+      data: [
+        {
+          chronicle_id: "chronicle-1",
+          label: "Bloodless Reflection",
+        },
+      ],
+      error: null,
+    });
+    const marksEqChronicle = vi.fn(() => ({ order: marksOrder }));
+    const marksSelect = vi.fn(() => ({ eq: marksEqChronicle }));
 
     const from = vi.fn((table: string) => {
       if (table === "chronicles") {
@@ -1786,6 +2103,10 @@ describe("guided setup flow", () => {
 
       if (table === "resources") {
         return { select: resourcesSelect };
+      }
+
+      if (table === "marks") {
+        return { select: marksSelect };
       }
 
       throw new Error(`Unsupported table in play page test: ${table}`);
@@ -1819,6 +2140,7 @@ describe("guided setup flow", () => {
 
     expect(skillsOrder).toHaveBeenCalledTimes(1);
     expect(resourcesOrder).toHaveBeenCalledTimes(1);
+    expect(marksOrder).toHaveBeenCalledTimes(1);
     expect(
       screen.getByRole("button", {
         name: "Required by this prompt",
@@ -1828,6 +2150,11 @@ describe("guided setup flow", () => {
     expect(
       screen.getByRole("button", {
         name: "Add a resource from this prompt",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Add a mark from this prompt",
       }),
     ).toBeInTheDocument();
   });

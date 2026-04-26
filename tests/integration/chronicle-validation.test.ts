@@ -278,6 +278,122 @@ describe("chronicle validation", () => {
     expect(result.success).toBe(false);
   });
 
+  it("keeps prompt-created marks in the parsed prompt resolution payload", () => {
+    const result = promptResolutionSchema.safeParse({
+      experienceText: "I learned to hide the wound beneath velvet and ash.",
+      memoryDecision: {
+        mode: "create-new",
+      },
+      newMark: {
+        description: "A crescent scar that opens when I hunger.",
+        isConcealed: true,
+        label: "Moon-Scarred Throat",
+      },
+      playerEntry: "The prompt leaves my throat remade by silver moonlight.",
+      sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+      traitMutations: {
+        characters: [],
+        marks: [],
+        resources: [],
+        skills: [],
+      },
+    });
+
+    expect(result.success).toBe(true);
+
+    if (!result.success) {
+      throw new Error("Expected prompt-created mark payload to parse.");
+    }
+
+    expect(result.data.newMark).toEqual({
+      description: "A crescent scar that opens when I hunger.",
+      isConcealed: true,
+      label: "Moon-Scarred Throat",
+    });
+  });
+
+  it("trims prompt-created mark fields in the parsed payload", () => {
+    const result = promptResolutionSchema.safeParse({
+      experienceText: "I learned to hide the wound beneath velvet and ash.",
+      memoryDecision: {
+        mode: "create-new",
+      },
+      newMark: {
+        description: "  A crescent scar that opens when I hunger.  ",
+        isConcealed: true,
+        label: "  Moon-Scarred Throat  ",
+      },
+      playerEntry: "The prompt leaves my throat remade by silver moonlight.",
+      sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+      traitMutations: {
+        characters: [],
+        marks: [],
+        resources: [],
+        skills: [],
+      },
+    });
+
+    expect(result.success).toBe(true);
+
+    if (!result.success) {
+      throw new Error("Expected trimmed prompt-created mark payload to parse.");
+    }
+
+    expect(result.data.newMark).toEqual({
+      description: "A crescent scar that opens when I hunger.",
+      isConcealed: true,
+      label: "Moon-Scarred Throat",
+    });
+  });
+
+  it("rejects prompt-created marks with missing description text", () => {
+    const result = promptResolutionSchema.safeParse({
+      experienceText: "I learned to hide the wound beneath velvet and ash.",
+      memoryDecision: {
+        mode: "create-new",
+      },
+      newMark: {
+        description: "",
+        isConcealed: true,
+        label: "Moon-Scarred Throat",
+      },
+      playerEntry: "The prompt leaves my throat remade by silver moonlight.",
+      sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+      traitMutations: {
+        characters: [],
+        marks: [],
+        resources: [],
+        skills: [],
+      },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects prompt-created marks with labels longer than 120 characters", () => {
+    const result = promptResolutionSchema.safeParse({
+      experienceText: "I learned to hide the wound beneath velvet and ash.",
+      memoryDecision: {
+        mode: "create-new",
+      },
+      newMark: {
+        description: "A crescent scar that opens when I hunger.",
+        isConcealed: false,
+        label: "M".repeat(121),
+      },
+      playerEntry: "The prompt leaves my throat remade by silver moonlight.",
+      sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+      traitMutations: {
+        characters: [],
+        marks: [],
+        resources: [],
+        skills: [],
+      },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("trims prompt-created skill fields in the parsed payload", () => {
     const result = promptResolutionSchema.safeParse({
       experienceText:

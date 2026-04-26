@@ -22,6 +22,10 @@ const promptCreatedResourcesMigrationPath = path.join(
   process.cwd(),
   "supabase/migrations/0011_prompt_created_resources.sql",
 );
+const promptCreatedMarksMigrationPath = path.join(
+  process.cwd(),
+  "supabase/migrations/0012_prompt_created_marks.sql",
+);
 const samePromptEncounterHotfixPath = path.join(
   process.cwd(),
   "supabase/migrations/0006_fix_same_prompt_encounter_progression.sql",
@@ -45,6 +49,10 @@ function readPromptCreatedSkillsMigration() {
 
 function readPromptCreatedResourcesMigration() {
   return fs.readFileSync(promptCreatedResourcesMigrationPath, "utf8");
+}
+
+function readPromptCreatedMarksMigration() {
+  return fs.readFileSync(promptCreatedMarksMigrationPath, "utf8");
 }
 
 function readSamePromptEncounterHotfix() {
@@ -242,6 +250,51 @@ describe("gameplay RPC safety guards", () => {
     );
     expect(sql).toMatch(
       /create or replace function public\.create_prompt_resource[\s\S]*?select coalesce\(max\(sort_order\), -1\) \+ 1[\s\S]*?into new_sort_order[\s\S]*?from public\.resources[\s\S]*?where chronicle_id = target_chronicle_id;/i,
+    );
+  });
+
+  it("adds a prompt-created mark helper and wires a new_mark argument into resolve_prompt_run", () => {
+    const sql = readPromptCreatedMarksMigration();
+
+    expect(sql).toMatch(
+      /create or replace function public\.create_prompt_mark\(\s*target_chronicle_id uuid,\s*new_mark jsonb\s*\)[\s\S]*?if new_mark is null then[\s\S]*?return null;[\s\S]*?select \*\s*into locked_chronicle\s*from public\.chronicles[\s\S]*?where id = target_chronicle_id[\s\S]*?for update;/i,
+    );
+    expect(sql).toMatch(
+      /create or replace function public\.resolve_prompt_run\(\s*target_chronicle_id uuid,\s*target_session_id uuid,\s*player_entry text,\s*experience_text text,\s*memory_decision jsonb default null,\s*trait_mutations jsonb default '\{\}'::jsonb,\s*new_skill jsonb default null,\s*new_resource jsonb default null,\s*new_mark jsonb default null\s*\)/i,
+    );
+    expect(sql).toMatch(
+      /perform public\.create_prompt_skill\(target_chronicle_id, new_skill\);\s*perform public\.create_prompt_resource\(target_chronicle_id, new_resource\);\s*perform public\.create_prompt_mark\(target_chronicle_id, new_mark\);\s*insert into public\.archive_events/i,
+    );
+  });
+
+  it("rejects duplicate mark labels and assigns the next mark sort order", () => {
+    const sql = readPromptCreatedMarksMigration();
+
+    expect(sql).toMatch(
+      /create or replace function public\.create_prompt_mark[\s\S]*?if exists \([\s\S]*?from public\.marks[\s\S]*?where chronicle_id = target_chronicle_id[\s\S]*?and btrim\(label\) = new_mark_label[\s\S]*?\) then[\s\S]*?raise exception 'A mark with this name already exists\.'[\s\S]*?end if;/i,
+    );
+    expect(sql).toMatch(
+      /create or replace function public\.create_prompt_mark[\s\S]*?select coalesce\(max\(sort_order\), -1\) \+ 1[\s\S]*?into new_sort_order[\s\S]*?from public\.marks[\s\S]*?where chronicle_id = target_chronicle_id;/i,
+    );
+  });
+
+  it("adds mark sort order schema support before prompt-created marks read it", () => {
+    const sql = readPromptCreatedMarksMigration();
+    const schemaSupportIndex = sql.search(
+      /alter table public\.marks[\s\S]*?add column if not exists sort_order integer/i,
+    );
+    const helperIndex = sql.indexOf(
+      "create or replace function public.create_prompt_mark",
+    );
+
+    expect(schemaSupportIndex).toBeGreaterThanOrEqual(0);
+    expect(helperIndex).toBeGreaterThanOrEqual(0);
+    expect(schemaSupportIndex).toBeLessThan(helperIndex);
+    expect(sql).toMatch(
+      /row_number\(\) over \(\s*partition by chronicle_id\s*order by created_at, id\s*\) - 1/i,
+    );
+    expect(sql).toMatch(
+      /alter table public\.marks[\s\S]*?alter column sort_order set default 0[\s\S]*?alter column sort_order set not null/i,
     );
   });
 

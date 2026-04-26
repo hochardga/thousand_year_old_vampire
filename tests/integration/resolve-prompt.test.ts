@@ -104,6 +104,49 @@ describe("resolvePrompt", () => {
     );
   });
 
+  it("passes prompt-created marks into the resolve_prompt_run RPC payload", async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        archiveEvents: [],
+        nextPrompt: {
+          encounterIndex: 1,
+          promptNumber: 4,
+        },
+        promptRunId: "run-1",
+        rolled: {
+          d10: 7,
+          d6: 4,
+          movement: 3,
+        },
+      },
+      error: null,
+    });
+
+    await resolvePrompt(
+      { rpc },
+      "chronicle-1",
+      {
+        ...payload,
+        newMark: {
+          description: "A crescent scar that opens when I hunger.",
+          isConcealed: true,
+          label: "Moon-Scarred Throat",
+        },
+      },
+    );
+
+    expect(rpc).toHaveBeenCalledWith(
+      "resolve_prompt_run",
+      expect.objectContaining({
+        new_mark: {
+          description: "A crescent scar that opens when I hunger.",
+          isConcealed: true,
+          label: "Moon-Scarred Throat",
+        },
+      }),
+    );
+  });
+
   it("normalizes known memory-rule failures into calm product copy", async () => {
     const supabase = {
       rpc: async () => ({
@@ -165,6 +208,30 @@ describe("resolvePrompt", () => {
       }),
     ).rejects.toThrow(
       "That resource name is already in the chronicle. Choose different wording.",
+    );
+  });
+
+  it("normalizes duplicate prompt-created mark failures into calm copy", async () => {
+    const supabase = {
+      rpc: async () => ({
+        data: null,
+        error: {
+          message: "A mark with this name already exists.",
+        },
+      }),
+    };
+
+    await expect(
+      resolvePrompt(supabase, "chronicle-1", {
+        ...payload,
+        newMark: {
+          description: "A crescent scar that opens when I hunger.",
+          isConcealed: true,
+          label: "Moon-Scarred Throat",
+        },
+      }),
+    ).rejects.toThrow(
+      "That mark name is already in the chronicle. Choose different wording.",
     );
   });
 });
