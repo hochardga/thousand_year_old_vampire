@@ -500,6 +500,17 @@ describe("guided setup flow", () => {
     });
     const marksEqChronicle = vi.fn(() => ({ order: marksOrder }));
     const marksSelect = vi.fn(() => ({ eq: marksEqChronicle }));
+    const charactersOrder = vi.fn().mockResolvedValue({
+      data: [
+        {
+          chronicle_id: "chronicle-1",
+          name: "Marta",
+        },
+      ],
+      error: null,
+    });
+    const charactersEqChronicle = vi.fn(() => ({ order: charactersOrder }));
+    const charactersSelect = vi.fn(() => ({ eq: charactersEqChronicle }));
     const from = vi.fn((table: string) => {
       if (table === "chronicles") {
         return { select: chronicleSelect };
@@ -523,6 +534,10 @@ describe("guided setup flow", () => {
 
       if (table === "marks") {
         return { select: marksSelect };
+      }
+
+      if (table === "characters") {
+        return { select: charactersSelect };
       }
 
       throw new Error(`Unsupported table in play page test: ${table}`);
@@ -2497,7 +2512,7 @@ describe("guided setup flow", () => {
     fetchMock.mockRestore();
   });
 
-  it("loads chronicle skill, resource, and mark labels on the play page for duplicate checking", async () => {
+  it("loads chronicle trait names on the play page for duplicate checking", async () => {
     const chronicleSingle = vi.fn().mockResolvedValue({
       data: {
         current_prompt_encounter: 1,
@@ -2557,6 +2572,18 @@ describe("guided setup flow", () => {
     });
     const marksEqChronicle = vi.fn(() => ({ order: marksOrder }));
     const marksSelect = vi.fn(() => ({ eq: marksEqChronicle }));
+    const charactersOrder = vi.fn().mockResolvedValue({
+      data: [
+        {
+          chronicle_id: "chronicle-1",
+          name: "Elias Voss",
+        },
+      ],
+      error: null,
+    });
+    const charactersEqChronicle = vi.fn(() => ({ order: charactersOrder }));
+    const charactersSelect = vi.fn(() => ({ eq: charactersEqChronicle }));
+    const fetchMock = vi.spyOn(globalThis, "fetch");
 
     const from = vi.fn((table: string) => {
       if (table === "chronicles") {
@@ -2581,6 +2608,10 @@ describe("guided setup flow", () => {
 
       if (table === "marks") {
         return { select: marksSelect };
+      }
+
+      if (table === "characters") {
+        return { select: charactersSelect };
       }
 
       throw new Error(`Unsupported table in play page test: ${table}`);
@@ -2615,6 +2646,7 @@ describe("guided setup flow", () => {
     expect(skillsOrder).toHaveBeenCalledTimes(1);
     expect(resourcesOrder).toHaveBeenCalledTimes(1);
     expect(marksOrder).toHaveBeenCalledTimes(1);
+    expect(charactersOrder).toHaveBeenCalledTimes(1);
     expect(
       screen.getByRole("button", {
         name: "Required by this prompt",
@@ -2631,6 +2663,37 @@ describe("guided setup flow", () => {
         name: "Add a mark from this prompt",
       }),
     ).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: { value: "The clerk saw the blood and chose silence." },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: { value: "I spared Elias so my secret would have a witness." },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Add a character from this prompt",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("Character name"), {
+      target: { value: "Elias Voss" },
+    });
+    fireEvent.change(screen.getByLabelText("Who they are"), {
+      target: { value: "A parish clerk who saw my hunger and chose silence." },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(
+      screen.getByText(
+        "That character name is already in the chronicle. Choose different wording.",
+      ),
+    ).toBeInTheDocument();
+
+    fetchMock.mockRestore();
   });
 
   it("disables diary overflow when the active diary is already full", async () => {
