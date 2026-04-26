@@ -331,6 +331,17 @@ describe("gameplay RPC safety guards", () => {
     );
   });
 
+  it("preserves setup-created character ordering after characters gain sort order", () => {
+    const sql = readPromptCreatedCharactersMigration();
+
+    expect(sql).toMatch(
+      /create or replace function public\.complete_chronicle_setup[\s\S]*for character_row in[\s\S]*select value, ordinality[\s\S]*insert into public\.characters \([\s\S]*kind,\s*sort_order[\s\S]*character_row\.ordinality - 1/i,
+    );
+    expect(sql).toMatch(
+      /if coalesce\(immortal_character->>'name', ''\) <> '' then[\s\S]*insert into public\.characters \([\s\S]*kind,\s*sort_order[\s\S]*inserted_character_count/i,
+    );
+  });
+
   it("keeps the e2e gameplay mock aligned with the setup and active-session guards", async () => {
     const client = createE2EServerSupabaseClient({
       get(name) {
