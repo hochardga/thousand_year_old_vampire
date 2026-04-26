@@ -972,6 +972,152 @@ describe("guided setup flow", () => {
     fetchMock.mockRestore();
   });
 
+  it("disables full memories in the append-existing picker", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        initialSessionId="session-1"
+        mindMemories={[
+          {
+            entryCount: 3,
+            id: "9b3a25d0-89de-4c6f-b0fd-f719f99c4f6b",
+            slotIndex: 1,
+            title: "Winter bells",
+          },
+        ]}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: /Add this Experience to an existing Memory/i,
+      }),
+    );
+
+    expect(
+      screen.getByRole("radio", {
+        name: /Slot 1: Winter bells/i,
+      }),
+    ).toBeDisabled();
+    expect(
+      screen.getByText("This Memory already holds 3 Experiences."),
+    ).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: { value: "I answered the prompt." },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: { value: "I carried the consequence forward." },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    expect(
+      screen.getByText("Choose which Memory receives this Experience."),
+    ).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    fetchMock.mockRestore();
+  });
+
+  it("allows append-existing without overflow when five memories are in mind", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            archiveEvents: [
+              {
+                eventType: "prompt_resolved",
+                summary: "The entry has been set into memory.",
+              },
+            ],
+            nextPrompt: {
+              encounterIndex: 1,
+              promptNumber: 4,
+            },
+            promptRunId: "run-1",
+            rolled: {
+              d10: 7,
+              d6: 4,
+              movement: 3,
+            },
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            status: 200,
+          },
+        ),
+      );
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        initialSessionId="session-1"
+        mindMemories={[
+          { entryCount: 1, id: "memory-1", slotIndex: 1, title: "Winter bells" },
+          { entryCount: 1, id: "memory-2", slotIndex: 2, title: "The nameless face" },
+          { entryCount: 1, id: "memory-3", slotIndex: 3, title: "A flooded chapel" },
+          { entryCount: 1, id: "memory-4", slotIndex: 4, title: "The black carriage" },
+          { entryCount: 1, id: "memory-5", slotIndex: 5, title: "A ruined oath" },
+        ]}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: /Add this Experience to an existing Memory/i,
+      }),
+    );
+    expect(screen.queryByText("The mind is full.")).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: /Slot 1: Winter bells/i,
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: { value: "I answered the prompt." },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: { value: "I carried the consequence forward." },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const payload = JSON.parse(String(request.body)) as {
+      memoryDecision: {
+        mode: string;
+        targetMemoryId: string;
+      };
+    };
+
+    expect(payload.memoryDecision).toEqual({
+      mode: "append-existing",
+      targetMemoryId: "memory-1",
+    });
+
+    fetchMock.mockRestore();
+  });
+
   it("surfaces known prompt skill effects and prefills Prompt 1's required skill", async () => {
     const { PlaySurface } = await import("@/components/ritual/PlaySurface");
     const fetchMock = vi.spyOn(globalThis, "fetch");
