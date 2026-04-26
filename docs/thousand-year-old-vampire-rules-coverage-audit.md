@@ -35,14 +35,13 @@ What is only partly covered:
 | Partly covered area | Why it is only partial |
 | --- | --- |
 | Setup fidelity | The data model can hold more than the UI currently gathers, but the guided setup only asks for one skill, one resource, one mortal, one mark, and one memory. |
-| Trait changes during play | The play UI now supports prompt-created skills and resources, but it still submits empty mutation arrays and offers no normal controls for most prompt-driven checks, losses, character changes, or mark updates. |
+| Trait changes during play | The play UI now supports prompt-created skills, resources, and marks, but it still submits empty mutation arrays and offers no normal controls for most prompt-driven checks, losses, character changes, or mark updates. |
 | Character and mark upkeep | Existing characters and marks can be edited after the fact in the ledger, but creation and many prompt-specific changes are not surfaced in active play. |
 
 What is still missing or materially incomplete:
 
 | Missing area | Why it matters |
 | --- | --- |
-| Normal UI support for adding an Experience to an existing memory | This is a core memory rule in the book, but the play UI only creates new memories or handles overflow. |
 | Book-faithful setup end state | The book expects 5 starting memories, 3 skills, 3 resources, at least 3 mortals, and 1 immortal; the default setup flow does not. |
 | Skill/resource substitution and end-game rules | The app does not parse prompt costs, apply substitution rules, or end the game when those costs become impossible. |
 | Diary loss cascading to stored memories | Normal four-memory diary capacity is now enforced, but diary loss and the loss of preserved memories tied to it are still not implemented. |
@@ -60,9 +59,9 @@ What now looks intentionally unsupported:
 
 The app currently implements a **promising but narrower rules slice** of *Thousand Year Old Vampire*.
 
-It is already good at the memory engine: prompt lookup, movement, repeated encounters, creating memories, forgetting memories, four-memory diary overflow, and preserving the archive across sessions. That part is real and backed by schema, RPCs, and tests.
+It is already good at the memory engine: prompt lookup, movement, repeated encounters, creating or extending memories, forgetting memories, four-memory diary overflow, and preserving the archive across sessions. That part is real and backed by schema, RPCs, and tests.
 
-It is not yet a full digital implementation of the rules text. The biggest genuine gaps are setup fidelity, append-to-existing-memory in the normal UI, prompt-driven creation and mutation of traits, substitution logic, diary-loss consequences, and game-ending conditions.
+It is not yet a full digital implementation of the rules text. The biggest genuine gaps are setup fidelity, prompt-driven character creation and mutation of traits, substitution logic, diary-loss consequences, and game-ending conditions.
 
 ## Detailed Breakdown
 
@@ -95,7 +94,7 @@ It is not yet a full digital implementation of the rules text. The biggest genui
 | An Experience must be placed into a Memory immediately. | Automated | Prompt resolution writes the prompt run and memory entry in one transaction. | `supabase/migrations/0007_memory_rule_helpers.sql`, `src/lib/chronicles/resolvePrompt.ts` |
 | A Memory may contain up to 3 Experiences. | Automated | The RPC rejects a fourth entry on the same memory. | `supabase/migrations/0007_memory_rule_helpers.sql`, `tests/integration/archive-rules.test.ts` |
 | The vampire may have up to 5 active memories in mind. | Automated | The schema and helper functions treat five in-mind memories as the limit. | `supabase/migrations/0002_core_gameplay_schema.sql`, `supabase/migrations/0007_memory_rule_helpers.sql`, `src/components/ritual/MemoryDecisionPanel.tsx` |
-| If a new Experience fits an existing Memory, it may be added there. | Partial | The backend supports `append-existing`, but the current play UI never offers that choice. In normal use, the player can only create a new memory and then handle overflow. | `src/types/chronicle.ts`, `src/lib/validation/play.ts`, `supabase/migrations/0007_memory_rule_helpers.sql`, `src/components/ritual/PlaySurface.tsx` |
+| If a new Experience fits an existing Memory, it may be added there. | Automated | The play UI now lets the player create a new Memory or append to a selected in-mind Memory; full Memories are shown as unavailable when entry counts are known, and the backend still enforces the three-Experience cap. | `src/components/ritual/MemoryPlacementPanel.tsx`, `src/components/ritual/PlaySurface.tsx`, `src/app/(app)/chronicles/[chronicleId]/play/page.tsx`, `supabase/migrations/0007_memory_rule_helpers.sql`, `tests/integration/setup-flow.test.tsx`, `tests/integration/archive-rules.test.ts` |
 | If all five memories are full, the player chooses what to forget unless instructed otherwise. | Automated | When the mind is full, the UI requires the player to choose a memory to forget or move into the diary. | `src/components/ritual/MemoryDecisionPanel.tsx`, `supabase/migrations/0007_memory_rule_helpers.sql`, `tests/integration/setup-flow.test.tsx` |
 | Forgetting is a player choice, not a conscious vampire choice. | Manual | The product copy supports this mood, but the distinction is not mechanically modeled. | `src/components/ritual/MemoryDecisionPanel.tsx` |
 | Forgotten memories remain readable. | Automated | Forgotten memories remain in the archive with `location = 'forgotten'`. | `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx`, `src/components/archive/MemoryCard.tsx` |
@@ -105,7 +104,7 @@ It is not yet a full digital implementation of the rules text. The biggest genui
 
 This is the strongest implemented rules cluster in the whole app. The database logic, archive UI, and tests all agree on the memory cap, overflow handling, diary movement, and prompt history.
 
-The biggest memory gap is also an important one: the book expects the player to decide whether a new Experience belongs in an existing Memory, but the normal play UI does not expose that choice. The backend can do it, yet the first-party interface does not.
+The prior biggest memory gap is now covered in normal play: the player can decide whether a new Experience begins a new Memory or joins an existing, non-full in-mind Memory. Remaining memory gaps are less central and mostly involve prompt-specific exceptions or restoration effects.
 
 ### 4. Diary Rules
 
@@ -250,7 +249,6 @@ These are the highest-value mismatches between the source rules and the current 
 
 | Gap | Why it matters now |
 | --- | --- |
-| No normal UI for `append-existing` memory placement | This changes the core rhythm of how memories are supposed to form. The book expects clustering into thematic memories; the current play UI mostly pushes toward one new memory per prompt until overflow. |
 | Guided setup does not produce the book's required starting state | A player who only uses the first-party setup flow begins with a simpler chronicle than the rules describe. |
 | No in-play creation of characters | Skills, resources, and marks now have first-party prompt-resolution flows, but prompts that require creating mortal Characters still need active-play support. |
 | No skill/resource substitution engine | The game-ending pressure around dwindling traits is one of the book's core mechanics, and it is currently absent. |
