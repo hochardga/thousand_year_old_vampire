@@ -21,6 +21,9 @@ type MindMemoryRecord = {
   diary_id: string | null;
   id: string;
   location: "mind" | "diary";
+  memory_entries?: Array<{
+    id: string;
+  }>;
   slot_index: number | null;
   title: string;
 };
@@ -195,7 +198,7 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
   ] = await Promise.all([
     memoryClient
       .from("memories")
-      .select("id, title, slot_index, location, diary_id")
+      .select("id, title, slot_index, location, diary_id, memory_entries(id)")
       .eq("chronicle_id", chronicleId),
     diaryClient
       .from("diaries")
@@ -303,6 +306,7 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
           existingSkillLabels={(skillsResult.data ?? []).map((skill) => skill.label)}
           initialSessionId={chronicle.current_session_id}
           mindMemories={mindMemories.map((memory) => ({
+            entryCount: memory.memory_entries?.length ?? 0,
             id: memory.id,
             slotIndex: memory.slot_index,
             title: memory.title,

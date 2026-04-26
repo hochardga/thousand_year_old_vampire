@@ -433,6 +433,7 @@ describe("guided setup flow", () => {
           diary_id: null,
           id: "memory-1",
           location: "mind",
+          memory_entries: [{ id: "entry-1" }, { id: "entry-2" }],
           slot_index: 1,
           title: "Winter bells",
         },
@@ -579,6 +580,15 @@ describe("guided setup flow", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("1 memory held in mind")).toBeInTheDocument();
     expect(screen.getByText("Diary 1 of 4 memories")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: /Add this Experience to an existing Memory/i,
+      }),
+    );
+    expect(screen.getByText("2 of 3 Experiences held here.")).toBeInTheDocument();
+    expect(memoriesSelect).toHaveBeenCalledWith(
+      "id, title, slot_index, location, diary_id, memory_entries(id)",
+    );
     expect(diariesMaybeSingle).toHaveBeenCalledTimes(1);
   });
 
