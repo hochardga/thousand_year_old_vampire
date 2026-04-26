@@ -875,6 +875,103 @@ describe("guided setup flow", () => {
     fetchMock.mockRestore();
   });
 
+  it("submits append-existing when the player chooses an in-mind memory", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            archiveEvents: [
+              {
+                eventType: "prompt_resolved",
+                summary: "The entry has been set into memory.",
+              },
+            ],
+            nextPrompt: {
+              encounterIndex: 1,
+              promptNumber: 4,
+            },
+            promptRunId: "run-1",
+            rolled: {
+              d10: 7,
+              d6: 4,
+              movement: 3,
+            },
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            status: 200,
+          },
+        ),
+      );
+
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        initialSessionId="session-1"
+        mindMemories={[
+          {
+            entryCount: 2,
+            id: "9b3a25d0-89de-4c6f-b0fd-f719f99c4f6b",
+            slotIndex: 1,
+            title: "Winter bells",
+          },
+        ]}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: {
+        value: "I answered the bells by dragging the sexton into the thawing graveyard.",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: {
+        value:
+          "I left the chapel with blood under my nails and a prayer I could not finish.",
+      },
+    });
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: /Add this Experience to an existing Memory/i,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: /Slot 1: Winter bells/i,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const payload = JSON.parse(String(request.body)) as {
+      memoryDecision: {
+        mode: string;
+        targetMemoryId: string;
+      };
+    };
+
+    expect(payload.memoryDecision).toEqual({
+      mode: "append-existing",
+      targetMemoryId: "9b3a25d0-89de-4c6f-b0fd-f719f99c4f6b",
+    });
+
+    fetchMock.mockRestore();
+  });
+
   it("surfaces known prompt skill effects and prefills Prompt 1's required skill", async () => {
     const { PlaySurface } = await import("@/components/ritual/PlaySurface");
     const fetchMock = vi.spyOn(globalThis, "fetch");
