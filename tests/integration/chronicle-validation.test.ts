@@ -394,6 +394,103 @@ describe("chronicle validation", () => {
     expect(result.success).toBe(false);
   });
 
+  it("keeps prompt-created characters in the parsed prompt resolution payload", () => {
+    const result = promptResolutionSchema.safeParse({
+      experienceText: "I learned the name of the witness who would not look away.",
+      memoryDecision: {
+        mode: "create-new",
+      },
+      newCharacter: {
+        description: "A parish clerk who saw my hunger and chose silence.",
+        kind: "mortal",
+        name: "Elias Voss",
+      },
+      playerEntry:
+        "The clerk watched me feed and crossed himself after I spared him.",
+      sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+      traitMutations: {
+        characters: [],
+        marks: [],
+        resources: [],
+        skills: [],
+      },
+    });
+
+    expect(result.success).toBe(true);
+
+    if (!result.success) {
+      throw new Error("Expected prompt-created character payload to parse.");
+    }
+
+    expect(result.data.newCharacter).toEqual({
+      description: "A parish clerk who saw my hunger and chose silence.",
+      kind: "mortal",
+      name: "Elias Voss",
+    });
+  });
+
+  it("trims prompt-created character fields in the parsed payload", () => {
+    const result = promptResolutionSchema.safeParse({
+      experienceText: "I learned the name of the witness who would not look away.",
+      memoryDecision: {
+        mode: "create-new",
+      },
+      newCharacter: {
+        description: "  A parish clerk who saw my hunger and chose silence.  ",
+        kind: "immortal",
+        name: "  Elias Voss  ",
+      },
+      playerEntry:
+        "The clerk watched me feed and crossed himself after I spared him.",
+      sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+      traitMutations: {
+        characters: [],
+        marks: [],
+        resources: [],
+        skills: [],
+      },
+    });
+
+    expect(result.success).toBe(true);
+
+    if (!result.success) {
+      throw new Error(
+        "Expected trimmed prompt-created character payload to parse.",
+      );
+    }
+
+    expect(result.data.newCharacter).toEqual({
+      description: "A parish clerk who saw my hunger and chose silence.",
+      kind: "immortal",
+      name: "Elias Voss",
+    });
+  });
+
+  it("rejects prompt-created characters with invalid kind", () => {
+    const result = promptResolutionSchema.safeParse({
+      experienceText: "I learned the name of the witness who would not look away.",
+      memoryDecision: {
+        mode: "create-new",
+      },
+      newCharacter: {
+        description: "A parish clerk who saw my hunger and chose silence.",
+        kind: "ghost",
+        name: "Elias Voss",
+      },
+      playerEntry:
+        "The clerk watched me feed and crossed himself after I spared him.",
+      sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+      traitMutations: {
+        characters: [],
+        marks: [],
+        resources: [],
+        skills: [],
+      },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("trims prompt-created skill fields in the parsed payload", () => {
     const result = promptResolutionSchema.safeParse({
       experienceText:
