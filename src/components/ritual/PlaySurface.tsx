@@ -6,6 +6,7 @@ import { trackAnalyticsEvent } from "@/lib/analytics/posthog";
 import type { PromptEffectGuidance } from "@/lib/prompts/effects";
 import { ConsequencePanel } from "@/components/ritual/ConsequencePanel";
 import { MemoryDecisionPanel } from "@/components/ritual/MemoryDecisionPanel";
+import { MemoryPlacementPanel } from "@/components/ritual/MemoryPlacementPanel";
 import { PromptMarkComposer } from "@/components/ritual/PromptMarkComposer";
 import { PromptResourceComposer } from "@/components/ritual/PromptResourceComposer";
 import { PromptSkillComposer } from "@/components/ritual/PromptSkillComposer";
@@ -42,12 +43,15 @@ type PlaySurfaceProps = {
   existingSkillLabels?: string[];
   initialSessionId: string | null;
   mindMemories?: Array<{
+    entryCount?: number;
     id: string;
     slotIndex: number | null;
     title: string;
   }>;
   promptEffect?: PromptEffectGuidance | null;
 };
+
+type MemoryPlacementMode = "append-existing" | "create-new";
 
 export function PlaySurface({
   activeDiary = null,
@@ -114,6 +118,13 @@ export function PlaySurface({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<ActiveResolvePromptResponse | null>(null);
+  const [memoryPlacementMode, setMemoryPlacementMode] =
+    useState<MemoryPlacementMode>(
+      () => initialDraft?.memoryPlacementMode ?? "create-new",
+    );
+  const [selectedAppendMemoryId, setSelectedAppendMemoryId] = useState<
+    string | null
+  >(() => initialDraft?.selectedAppendMemoryId ?? null);
   const [overflowMode, setOverflowMode] = useState<
     "forget-existing" | "move-to-diary" | null
   >(null);
@@ -121,12 +132,20 @@ export function PlaySurface({
     string | null
   >(null);
 
-  const requiresOverflowDecision = mindMemories.length >= 5;
+  const selectedAppendMemory = mindMemories.find(
+    (memory) => memory.id === selectedAppendMemoryId,
+  );
+  const selectedAppendMemoryIsFull =
+    typeof selectedAppendMemory?.entryCount === "number" &&
+    selectedAppendMemory.entryCount >= 3;
+  const requiresOverflowDecision =
+    memoryPlacementMode === "create-new" && mindMemories.length >= 5;
 
   const syncPromptDraft = useCallback(
     (
       overrides: Partial<{
         experienceText: string;
+        memoryPlacementMode: MemoryPlacementMode;
         newMarkDescription: string;
         newMarkIsConcealed: boolean;
         newMarkLabel: string;
@@ -136,6 +155,7 @@ export function PlaySurface({
         newSkillDescription: string;
         newSkillLabel: string;
         playerEntry: string;
+        selectedAppendMemoryId: string | null;
         shouldCreateMark: boolean;
         shouldCreateResource: boolean;
         shouldCreateSkill: boolean;
@@ -143,6 +163,7 @@ export function PlaySurface({
     ) => {
       const nextDraft = {
         experienceText,
+        memoryPlacementMode,
         newMarkDescription,
         newMarkIsConcealed,
         newMarkLabel,
@@ -152,6 +173,7 @@ export function PlaySurface({
         newSkillDescription,
         newSkillLabel,
         playerEntry,
+        selectedAppendMemoryId,
         shouldCreateMark: isAddingMark,
         shouldCreateResource: isAddingResource,
         shouldCreateSkill: isAddingSkill,
@@ -167,6 +189,8 @@ export function PlaySurface({
         Boolean(nextDraft.newResourceDescription) ||
         Boolean(nextDraft.newSkillLabel) ||
         Boolean(nextDraft.newSkillDescription) ||
+        Boolean(nextDraft.selectedAppendMemoryId) ||
+        nextDraft.memoryPlacementMode === "append-existing" ||
         nextDraft.shouldCreateMark ||
         nextDraft.shouldCreateResource ||
         nextDraft.shouldCreateSkill;
@@ -184,6 +208,7 @@ export function PlaySurface({
       isAddingMark,
       isAddingResource,
       isAddingSkill,
+      memoryPlacementMode,
       newMarkDescription,
       newMarkIsConcealed,
       newMarkLabel,
@@ -193,6 +218,7 @@ export function PlaySurface({
       newSkillDescription,
       newSkillLabel,
       playerEntry,
+      selectedAppendMemoryId,
     ],
   );
 
@@ -211,6 +237,16 @@ export function PlaySurface({
       setErrorMessage(
         "Choose which memory to forget or move into the diary before continuing.",
       );
+      return;
+    }
+
+    if (memoryPlacementMode === "append-existing" && !selectedAppendMemoryId) {
+      setErrorMessage("Choose which Memory receives this Experience.");
+      return;
+    }
+
+    if (memoryPlacementMode === "append-existing" && selectedAppendMemoryIsFull) {
+      setErrorMessage("That Memory is already full.");
       return;
     }
 
@@ -290,7 +326,12 @@ export function PlaySurface({
           body: JSON.stringify({
             experienceText,
             memoryDecision:
-              requiresOverflowDecision && overflowMode && selectedOverflowMemoryId
+              memoryPlacementMode === "append-existing" && selectedAppendMemoryId
+                ? {
+                    mode: "append-existing",
+                    targetMemoryId: selectedAppendMemoryId,
+                  }
+                : requiresOverflowDecision && overflowMode && selectedOverflowMemoryId
                 ? {
                     memoryId: selectedOverflowMemoryId,
                     mode: overflowMode,
@@ -397,6 +438,8 @@ export function PlaySurface({
       setNewSkillDescription("");
       setNewSkillLabel("");
       setSkillErrorMessage(null);
+      setMemoryPlacementMode("create-new");
+      setSelectedAppendMemoryId(null);
       setOverflowMode(null);
       setSelectedOverflowMemoryId(null);
       clearPromptDraft(chronicleId);
@@ -499,6 +542,28 @@ export function PlaySurface({
     setMarkErrorMessage(null);
   }
 
+  function handleMemoryPlacementModeChange(mode: MemoryPlacementMode) {
+    setMemoryPlacementMode(mode);
+    setErrorMessage(null);
+
+    if (mode === "create-new") {
+      setSelectedAppendMemoryId(null);
+      syncPromptDraft({
+        memoryPlacementMode: mode,
+        selectedAppendMemoryId: null,
+      });
+      return;
+    }
+
+    syncPromptDraft({ memoryPlacementMode: mode });
+  }
+
+  function handleSelectedAppendMemoryChange(memoryId: string) {
+    setSelectedAppendMemoryId(memoryId);
+    setErrorMessage(null);
+    syncPromptDraft({ selectedAppendMemoryId: memoryId });
+  }
+
   return (
     <div className="space-y-4">
       {consequenceSummary && nextPromptNumber ? (
@@ -555,6 +620,15 @@ export function PlaySurface({
             onChange={setExperienceText}
             placeholder="Distill the lasting consequence into a single sentence."
           />
+          {mindMemories.length > 0 ? (
+            <MemoryPlacementPanel
+              memories={mindMemories}
+              onModeChange={handleMemoryPlacementModeChange}
+              onSelectedMemoryChange={handleSelectedAppendMemoryChange}
+              selectedMemoryId={selectedAppendMemoryId}
+              selectedMode={memoryPlacementMode}
+            />
+          ) : null}
           <PromptSkillComposer
             description={newSkillDescription}
             errorMessage={skillErrorMessage}
