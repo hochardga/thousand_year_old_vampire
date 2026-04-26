@@ -147,11 +147,17 @@ function buildResolveArgs(
     isConcealed: boolean;
     label: string;
   },
+  newCharacter?: {
+    description: string;
+    kind: "immortal" | "mortal";
+    name: string;
+  },
 ) {
   return {
     experience_text:
       "I set down the shape of this moment before it can leave me again.",
     memory_decision: memoryDecision,
+    new_character: newCharacter ?? null,
     new_mark: newMark ?? null,
     new_resource: newResource ?? null,
     new_skill: newSkill ?? null,
@@ -263,6 +269,11 @@ async function resolvePromptRun(
     isConcealed: boolean;
     label: string;
   },
+  newCharacter?: {
+    description: string;
+    kind: "immortal" | "mortal";
+    name: string;
+  },
 ): Promise<PromptRunRpcResult> {
   return client.rpc(
     "resolve_prompt_run",
@@ -273,6 +284,7 @@ async function resolvePromptRun(
       newSkill,
       newResource,
       newMark,
+      newCharacter,
     ),
   );
 }
@@ -805,6 +817,148 @@ describe("archive rule enforcement", () => {
       message: "A mark description is required.",
     });
     expect(state.marks).toHaveLength(0);
+    expect(state.prompt_runs).toHaveLength(0);
+  });
+
+  it("creates prompt-created characters at the next sort order", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle(
+      1,
+      [],
+    );
+
+    state.characters.push({
+      chronicle_id: chronicleId,
+      description: "My sister kept the house until the last fever.",
+      id: randomUUID(),
+      kind: "mortal",
+      name: "Marta",
+      retired_at: null,
+      sort_order: 0,
+      status: "active",
+    });
+
+    const result = await resolvePromptRun(
+      client,
+      chronicleId,
+      sessionId,
+      { mode: "create-new" },
+      undefined,
+      undefined,
+      undefined,
+      {
+        description: "  A parish clerk who saw my hunger and chose silence.  ",
+        kind: "mortal",
+        name: "  Elias Voss  ",
+      },
+    );
+
+    expect(result.error).toBeNull();
+    expect(state.characters).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          chronicle_id: chronicleId,
+          description: "A parish clerk who saw my hunger and chose silence.",
+          kind: "mortal",
+          name: "Elias Voss",
+          sort_order: 1,
+          status: "active",
+        }),
+      ]),
+    );
+  });
+
+  it("rejects duplicate prompt-created character names within the same chronicle", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle(
+      1,
+      [],
+    );
+
+    state.characters.push({
+      chronicle_id: chronicleId,
+      description: "A parish clerk who saw too much.",
+      id: randomUUID(),
+      kind: "mortal",
+      name: "Elias Voss",
+      retired_at: null,
+      sort_order: 0,
+      status: "active",
+    });
+
+    const result = await resolvePromptRun(
+      client,
+      chronicleId,
+      sessionId,
+      { mode: "create-new" },
+      undefined,
+      undefined,
+      undefined,
+      {
+        description: "A second clerk with the same name.",
+        kind: "mortal",
+        name: " Elias Voss ",
+      },
+    );
+
+    expect(result.error).toMatchObject({
+      message: "A character with this name already exists.",
+    });
+    expect(state.characters).toHaveLength(1);
+    expect(state.prompt_runs).toHaveLength(0);
+  });
+
+  it("rejects prompt-created characters with a blank trimmed name", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle(
+      1,
+      [],
+    );
+
+    const result = await resolvePromptRun(
+      client,
+      chronicleId,
+      sessionId,
+      { mode: "create-new" },
+      undefined,
+      undefined,
+      undefined,
+      {
+        description: "A parish clerk who saw too much.",
+        kind: "mortal",
+        name: "   ",
+      },
+    );
+
+    expect(result.error).toMatchObject({
+      message: "A character name is required.",
+    });
+    expect(state.characters).toHaveLength(0);
+    expect(state.prompt_runs).toHaveLength(0);
+  });
+
+  it("rejects prompt-created characters with a blank trimmed description", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle(
+      1,
+      [],
+    );
+
+    const result = await resolvePromptRun(
+      client,
+      chronicleId,
+      sessionId,
+      { mode: "create-new" },
+      undefined,
+      undefined,
+      undefined,
+      {
+        description: "   ",
+        kind: "mortal",
+        name: "Elias Voss",
+      },
+    );
+
+    expect(result.error).toMatchObject({
+      message: "A character description is required.",
+    });
+    expect(state.characters).toHaveLength(0);
     expect(state.prompt_runs).toHaveLength(0);
   });
 

@@ -35,8 +35,8 @@ What is only partly covered:
 | Partly covered area | Why it is only partial |
 | --- | --- |
 | Setup fidelity | The data model can hold more than the UI currently gathers, but the guided setup only asks for one skill, one resource, one mortal, one mark, and one memory. |
-| Trait changes during play | The play UI now supports prompt-created skills, resources, and marks, but it still submits empty mutation arrays and offers no normal controls for most prompt-driven checks, losses, character changes, or mark updates. |
-| Character and mark upkeep | Existing characters and marks can be edited after the fact in the ledger, but creation and many prompt-specific changes are not surfaced in active play. |
+| Trait changes during play | The play UI now supports prompt-created skills, resources, characters, and marks, but it still submits empty mutation arrays and offers no normal controls for most prompt-driven checks, losses, existing character changes, or mark updates. |
+| Character and mark upkeep | New characters and marks can be created during prompt resolution, and existing characters and marks can be edited after the fact in the ledger, but many prompt-specific changes are not surfaced in active play. |
 
 What is still missing or materially incomplete:
 
@@ -146,7 +146,7 @@ The prior biggest memory gap is now covered in normal play: the player can decid
 | Characters are named and described. | Automated | Characters exist in the schema and ledger view. | `supabase/migrations/0002_core_gameplay_schema.sql`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
 | Characters may be mortal or immortal. | Automated | `character_kind` is modeled and displayed. | `supabase/migrations/0002_core_gameplay_schema.sql`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
 | Character descriptions may accumulate detail over time. | Manual | The ledger editor lets the player revise descriptions after the fact. | `src/components/archive/CharacterEditor.tsx`, `src/app/api/chronicles/[chronicleId]/characters/[characterId]/route.ts` |
-| If a prompt requires a Character and none is available, create one. | Missing | There is no character-creation UI or route during play. The only character route is an item-level `PATCH` route. | `src/app/api/chronicles/[chronicleId]/characters/[characterId]/route.ts`, `src/components/ritual/PlaySurface.tsx` |
+| If a prompt requires a Character and none is available, create one. | Automated | The play surface now supports prompt-created Characters, including mortal or immortal kind selection, and prompt resolution persists the new Character transactionally with the prompt answer. | `src/components/ritual/PromptCharacterComposer.tsx`, `src/components/ritual/PlaySurface.tsx`, `src/lib/validation/play.ts`, `supabase/migrations/0013_prompt_created_characters.sql`, `tests/integration/setup-flow.test.tsx`, `tests/integration/archive-rules.test.ts` |
 | Mortals occasionally die of old age. | Manual | The player can mark a character dead in the ledger or through hidden trait mutations, but there is no automatic cadence or reminder. | `src/components/archive/CharacterEditor.tsx`, `src/types/chronicle.ts` |
 | Characters cannot otherwise be killed unless a prompt says so. | Manual | The editor allows `dead` or `lost` at any time; the app does not police whether a prompt authorized it. | `src/components/archive/CharacterEditor.tsx`, `src/app/api/chronicles/[chronicleId]/characters/[characterId]/route.ts` |
 
@@ -250,7 +250,6 @@ These are the highest-value mismatches between the source rules and the current 
 | Gap | Why it matters now |
 | --- | --- |
 | Guided setup does not produce the book's required starting state | A player who only uses the first-party setup flow begins with a simpler chronicle than the rules describe. |
-| No in-play creation of characters | Skills, resources, and marks now have first-party prompt-resolution flows, but prompts that require creating mortal Characters still need active-play support. |
 | No skill/resource substitution engine | The game-ending pressure around dwindling traits is one of the book's core mechanics, and it is currently absent. |
 | Diary loss and cascading memory loss are still missing | Diary capacity pressure now exists, but losing the diary and the memories preserved in it is still absent from the rules loop. |
 | No end-game flow | The app has statuses for `completed`, but no prompt-driven or rules-driven completion path in play. |

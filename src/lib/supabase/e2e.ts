@@ -634,6 +634,21 @@ function nextMarkSortOrder(state: E2EState, chronicleId: string) {
   );
 }
 
+function nextCharacterSortOrder(state: E2EState, chronicleId: string) {
+  return (
+    state.characters.reduce((highestSortOrder, character) => {
+      if (character.chronicle_id !== chronicleId) {
+        return highestSortOrder;
+      }
+
+      return Math.max(
+        highestSortOrder,
+        typeof character.sort_order === "number" ? character.sort_order : -1,
+      );
+    }, -1) + 1
+  );
+}
+
 function normalizeSkillText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -1079,6 +1094,7 @@ function applySetupCompletion(args: Record<string, unknown>) {
       introduced_at: now,
       kind: character.kind ?? "mortal",
       name,
+      sort_order: nextCharacterSortOrder(state, chronicle.id),
       status: "active",
     });
   });
@@ -1093,6 +1109,7 @@ function applySetupCompletion(args: Record<string, unknown>) {
       introduced_at: now,
       kind: immortalCharacter.kind ?? "immortal",
       name: immortalName,
+      sort_order: nextCharacterSortOrder(state, chronicle.id),
       status: "active",
     });
   }
@@ -1210,6 +1227,10 @@ function applyPromptResolution(args: Record<string, unknown>) {
     args.new_mark && typeof args.new_mark === "object"
       ? (args.new_mark as Record<string, unknown>)
       : null;
+  const rawNewCharacter =
+    args.new_character && typeof args.new_character === "object"
+      ? (args.new_character as Record<string, unknown>)
+      : null;
   const newSkill = rawNewSkill
     ? {
         description: normalizeSkillText(rawNewSkill.description),
@@ -1228,6 +1249,14 @@ function applyPromptResolution(args: Record<string, unknown>) {
         description: normalizeMarkText(rawNewMark.description),
         isConcealed: Boolean(rawNewMark.isConcealed),
         label: normalizeMarkText(rawNewMark.label),
+      }
+    : null;
+  const newCharacter = rawNewCharacter
+    ? {
+        description: normalizeCharacterText(rawNewCharacter.description),
+        kind:
+          rawNewCharacter.kind === "immortal" ? "immortal" : ("mortal" as const),
+        name: normalizeCharacterText(rawNewCharacter.name),
       }
     : null;
 
@@ -1286,6 +1315,25 @@ function applyPromptResolution(args: Record<string, unknown>) {
     )
   ) {
     return createRpcError("A mark with this name already exists.");
+  }
+
+  if (newCharacter && !newCharacter.name) {
+    return createRpcError("A character name is required.");
+  }
+
+  if (newCharacter && !newCharacter.description) {
+    return createRpcError("A character description is required.");
+  }
+
+  if (
+    newCharacter &&
+    state.characters.some(
+      (character) =>
+        character.chronicle_id === chronicle.id &&
+        normalizeCharacterText(character.name) === newCharacter.name,
+    )
+  ) {
+    return createRpcError("A character with this name already exists.");
   }
 
   if ((memoryDecision.mode ?? "create-new") === "append-existing") {
@@ -1435,6 +1483,20 @@ function applyPromptResolution(args: Record<string, unknown>) {
       is_concealed: newMark.isConcealed,
       label: newMark.label,
       sort_order: nextMarkSortOrder(state, chronicle.id),
+    });
+  }
+
+  if (newCharacter) {
+    state.characters.push({
+      chronicle_id: chronicle.id,
+      description: newCharacter.description,
+      id: randomUUID(),
+      introduced_at: now,
+      kind: newCharacter.kind,
+      name: newCharacter.name,
+      retired_at: null,
+      sort_order: nextCharacterSortOrder(state, chronicle.id),
+      status: "active",
     });
   }
 
