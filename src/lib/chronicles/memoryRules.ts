@@ -1,5 +1,6 @@
 export const MEMORY_RULE_MESSAGES = {
   diaryFull: "The diary is already full.",
+  duplicateCharacter: "A character with this name already exists.",
   duplicateMark: "A mark with this name already exists.",
   duplicateResource: "A resource with this name already exists.",
   duplicateSkill: "A skill with this name already exists.",
@@ -15,6 +16,8 @@ export const MEMORY_RULE_MESSAGES = {
 const MEMORY_RULE_COPY: Record<string, string> = {
   [MEMORY_RULE_MESSAGES.diaryFull]:
     "The diary is full. Choose a memory to forget, or wait until the diary can hold more.",
+  [MEMORY_RULE_MESSAGES.duplicateCharacter]:
+    "That character name is already in the chronicle. Choose different wording.",
   [MEMORY_RULE_MESSAGES.duplicateMark]:
     "That mark name is already in the chronicle. Choose different wording.",
   [MEMORY_RULE_MESSAGES.duplicateResource]:

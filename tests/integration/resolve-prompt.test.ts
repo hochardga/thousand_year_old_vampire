@@ -147,6 +147,49 @@ describe("resolvePrompt", () => {
     );
   });
 
+  it("passes prompt-created characters into the resolve_prompt_run RPC payload", async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        archiveEvents: [],
+        nextPrompt: {
+          encounterIndex: 1,
+          promptNumber: 4,
+        },
+        promptRunId: "run-1",
+        rolled: {
+          d10: 7,
+          d6: 4,
+          movement: 3,
+        },
+      },
+      error: null,
+    });
+
+    await resolvePrompt(
+      { rpc },
+      "chronicle-1",
+      {
+        ...payload,
+        newCharacter: {
+          description: "A parish clerk who saw my hunger and chose silence.",
+          kind: "mortal",
+          name: "Elias Voss",
+        },
+      },
+    );
+
+    expect(rpc).toHaveBeenCalledWith(
+      "resolve_prompt_run",
+      expect.objectContaining({
+        new_character: {
+          description: "A parish clerk who saw my hunger and chose silence.",
+          kind: "mortal",
+          name: "Elias Voss",
+        },
+      }),
+    );
+  });
+
   it("normalizes known memory-rule failures into calm product copy", async () => {
     const supabase = {
       rpc: async () => ({
@@ -232,6 +275,30 @@ describe("resolvePrompt", () => {
       }),
     ).rejects.toThrow(
       "That mark name is already in the chronicle. Choose different wording.",
+    );
+  });
+
+  it("normalizes duplicate prompt-created character failures into calm copy", async () => {
+    const supabase = {
+      rpc: async () => ({
+        data: null,
+        error: {
+          message: "A character with this name already exists.",
+        },
+      }),
+    };
+
+    await expect(
+      resolvePrompt(supabase, "chronicle-1", {
+        ...payload,
+        newCharacter: {
+          description: "A parish clerk who saw my hunger and chose silence.",
+          kind: "mortal",
+          name: "Elias Voss",
+        },
+      }),
+    ).rejects.toThrow(
+      "That character name is already in the chronicle. Choose different wording.",
     );
   });
 });

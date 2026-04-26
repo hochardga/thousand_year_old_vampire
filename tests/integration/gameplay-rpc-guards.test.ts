@@ -26,6 +26,10 @@ const promptCreatedMarksMigrationPath = path.join(
   process.cwd(),
   "supabase/migrations/0012_prompt_created_marks.sql",
 );
+const promptCreatedCharactersMigrationPath = path.join(
+  process.cwd(),
+  "supabase/migrations/0013_prompt_created_characters.sql",
+);
 const samePromptEncounterHotfixPath = path.join(
   process.cwd(),
   "supabase/migrations/0006_fix_same_prompt_encounter_progression.sql",
@@ -53,6 +57,10 @@ function readPromptCreatedResourcesMigration() {
 
 function readPromptCreatedMarksMigration() {
   return fs.readFileSync(promptCreatedMarksMigrationPath, "utf8");
+}
+
+function readPromptCreatedCharactersMigration() {
+  return fs.readFileSync(promptCreatedCharactersMigrationPath, "utf8");
 }
 
 function readSamePromptEncounterHotfix() {
@@ -295,6 +303,31 @@ describe("gameplay RPC safety guards", () => {
     );
     expect(sql).toMatch(
       /alter table public\.marks[\s\S]*?alter column sort_order set default 0[\s\S]*?alter column sort_order set not null/i,
+    );
+  });
+
+  it("adds a prompt-created character helper and wires a new_character argument into resolve_prompt_run", () => {
+    const sql = readPromptCreatedCharactersMigration();
+
+    expect(sql).toMatch(
+      /create or replace function public\.create_prompt_character\(\s*target_chronicle_id uuid,\s*new_character jsonb\s*\)[\s\S]*?if new_character is null then[\s\S]*?return null;[\s\S]*?select \*\s*into locked_chronicle\s*from public\.chronicles[\s\S]*?where id = target_chronicle_id[\s\S]*?for update;/i,
+    );
+    expect(sql).toMatch(
+      /create or replace function public\.resolve_prompt_run\(\s*target_chronicle_id uuid,\s*target_session_id uuid,\s*player_entry text,\s*experience_text text,\s*memory_decision jsonb default null,\s*trait_mutations jsonb default '\{\}'::jsonb,\s*new_skill jsonb default null,\s*new_resource jsonb default null,\s*new_mark jsonb default null,\s*new_character jsonb default null\s*\)/i,
+    );
+    expect(sql).toMatch(
+      /perform public\.create_prompt_skill\(target_chronicle_id, new_skill\);\s*perform public\.create_prompt_resource\(target_chronicle_id, new_resource\);\s*perform public\.create_prompt_mark\(target_chronicle_id, new_mark\);\s*perform public\.create_prompt_character\(target_chronicle_id, new_character\);/i,
+    );
+  });
+
+  it("rejects duplicate character names and assigns the next character sort order", () => {
+    const sql = readPromptCreatedCharactersMigration();
+
+    expect(sql).toMatch(
+      /raise exception 'A character with this name already exists\.'/i,
+    );
+    expect(sql).toMatch(
+      /select coalesce\(max\(sort_order\), -1\) \+ 1[\s\S]*from public\.characters/i,
     );
   });
 
