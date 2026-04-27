@@ -95,6 +95,21 @@ export type ResourceMutation = {
   id: string;
 };
 
+export type SkillResourceRequiredAction =
+  | "check-skill"
+  | "lose-resource"
+  | "lose-skill";
+
+export type SkillResourceResolutionAction = SkillResourceRequiredAction;
+
+export type SkillResourceChangeInput = {
+  isSubstitution: boolean;
+  requiredAction: SkillResourceRequiredAction;
+  resolutionAction: SkillResourceResolutionAction;
+  targetId: string;
+  worstOutcomeNarration?: string | null;
+};
+
 export type CharacterMutation = {
   action: "age-out" | "lose";
   id: string;
@@ -124,5 +139,6 @@ export type PromptResolutionPayload = {
   newSkill?: PromptCreatedSkillInput;
   playerEntry: string;
   sessionId: string;
+  skillResourceChange?: SkillResourceChangeInput;
   traitMutations: TraitMutationsPayload;
 };

@@ -46,6 +46,7 @@ describe("chronicle validation", () => {
     });
 
     expect(result.success).toBe(true);
+
   });
 
   it("rejects an invalid setup payload", () => {
@@ -117,6 +118,46 @@ describe("chronicle validation", () => {
     });
 
     expect(result.success).toBe(true);
+  });
+
+  it("keeps a Skill/Resource change in the parsed prompt resolution payload", () => {
+    const result = promptResolutionSchema.safeParse({
+      experienceText:
+        "I left the burning house carrying nothing but the shape of my hunger.",
+      memoryDecision: {
+        mode: "create-new",
+      },
+      playerEntry:
+        "The prompt asks me to check a Skill, but the old habits are already spent.",
+      sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+      skillResourceChange: {
+        isSubstitution: true,
+        requiredAction: "check-skill",
+        resolutionAction: "lose-resource",
+        targetId: "3d6ca4e5-4627-4298-b4ae-1ca4a1c4d341",
+        worstOutcomeNarration: "The estate burns with everyone still inside.",
+      },
+      traitMutations: {
+        characters: [],
+        marks: [],
+        resources: [],
+        skills: [],
+      },
+    });
+
+    expect(result.success).toBe(true);
+
+    if (!result.success) {
+      throw new Error("Expected Skill/Resource change payload to parse.");
+    }
+
+    expect(result.data.skillResourceChange).toEqual({
+      isSubstitution: true,
+      requiredAction: "check-skill",
+      resolutionAction: "lose-resource",
+      targetId: "3d6ca4e5-4627-4298-b4ae-1ca4a1c4d341",
+      worstOutcomeNarration: "The estate burns with everyone still inside.",
+    });
   });
 
   it("keeps prompt-created skills in the parsed prompt resolution payload", () => {

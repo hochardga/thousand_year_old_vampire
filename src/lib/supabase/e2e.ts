@@ -180,6 +180,14 @@ type InsertBuilder<T> = {
   select: (columns: string) => {
     single: () => Promise<{ data: Partial<T> | null; error: null }>;
   };
+  then: <TResult1 = { data: null; error: null }, TResult2 = never>(
+    onFulfilled?:
+      | ((value: { data: null; error: null }) => TResult1 | PromiseLike<TResult1>)
+      | null,
+    onRejected?:
+      | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
+      | null,
+  ) => Promise<TResult1 | TResult2>;
 };
 
 type SelectExecutionResult =
@@ -786,6 +794,36 @@ function appendArchiveEvents(
   );
 }
 
+function createInsertBuilder<T>(
+  row: Partial<T> | null,
+): InsertBuilder<T> {
+  const result = {
+    data: null,
+    error: null,
+  };
+
+  return {
+    select(columns: string) {
+      return {
+        single() {
+          return Promise.resolve({
+            data: row
+              ? (pickColumns(
+                  row as Record<string, unknown>,
+                  columns,
+                ) as Partial<T>)
+              : null,
+            error: null,
+          });
+        },
+      };
+    },
+    then(onFulfilled, onRejected) {
+      return Promise.resolve(result).then(onFulfilled, onRejected);
+    },
+  };
+}
+
 function createChronicleInsertBuilder(
   payload: Record<string, unknown>,
 ): InsertBuilder<ChronicleRow> {
@@ -814,18 +852,7 @@ function createChronicleInsertBuilder(
 
   state.chronicles.unshift(createdChronicle);
 
-  return {
-    select(columns: string) {
-      return {
-        single() {
-          return Promise.resolve({
-            data: pickColumns(createdChronicle, columns),
-            error: null,
-          });
-        },
-      };
-    },
-  };
+  return createInsertBuilder(createdChronicle);
 }
 
 function createProfileInsertBuilder(
@@ -852,18 +879,7 @@ function createProfileInsertBuilder(
     state.profiles.push(createdProfile);
   }
 
-  return {
-    select(columns: string) {
-      return {
-        single() {
-          return Promise.resolve({
-            data: pickColumns(createdProfile, columns),
-            error: null,
-          });
-        },
-      };
-    },
-  };
+  return createInsertBuilder(createdProfile);
 }
 
 function createFeedbackSubmissionInsertBuilder(
@@ -889,18 +905,29 @@ function createFeedbackSubmissionInsertBuilder(
 
   state.feedback_submissions.unshift(createdSubmission);
 
-  return {
-    select(columns: string) {
-      return {
-        single() {
-          return Promise.resolve({
-            data: pickColumns(createdSubmission, columns),
-            error: null,
-          });
-        },
-      };
-    },
+  return createInsertBuilder(createdSubmission);
+}
+
+function createArchiveEventInsertBuilder(
+  payload: Record<string, unknown>,
+): InsertBuilder<ArchiveEventRow> {
+  const state = getState();
+  const createdEvent: ArchiveEventRow = {
+    chronicle_id: String(payload.chronicle_id),
+    created_at: timestamp(),
+    event_type: String(payload.event_type),
+    id: randomUUID(),
+    metadata:
+      payload.metadata && typeof payload.metadata === "object"
+        ? (payload.metadata as Record<string, unknown>)
+        : {},
+    session_id: typeof payload.session_id === "string" ? payload.session_id : null,
+    summary: String(payload.summary),
   };
+
+  state.archive_events.push(createdEvent);
+
+  return createInsertBuilder(createdEvent);
 }
 
 function selectRowsForTable(table: string) {
@@ -1231,6 +1258,10 @@ function applyPromptResolution(args: Record<string, unknown>) {
     args.new_character && typeof args.new_character === "object"
       ? (args.new_character as Record<string, unknown>)
       : null;
+  const rawTraitMutations =
+    args.trait_mutations && typeof args.trait_mutations === "object"
+      ? (args.trait_mutations as Record<string, unknown>)
+      : {};
   const newSkill = rawNewSkill
     ? {
         description: normalizeSkillText(rawNewSkill.description),
@@ -1259,6 +1290,12 @@ function applyPromptResolution(args: Record<string, unknown>) {
         name: normalizeCharacterText(rawNewCharacter.name),
       }
     : null;
+  const skillMutations = Array.isArray(rawTraitMutations.skills)
+    ? (rawTraitMutations.skills as Array<Record<string, unknown>>)
+    : [];
+  const resourceMutations = Array.isArray(rawTraitMutations.resources)
+    ? (rawTraitMutations.resources as Array<Record<string, unknown>>)
+    : [];
 
   if (newSkill && !newSkill.label) {
     return createRpcError("A skill name is required.");
@@ -1450,6 +1487,34 @@ function applyPromptResolution(args: Record<string, unknown>) {
     });
   }
 
+  for (const mutation of skillMutations) {
+    const targetSkill = state.skills.find(
+      (skillRow) =>
+        skillRow.id === mutation.id &&
+        skillRow.chronicle_id === chronicle.id,
+    );
+
+    if (targetSkill && mutation.action === "check") {
+      targetSkill.status = "checked";
+    }
+
+    if (targetSkill && mutation.action === "lose") {
+      targetSkill.status = "lost";
+    }
+  }
+
+  for (const mutation of resourceMutations) {
+    const targetResource = state.resources.find(
+      (resourceRow) =>
+        resourceRow.id === mutation.id &&
+        resourceRow.chronicle_id === chronicle.id,
+    );
+
+    if (targetResource && mutation.action === "lose") {
+      targetResource.status = "lost";
+    }
+  }
+
   if (newSkill) {
     state.skills.push({
       chronicle_id: chronicle.id,
@@ -1628,6 +1693,10 @@ export function createE2EServerSupabaseClient(cookieStore: CookieStoreLike) {
 
           if (table === "feedback_submissions") {
             return createFeedbackSubmissionInsertBuilder(payload);
+          }
+
+          if (table === "archive_events") {
+            return createArchiveEventInsertBuilder(payload);
           }
 
           throw new Error(`Unsupported e2e insert table: ${table}`);

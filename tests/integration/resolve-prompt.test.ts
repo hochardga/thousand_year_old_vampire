@@ -190,6 +190,51 @@ describe("resolvePrompt", () => {
     );
   });
 
+  it("passes Skill/Resource trait mutations into the resolve_prompt_run RPC payload", async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        archiveEvents: [],
+        nextPrompt: {
+          encounterIndex: 1,
+          promptNumber: 4,
+        },
+        promptRunId: "run-1",
+        rolled: {
+          d10: 7,
+          d6: 4,
+          movement: 3,
+        },
+      },
+      error: null,
+    });
+
+    await resolvePrompt(
+      { rpc },
+      "chronicle-1",
+      {
+        ...payload,
+        traitMutations: {
+          characters: [],
+          marks: [],
+          resources: [{ action: "lose", id: "resource-1" }],
+          skills: [],
+        },
+      },
+    );
+
+    expect(rpc).toHaveBeenCalledWith(
+      "resolve_prompt_run",
+      expect.objectContaining({
+        trait_mutations: {
+          characters: [],
+          marks: [],
+          resources: [{ action: "lose", id: "resource-1" }],
+          skills: [],
+        },
+      }),
+    );
+  });
+
   it("normalizes known memory-rule failures into calm product copy", async () => {
     const supabase = {
       rpc: async () => ({

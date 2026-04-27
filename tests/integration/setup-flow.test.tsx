@@ -806,6 +806,121 @@ describe("guided setup flow", () => {
     );
   });
 
+  it("converts a declared Skill/Resource substitution into route trait mutations", async () => {
+    const from = vi.fn((table: string) => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          order: vi.fn().mockResolvedValue(
+            table === "skills"
+              ? {
+                  data: [
+                    {
+                      description: "Already spent.",
+                      id: "06a408b6-f408-477a-a0d4-4d167bb365c1",
+                      label: "Quiet Vanishing",
+                      status: "checked",
+                    },
+                  ],
+                  error: null,
+                }
+              : {
+                  data: [
+                    {
+                      description: "A safe house kept by bribes.",
+                      id: "3d6ca4e5-4627-4298-b4ae-1ca4a1c4d341",
+                      is_stationary: true,
+                      label: "The Marsh House",
+                      status: "active",
+                    },
+                  ],
+                  error: null,
+                },
+          ),
+        })),
+      })),
+    }));
+
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user-1" } },
+        }),
+      },
+      from,
+    });
+    resolvePrompt.mockResolvedValue({
+      archiveEvents: [],
+      nextPrompt: {
+        encounterIndex: 1,
+        promptNumber: 4,
+      },
+      promptRunId: "run-1",
+      rolled: {
+        d10: 7,
+        d6: 4,
+        movement: 3,
+      },
+    });
+
+    const { POST } = await import(
+      "@/app/api/chronicles/[chronicleId]/play/resolve/route"
+    );
+    const response = await POST(
+      new Request("http://localhost/api/chronicles/chronicle-1/play/resolve", {
+        body: JSON.stringify({
+          experienceText:
+            "The estate burns because I had nothing left but shelter.",
+          memoryDecision: {
+            mode: "create-new",
+          },
+          playerEntry:
+            "I try to escape without a clean talent left to spend.",
+          sessionId: "ae7810a8-c50f-4790-9d09-8e8968f6a7a1",
+          skillResourceChange: {
+            isSubstitution: true,
+            requiredAction: "check-skill",
+            resolutionAction: "lose-resource",
+            targetId: "3d6ca4e5-4627-4298-b4ae-1ca4a1c4d341",
+            worstOutcomeNarration:
+              "The house burns because I had nothing left but shelter.",
+          },
+          traitMutations: {
+            characters: [],
+            marks: [],
+            resources: [],
+            skills: [],
+          },
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      }),
+      {
+        params: Promise.resolve({ chronicleId: "chronicle-1" }),
+      } as never,
+    );
+
+    expect(response.status).toBe(200);
+    expect(resolvePrompt).toHaveBeenCalledWith(
+      expect.anything(),
+      "chronicle-1",
+      expect.objectContaining({
+        traitMutations: {
+          characters: [],
+          marks: [],
+          resources: [
+            {
+              action: "lose",
+              id: "3d6ca4e5-4627-4298-b4ae-1ca4a1c4d341",
+            },
+          ],
+          skills: [],
+        },
+      }),
+    );
+  });
+
   it("rejects an invalid prompt resolution payload with the standard error shape", async () => {
     createServerSupabaseClient.mockResolvedValue({
       auth: {
@@ -938,6 +1053,208 @@ describe("guided setup flow", () => {
       screen.queryByText("The entry has been set into memory."),
     ).not.toBeInTheDocument();
     expect(screen.getByLabelText("Player entry")).toBeInTheDocument();
+
+    fetchMock.mockRestore();
+  });
+
+  it("submits a selected Skill check as a Skill/Resource change", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            archiveEvents: [
+              {
+                eventType: "prompt_resolved",
+                summary: "The entry has been set into memory.",
+              },
+            ],
+            nextPrompt: {
+              encounterIndex: 1,
+              promptNumber: 4,
+            },
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            status: 200,
+          },
+        ),
+      );
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        initialSessionId="session-1"
+        resources={[]}
+        skills={[
+          {
+            description: "I know when to vanish.",
+            id: "06a408b6-f408-477a-a0d4-4d167bb365c1",
+            label: "Quiet Vanishing",
+            status: "active",
+          },
+        ]}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: {
+        value: "I slip out through the sacristy smoke.",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: {
+        value:
+          "I escape with ash in my throat and nobody left behind me.",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Prompt requires"), {
+      target: {
+        value: "check-skill",
+      },
+    });
+    fireEvent.click(screen.getByRole("radio", { name: /Quiet Vanishing/i }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const payload = JSON.parse(String(request.body));
+
+    expect(payload.skillResourceChange).toEqual({
+      isSubstitution: false,
+      requiredAction: "check-skill",
+      resolutionAction: "check-skill",
+      targetId: "06a408b6-f408-477a-a0d4-4d167bb365c1",
+      worstOutcomeNarration: "",
+    });
+
+    fetchMock.mockRestore();
+  });
+
+  it("requires worst-outcome narration before submitting a substitution", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        initialSessionId="session-1"
+        resources={[
+          {
+            description: "A safe house kept by bribes.",
+            id: "3d6ca4e5-4627-4298-b4ae-1ca4a1c4d341",
+            isStationary: true,
+            label: "The Marsh House",
+            status: "active",
+          },
+        ]}
+        skills={[
+          {
+            description: "Already spent.",
+            id: "06a408b6-f408-477a-a0d4-4d167bb365c1",
+            label: "Quiet Vanishing",
+            status: "checked",
+          },
+        ]}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Player entry"), {
+      target: {
+        value: "I try to escape without a clean talent left to spend.",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Experience text"), {
+      target: {
+        value: "The house burns because I had nothing left but shelter.",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Prompt requires"), {
+      target: {
+        value: "check-skill",
+      },
+    });
+    fireEvent.click(screen.getByRole("radio", { name: /The Marsh House/i }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Set the entry into memory",
+      }),
+    );
+
+    expect(
+      await screen.findByText(
+        "Describe the worst possible outcome before setting this substitution into memory.",
+      ),
+    ).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    fetchMock.mockRestore();
+  });
+
+  it("ends the chronicle when no legal Skill or Resource action remains", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({ nextRoute: "/chronicles/chronicle-1/recap" }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            status: 200,
+          },
+        ),
+      );
+    const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+
+    render(
+      <PlaySurface
+        chronicleId="chronicle-1"
+        currentPromptNumber={1}
+        initialSessionId="session-1"
+        resources={[]}
+        skills={[]}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Prompt requires"), {
+      target: {
+        value: "check-skill",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Demise narration"), {
+      target: {
+        value:
+          "With no talent and no refuge left, I walk into morning and let it finish the old story.",
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "End the chronicle" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/chronicles/chronicle-1/play/end",
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
+    expect(await screen.findByRole("link", { name: "Go to recap" })).toHaveAttribute(
+      "href",
+      "/chronicles/chronicle-1/recap",
+    );
 
     fetchMock.mockRestore();
   });

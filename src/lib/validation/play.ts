@@ -52,6 +52,20 @@ const resourceMutationSchema = z.object({
   id: uuidSchema,
 });
 
+const skillResourceActionSchema = z.enum([
+  "check-skill",
+  "lose-resource",
+  "lose-skill",
+]);
+
+const skillResourceChangeSchema = z.object({
+  isSubstitution: z.boolean(),
+  requiredAction: skillResourceActionSchema,
+  resolutionAction: skillResourceActionSchema,
+  targetId: uuidSchema,
+  worstOutcomeNarration: z.string().trim().max(600).optional().nullable(),
+});
+
 const characterMutationSchema = z.object({
   action: z.enum(["age-out", "lose"]),
   id: uuidSchema,
@@ -105,6 +119,7 @@ export const promptResolutionSchema: z.ZodType<PromptResolutionPayload> =
     newSkill: newSkillSchema.optional(),
     playerEntry: z.string().trim().min(1).max(4000),
     sessionId: uuidSchema,
+    skillResourceChange: skillResourceChangeSchema.optional(),
     traitMutations: traitMutationsSchema.default({
       characters: [],
       marks: [],
@@ -112,3 +127,8 @@ export const promptResolutionSchema: z.ZodType<PromptResolutionPayload> =
       skills: [],
     }),
   });
+
+export const skillResourceEndSchema = z.object({
+  narration: z.string().trim().min(1).max(1200),
+  requiredAction: skillResourceActionSchema,
+});

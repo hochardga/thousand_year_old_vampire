@@ -10,6 +10,7 @@ import { MemoryPlacementPanel } from "@/components/ritual/MemoryPlacementPanel";
 import { PromptCharacterComposer } from "@/components/ritual/PromptCharacterComposer";
 import { PromptMarkComposer } from "@/components/ritual/PromptMarkComposer";
 import { PromptResourceComposer } from "@/components/ritual/PromptResourceComposer";
+import { SkillResourceChangePanel } from "@/components/ritual/SkillResourceChangePanel";
 import { PromptSkillComposer } from "@/components/ritual/PromptSkillComposer";
 import { RitualTextarea } from "@/components/ritual/RitualTextarea";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
@@ -18,6 +19,12 @@ import {
   loadPromptDraft,
   savePromptDraft,
 } from "@/lib/chronicles/localDrafts";
+import {
+  getSkillResourceResolutionState,
+  type SkillResourceRequiredAction,
+  type SkillResourceResource,
+  type SkillResourceSkill,
+} from "@/lib/chronicles/skillResourceRules";
 
 type ResolvePromptResponse = {
   archiveEvents?: Array<{
@@ -33,6 +40,10 @@ type ResolvePromptResponse = {
 type ActiveResolvePromptResponse = ResolvePromptResponse & {
   resolvedPromptNumber: number;
   resolvedSessionId: string | null;
+};
+
+type EndChronicleResponse = {
+  nextRoute?: string;
 };
 
 type PlaySurfaceProps = {
@@ -51,6 +62,8 @@ type PlaySurfaceProps = {
     title: string;
   }>;
   promptEffect?: PromptEffectGuidance | null;
+  resources?: SkillResourceResource[];
+  skills?: SkillResourceSkill[];
 };
 
 type MemoryPlacementMode = "append-existing" | "create-new";
@@ -66,6 +79,8 @@ export function PlaySurface({
   initialSessionId,
   mindMemories = [],
   promptEffect = null,
+  resources = [],
+  skills = [],
 }: PlaySurfaceProps) {
   const hasTrackedFirstPromptResolved = useRef(false);
   const initialDraft = loadPromptDraft(chronicleId);
@@ -127,11 +142,27 @@ export function PlaySurface({
   const [newSkillDescription, setNewSkillDescription] = useState(
     () => initialDraft?.newSkillDescription ?? "",
   );
+  const [skillResourceRequiredAction, setSkillResourceRequiredAction] =
+    useState<SkillResourceRequiredAction | "">(
+      () => initialDraft?.skillResourceRequiredAction ?? "",
+    );
+  const [skillResourceTargetId, setSkillResourceTargetId] = useState(
+    () => initialDraft?.skillResourceTargetId ?? "",
+  );
+  const [skillResourceWorstOutcome, setSkillResourceWorstOutcome] = useState(
+    () => initialDraft?.skillResourceWorstOutcome ?? "",
+  );
+  const [skillResourceDemiseNarration, setSkillResourceDemiseNarration] =
+    useState(() => initialDraft?.skillResourceDemiseNarration ?? "");
+  const [skillResourceErrorMessage, setSkillResourceErrorMessage] =
+    useState<string | null>(null);
   const [characterErrorMessage, setCharacterErrorMessage] = useState<string | null>(null);
   const [resourceErrorMessage, setResourceErrorMessage] = useState<string | null>(null);
   const [markErrorMessage, setMarkErrorMessage] = useState<string | null>(null);
   const [skillErrorMessage, setSkillErrorMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [endChronicleRoute, setEndChronicleRoute] = useState<string | null>(null);
+  const [isEndingChronicle, setIsEndingChronicle] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<ActiveResolvePromptResponse | null>(null);
   const [memoryPlacementMode, setMemoryPlacementMode] =
@@ -156,6 +187,18 @@ export function PlaySurface({
     selectedAppendMemory.entryCount >= 3;
   const requiresOverflowDecision =
     memoryPlacementMode === "create-new" && mindMemories.length >= 5;
+  const skillResourceResolutionState = skillResourceRequiredAction
+    ? getSkillResourceResolutionState(skillResourceRequiredAction, {
+        resources,
+        skills,
+      })
+    : null;
+  const skillResourceIsSubstitution = Boolean(
+    skillResourceResolutionState?.substitutionAction,
+  );
+  const skillResourceResolutionAction = skillResourceIsSubstitution
+    ? skillResourceResolutionState?.substitutionAction
+    : skillResourceResolutionState?.primaryAction;
 
   const syncPromptDraft = useCallback(
     (
@@ -179,6 +222,10 @@ export function PlaySurface({
         shouldCreateMark: boolean;
         shouldCreateResource: boolean;
         shouldCreateSkill: boolean;
+        skillResourceDemiseNarration: string;
+        skillResourceRequiredAction: SkillResourceRequiredAction | "";
+        skillResourceTargetId: string;
+        skillResourceWorstOutcome: string;
       }> = {},
     ) => {
       const nextDraft = {
@@ -201,6 +248,10 @@ export function PlaySurface({
         shouldCreateMark: isAddingMark,
         shouldCreateResource: isAddingResource,
         shouldCreateSkill: isAddingSkill,
+        skillResourceDemiseNarration,
+        skillResourceRequiredAction,
+        skillResourceTargetId,
+        skillResourceWorstOutcome,
         ...overrides,
       };
 
@@ -215,6 +266,10 @@ export function PlaySurface({
         Boolean(nextDraft.newResourceDescription) ||
         Boolean(nextDraft.newSkillLabel) ||
         Boolean(nextDraft.newSkillDescription) ||
+        Boolean(nextDraft.skillResourceDemiseNarration) ||
+        Boolean(nextDraft.skillResourceRequiredAction) ||
+        Boolean(nextDraft.skillResourceTargetId) ||
+        Boolean(nextDraft.skillResourceWorstOutcome) ||
         Boolean(nextDraft.selectedAppendMemoryId) ||
         nextDraft.memoryPlacementMode === "append-existing" ||
         nextDraft.shouldCreateCharacter ||
@@ -250,6 +305,10 @@ export function PlaySurface({
       newSkillLabel,
       playerEntry,
       selectedAppendMemoryId,
+      skillResourceDemiseNarration,
+      skillResourceRequiredAction,
+      skillResourceTargetId,
+      skillResourceWorstOutcome,
     ],
   );
 
@@ -264,6 +323,7 @@ export function PlaySurface({
     setMarkErrorMessage(null);
     setResourceErrorMessage(null);
     setSkillErrorMessage(null);
+    setSkillResourceErrorMessage(null);
 
     if (requiresOverflowDecision && (!overflowMode || !selectedOverflowMemoryId)) {
       setErrorMessage(
@@ -371,6 +431,29 @@ export function PlaySurface({
       }
     }
 
+    if (skillResourceRequiredAction) {
+      if (skillResourceResolutionState?.isGameEnding) {
+        setSkillResourceErrorMessage(
+          "No legal Skill or Resource remains for this prompt.",
+        );
+        return;
+      }
+
+      if (!skillResourceResolutionAction || !skillResourceTargetId) {
+        setSkillResourceErrorMessage(
+          "Choose an available Skill or Resource for this prompt.",
+        );
+        return;
+      }
+
+      if (skillResourceIsSubstitution && !skillResourceWorstOutcome.trim()) {
+        setSkillResourceErrorMessage(
+          "Describe the worst possible outcome before setting this substitution into memory.",
+        );
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -422,6 +505,18 @@ export function PlaySurface({
               : undefined,
             playerEntry,
             sessionId: initialSessionId,
+            skillResourceChange:
+              skillResourceRequiredAction &&
+              skillResourceResolutionAction &&
+              skillResourceTargetId
+                ? {
+                    isSubstitution: skillResourceIsSubstitution,
+                    requiredAction: skillResourceRequiredAction,
+                    resolutionAction: skillResourceResolutionAction,
+                    targetId: skillResourceTargetId,
+                    worstOutcomeNarration: skillResourceWorstOutcome,
+                  }
+                : undefined,
             traitMutations: {
               characters: [],
               marks: [],
@@ -512,6 +607,11 @@ export function PlaySurface({
       setNewSkillDescription("");
       setNewSkillLabel("");
       setSkillErrorMessage(null);
+      setSkillResourceRequiredAction("");
+      setSkillResourceTargetId("");
+      setSkillResourceWorstOutcome("");
+      setSkillResourceDemiseNarration("");
+      setSkillResourceErrorMessage(null);
       setMemoryPlacementMode("create-new");
       setSelectedAppendMemoryId(null);
       setOverflowMode(null);
@@ -637,6 +737,92 @@ export function PlaySurface({
     setMarkErrorMessage(null);
   }
 
+  function handleSkillResourceRequiredActionChange(
+    value: SkillResourceRequiredAction | "",
+  ) {
+    setSkillResourceRequiredAction(value);
+    setSkillResourceTargetId("");
+    setSkillResourceWorstOutcome("");
+    setSkillResourceDemiseNarration("");
+    setEndChronicleRoute(null);
+    setSkillResourceErrorMessage(null);
+    syncPromptDraft({
+      skillResourceDemiseNarration: "",
+      skillResourceRequiredAction: value,
+      skillResourceTargetId: "",
+      skillResourceWorstOutcome: "",
+    });
+  }
+
+  function handleSkillResourceTargetChange(value: string) {
+    setSkillResourceTargetId(value);
+    setSkillResourceErrorMessage(null);
+    syncPromptDraft({ skillResourceTargetId: value });
+  }
+
+  function handleSkillResourceWorstOutcomeChange(value: string) {
+    setSkillResourceWorstOutcome(value);
+    setSkillResourceErrorMessage(null);
+    syncPromptDraft({ skillResourceWorstOutcome: value });
+  }
+
+  function handleSkillResourceDemiseNarrationChange(value: string) {
+    setSkillResourceDemiseNarration(value);
+    setSkillResourceErrorMessage(null);
+    syncPromptDraft({ skillResourceDemiseNarration: value });
+  }
+
+  async function handleEndChronicle() {
+    setSkillResourceErrorMessage(null);
+    setErrorMessage(null);
+
+    if (!skillResourceRequiredAction) {
+      setSkillResourceErrorMessage(
+        "Choose the Skill or Resource change the prompt requires.",
+      );
+      return;
+    }
+
+    if (!skillResourceDemiseNarration.trim()) {
+      setSkillResourceErrorMessage(
+        "Narrate the vampire's demise before ending the chronicle.",
+      );
+      return;
+    }
+
+    setIsEndingChronicle(true);
+
+    try {
+      const response = await fetch(`/api/chronicles/${chronicleId}/play/end`, {
+        body: JSON.stringify({
+          narration: skillResourceDemiseNarration,
+          requiredAction: skillResourceRequiredAction,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
+      const payload = (await response.json()) as EndChronicleResponse & {
+        error?: string;
+      };
+
+      if (!response.ok) {
+        setSkillResourceErrorMessage(
+          payload.error || "The chronicle could not be ended.",
+        );
+        return;
+      }
+
+      setEndChronicleRoute(payload.nextRoute ?? `/chronicles/${chronicleId}/recap`);
+      clearPromptDraft(chronicleId);
+    } catch {
+      setSkillResourceErrorMessage("The chronicle could not be ended.");
+    } finally {
+      setIsEndingChronicle(false);
+    }
+  }
+
   function handleMemoryPlacementModeChange(mode: MemoryPlacementMode) {
     setMemoryPlacementMode(mode);
     setErrorMessage(null);
@@ -723,6 +909,54 @@ export function PlaySurface({
               selectedMemoryId={selectedAppendMemoryId}
               selectedMode={memoryPlacementMode}
             />
+          ) : null}
+          <SkillResourceChangePanel
+            errorMessage={skillResourceErrorMessage}
+            onRequiredActionChange={handleSkillResourceRequiredActionChange}
+            onTargetChange={handleSkillResourceTargetChange}
+            onWorstOutcomeChange={handleSkillResourceWorstOutcomeChange}
+            requiredAction={skillResourceRequiredAction}
+            resources={resources}
+            selectedTargetId={skillResourceTargetId}
+            skills={skills}
+            worstOutcomeNarration={skillResourceWorstOutcome}
+          />
+          {skillResourceResolutionState?.isGameEnding ? (
+            <SurfacePanel className="space-y-4 border-error/20 bg-error/10 px-6 py-6 sm:px-8">
+              <div>
+                <p className="font-mono text-xs uppercase tracking-[0.22em] text-ink-muted">
+                  No legal substitution
+                </p>
+                <h3 className="mt-3 font-heading text-2xl text-ink">
+                  End the chronicle with the prompt as its last wound.
+                </h3>
+              </div>
+              <RitualTextarea
+                label="Demise narration"
+                name="skillResourceDemiseNarration"
+                onChange={handleSkillResourceDemiseNarrationChange}
+                placeholder="Narrate the vampire's demise using the prompt for inspiration."
+                rows={4}
+                value={skillResourceDemiseNarration}
+              />
+              {endChronicleRoute ? (
+                <a
+                  className="inline-flex min-h-11 items-center justify-center rounded-soft bg-nocturne px-5 py-3 text-sm font-medium text-surface transition-colors duration-160 ease-ritual hover:bg-nocturne/92"
+                  href={endChronicleRoute}
+                >
+                  Go to recap
+                </a>
+              ) : (
+                <button
+                  className="inline-flex min-h-11 items-center justify-center rounded-soft bg-nocturne px-5 py-3 text-sm font-medium text-surface transition-colors duration-160 ease-ritual hover:bg-nocturne/92 disabled:cursor-wait disabled:opacity-75"
+                  disabled={isEndingChronicle}
+                  onClick={handleEndChronicle}
+                  type="button"
+                >
+                  {isEndingChronicle ? "Ending the chronicle..." : "End the chronicle"}
+                </button>
+              )}
+            </SurfacePanel>
           ) : null}
           <PromptSkillComposer
             description={newSkillDescription}

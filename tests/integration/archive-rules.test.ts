@@ -687,6 +687,45 @@ describe("archive rule enforcement", () => {
     expect(state.prompt_runs).toHaveLength(0);
   });
 
+  it("applies Skill and Resource trait mutations in the e2e mock", async () => {
+    const { chronicleId, client, sessionId, state } = await createActiveChronicle(1, [
+      {
+        description: "I know how to leave before dawn names me.",
+        label: "Quiet Vanishing",
+      },
+    ]);
+    const skillId = state.skills[0]?.id as string;
+    const resourceId = randomUUID();
+
+    state.resources.push({
+      chronicle_id: chronicleId,
+      description: "A safe house kept by bribes and silence.",
+      id: resourceId,
+      is_stationary: false,
+      label: "Pilgrim Road Inn",
+      sort_order: 0,
+      status: "active",
+    });
+
+    const result = await client.rpc("resolve_prompt_run", {
+      ...buildResolveArgs(chronicleId, sessionId, { mode: "create-new" }),
+      trait_mutations: {
+        characters: [],
+        marks: [],
+        resources: [{ action: "lose", id: resourceId }],
+        skills: [{ action: "check", id: skillId }],
+      },
+    });
+
+    expect(result.error).toBeNull();
+    expect(state.skills.find((skillRow) => skillRow.id === skillId)?.status).toBe(
+      "checked",
+    );
+    expect(
+      state.resources.find((resourceRow) => resourceRow.id === resourceId)?.status,
+    ).toBe("lost");
+  });
+
   it("creates prompt-created marks at the next sort order", async () => {
     const { chronicleId, client, sessionId, state } = await createActiveChronicle(
       1,
