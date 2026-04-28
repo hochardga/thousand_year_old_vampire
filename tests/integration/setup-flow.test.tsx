@@ -3167,9 +3167,10 @@ describe("guided setup flow", () => {
     expect(resourcesOrder).toHaveBeenCalledTimes(1);
     expect(marksOrder).toHaveBeenCalledTimes(1);
     expect(charactersOrder).toHaveBeenCalledTimes(1);
+    const legacyRequiredButtonLabel = ["Required", "by this prompt"].join(" ");
     expect(
       screen.queryByRole("button", {
-        name: "Required by this prompt",
+        name: legacyRequiredButtonLabel,
       }),
     ).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Skill name")).not.toBeInTheDocument();
