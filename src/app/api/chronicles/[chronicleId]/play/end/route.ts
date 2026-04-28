@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import {
+  getSkillResourceResolutionState,
+  type SkillResourceResource,
+  type SkillResourceSkill,
+} from "@/lib/chronicles/skillResourceRules";
 import { closeSessionWithRecap } from "@/lib/chronicles/sessionSnapshots";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { skillResourceEndSchema } from "@/lib/validation/play";
@@ -38,6 +43,24 @@ type EndRouteClient = {
   };
 };
 
+type SkillResourceLedgerRecord = Record<string, unknown>;
+
+type SkillResourceLedgerClient = {
+  from: (table: "skills" | "resources") => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        order: (
+          column: string,
+          options: { ascending: boolean },
+        ) => Promise<{
+          data: SkillResourceLedgerRecord[] | null;
+          error: { message: string } | null;
+        }>;
+      };
+    };
+  };
+};
+
 function validationErrorResponse(issues: {
   message: string;
   path: PropertyKey[];
@@ -52,6 +75,27 @@ function validationErrorResponse(issues: {
     },
     { status: 400 },
   );
+}
+
+function toSkillRecords(records: SkillResourceLedgerRecord[]) {
+  return records.map((skill) => ({
+    description:
+      typeof skill.description === "string" ? skill.description : null,
+    id: String(skill.id),
+    label: String(skill.label),
+    status: skill.status as SkillResourceSkill["status"],
+  }));
+}
+
+function toResourceRecords(records: SkillResourceLedgerRecord[]) {
+  return records.map((resource) => ({
+    description:
+      typeof resource.description === "string" ? resource.description : null,
+    id: String(resource.id),
+    isStationary: Boolean(resource.is_stationary),
+    label: String(resource.label),
+    status: resource.status as SkillResourceResource["status"],
+  }));
 }
 
 export async function POST(request: Request, context: EndRouteContext) {
@@ -102,6 +146,41 @@ export async function POST(request: Request, context: EndRouteContext) {
         },
         { status: 400 },
       );
+    }
+
+    const skillResourceClient = supabase as unknown as SkillResourceLedgerClient;
+    const [skillsResult, resourcesResult] = await Promise.all([
+      skillResourceClient
+        .from("skills")
+        .select("id, label, description, status")
+        .eq("chronicle_id", chronicleId)
+        .order("sort_order", { ascending: true }),
+      skillResourceClient
+        .from("resources")
+        .select("id, label, description, is_stationary, status")
+        .eq("chronicle_id", chronicleId)
+        .order("sort_order", { ascending: true }),
+    ]);
+
+    if (skillsResult.error || resourcesResult.error) {
+      throw new Error("The Skill and Resource ledger could not be read.");
+    }
+
+    const resolutionState = getSkillResourceResolutionState(
+      parsed.data.requiredAction,
+      {
+        resources: toResourceRecords(resourcesResult.data ?? []),
+        skills: toSkillRecords(skillsResult.data ?? []),
+      },
+    );
+
+    if (!resolutionState.isGameEnding) {
+      return validationErrorResponse([
+        {
+          message: "This Skill/Resource requirement still has legal choices.",
+          path: ["requiredAction"],
+        },
+      ]);
     }
 
     const archiveEventResult = await endClient
