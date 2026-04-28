@@ -87,8 +87,11 @@ type ActiveDiaryMaybeSingleClient = {
   };
 };
 
-type SkillLabelRecord = {
+type SkillRecord = {
+  description: string | null;
+  id: string;
   label: string;
+  status: "active" | "checked" | "lost";
 };
 
 type SkillLookupClient = {
@@ -99,7 +102,7 @@ type SkillLookupClient = {
           column: string,
           options: { ascending: boolean },
         ) => Promise<{
-          data: SkillLabelRecord[] | null;
+          data: SkillRecord[] | null;
           error: { message: string } | null;
         }>;
       };
@@ -107,8 +110,12 @@ type SkillLookupClient = {
   };
 };
 
-type ResourceLabelRecord = {
+type ResourceRecord = {
+  description: string | null;
+  id: string;
+  is_stationary: boolean;
   label: string;
+  status: "active" | "checked" | "lost";
 };
 
 type ResourceLookupClient = {
@@ -119,7 +126,7 @@ type ResourceLookupClient = {
           column: string,
           options: { ascending: boolean },
         ) => Promise<{
-          data: ResourceLabelRecord[] | null;
+          data: ResourceRecord[] | null;
           error: { message: string } | null;
         }>;
       };
@@ -230,12 +237,12 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
       .maybeSingle(),
     skillClient
       .from("skills")
-      .select("label")
+      .select("id, label, description, status")
       .eq("chronicle_id", chronicleId)
       .order("sort_order", { ascending: true }),
     resourceClient
       .from("resources")
-      .select("label")
+      .select("id, label, description, is_stationary, status")
       .eq("chronicle_id", chronicleId)
       .order("sort_order", { ascending: true }),
     markClient
@@ -256,11 +263,11 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
     },
     ActiveDiaryLookupResult,
     {
-      data: SkillLabelRecord[] | null;
+      data: SkillRecord[] | null;
       error: { message: string } | null;
     },
     {
-      data: ResourceLabelRecord[] | null;
+      data: ResourceRecord[] | null;
       error: { message: string } | null;
     },
     {
@@ -346,6 +353,14 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
             title: memory.title,
           }))}
           promptEffect={promptEffect}
+          resources={(resourcesResult.data ?? []).map((resource) => ({
+            description: resource.description,
+            id: resource.id,
+            isStationary: resource.is_stationary,
+            label: resource.label,
+            status: resource.status,
+          }))}
+          skills={skillsResult.data ?? []}
         />
 
         <div className="space-y-4">

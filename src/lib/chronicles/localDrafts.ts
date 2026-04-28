@@ -23,6 +23,10 @@ export type PromptDraft = {
   shouldCreateMark: boolean;
   shouldCreateResource: boolean;
   shouldCreateSkill: boolean;
+  skillResourceDemiseNarration?: string;
+  skillResourceRequiredAction?: "check-skill" | "lose-resource" | "lose-skill" | "";
+  skillResourceTargetId?: string;
+  skillResourceWorstOutcome?: string;
 };
 
 function canUseStorage() {

@@ -2,7 +2,7 @@
 
 ## Scope
 
-This audit compares the rules in `docs/source_material/ThousandYearOldVampire Rules without prompts.md` against the current application code, schema, routes, and tests.
+This audit compares the rules in `docs/source_material/ThousandYearOldVampire Rules without prompts.md` against the current application code, schema, routes, tests, and first-party UI.
 
 I treated coverage in five buckets:
 
@@ -10,58 +10,74 @@ I treated coverage in five buckets:
 | --- | --- |
 | Automated | The current app flow enforces or persists the rule without extra player bookkeeping. |
 | Intentionally Unsupported | The source text mentions this, but supporting it would cut against the current product direction, so it is not a target for this edition. |
-| Manual | The player can satisfy the rule in the current UI, but the app does not validate or automate it. |
+| Manual | The player can satisfy the rule in the current UI or prose, but the app does not validate or automate it. |
 | Partial | Some support exists, but the normal product flow does not fully cover the rule. |
 | Missing | The current product flow does not meaningfully support the rule. |
 
-Important judgment call: if a route or type exists but the first-party UI never exposes it, I counted that as `Partial`, not `Automated`.
+Important judgment calls for this pass:
 
-I also used `Intentionally Unsupported` sparingly. I only applied it where the current product direction clearly prefers a narrower, writing-first, archive-centric edition over supporting every mode the book allows.
+- I did **not** treat optional UI controls as `Automated` unless the app actually recognizes that the current prompt requires the action.
+- I counted backend routes and payload types as `Partial` when no first-party UI exposes them.
+- I counted rules covered only through prose as `Manual`, even when the app provides the text box where the player can write the answer.
+- I challenged the prior audit rather than inheriting its statuses.
 
 ## Executive Summary
 
-The current app does **not** cover all of the rules yet, and a small number of source-text features also look intentionally out of scope for this edition.
+The current app does **not** cover all rules yet. It covers the memory-and-movement backbone well, but most of the trait economy still depends on the player reading the prompt text and doing the right thing manually.
 
 What is already strong:
 
 | Strongly covered area | Current state |
 | --- | --- |
-| Prompt movement | The app rolls `d10 - d6`, moves forward or backward, tracks repeat encounters, and skips to the next available prompt entry. |
-| Memory pressure | The app enforces three entries per memory, five in-mind memories, four-memory diary capacity, forgetting, and moving memories into a diary. |
-| Archive continuity | Prompt history, memory entries, forgotten memories, diary memories, and archive events are all persisted and visible. |
+| Prompt movement | The app rolls `d10 - d6`, moves forward or backward, tracks repeated encounters, and skips to the next available prompt entry. |
+| Memory pressure | The app enforces three Experiences per Memory, five in-mind Memory slots, forgetting, moving Memories into a Diary, and the four-Memory Diary capacity. |
+| Archive continuity | Prompt history, Memory entries, forgotten Memories, Diary Memories, Characters, Resources, Skills, Marks, and archive events are persisted and visible. |
 
 What is only partly covered:
 
 | Partly covered area | Why it is only partial |
 | --- | --- |
-| Setup fidelity | The data model can hold more than the UI currently gathers, but the guided setup only asks for one skill, one resource, one mortal, one mark, and one memory. |
-| Trait changes during play | The play UI now supports prompt-created skills, resources, characters, and marks, but it still submits empty mutation arrays and offers no normal controls for most prompt-driven checks, losses, existing character changes, or mark updates. |
-| Character and mark upkeep | New characters and marks can be created during prompt resolution, and existing characters and marks can be edited after the fact in the ledger, but many prompt-specific changes are not surfaced in active play. |
+| Setup fidelity | The backend accepts arrays, but the guided setup UI asks for one Skill, one Resource, one Mortal, one Mark, and one Memory, not the book's full starting state. |
+| Prompt-created traits | The play UI can create new Skills, Resources, Characters, and Marks, but only base Prompt 1 and base Prompt 4 receive special prompt-effect guidance. Most prompt-required creations are manual player interpretation. |
+| Existing trait mutation | Play now exposes a rules-aware Skill/Resource change panel, and ledger editors expose Characters and Marks, but most non-Skill/Resource prompt mutations still require player interpretation or after-the-fact ledger edits. |
+| Appendix prompt support | Alternate Appendix I prompts exist in `supabase/seed.sql`, but normal setup pins chronicles to `prompt_version = 'base'`, so alternate prompts are not a normal player-facing option. |
 
 What is still missing or materially incomplete:
 
 | Missing area | Why it matters |
 | --- | --- |
-| Book-faithful setup end state | The book expects 5 starting memories, 3 skills, 3 resources, at least 3 mortals, and 1 immortal; the default setup flow does not. |
-| Skill/resource substitution and end-game rules | The app does not parse prompt costs, apply substitution rules, or end the game when those costs become impossible. |
-| Diary loss cascading to stored memories | Normal four-memory diary capacity is now enforced, but diary loss and the loss of preserved memories tied to it are still not implemented. |
+| Book-faithful setup end state | The book expects 5 starting Memories, 3 Skills, 3 Resources, at least 3 Mortals, 1 Immortal, and 1 Mark. The first-party setup flow does not produce that state. |
+| Diary as a Resource, plus Diary loss | The app has a `diaries` table, but the Diary is not added as a normal Resource, cannot be described by the player, and cannot be lost with cascading loss of stored Memories. |
+| Prompt-specific exceptions | The app always requires an Experience and cannot model prompt text that says to skip, rewrite, restore, merge, swap, or otherwise alter Memories outside the standard flow. |
+| Structured prompt-instruction parsing | The player still declares which Skill/Resource change the prompt requires; the app does not yet parse every prompt into required mechanical effects. |
 
-What now looks intentionally unsupported:
+What looks intentionally unsupported:
 
-| Intentionally unsupported area | Why it looks like a deliberate non-goal |
+| Intentionally unsupported area | Why it looks deliberate |
 | --- | --- |
 | Aloud-only prompt answering | The product is centered on authored written entries and a durable archive, not ephemeral spoken play. |
-| Quick Game mode | The current edition is built around journaling surfaces, archive continuity, and preserved writing rather than a lighter memory-area-only mode. |
-| Retroactive journal rewriting | Preserving the archive as a durable artifact appears more aligned with the product than editable historical prompt entries. |
-| Full appendix reproduction inside the app | The product vision is still a narrow digital edition of the core ritual loop, even though the app now includes its own safety framing and play guidance. |
+| Quick Game mode | The current edition is built around a journaling surface plus archive continuity rather than a lighter memory-area-only mode. |
+| Multiplayer and full appendix reproduction | `docs/product-vision.md` explicitly lists multiplayer and prompt-pack/platform-style expansion as out of scope for this release, even though the app adds its own safety framing. |
 
 ## Overall Verdict
 
-The app currently implements a **promising but narrower rules slice** of *Thousand Year Old Vampire*.
+The app implements a recognizable, useful slice of *Thousand Year Old Vampire*, but it is not rules-complete.
 
-It is already good at the memory engine: prompt lookup, movement, repeated encounters, creating or extending memories, forgetting memories, four-memory diary overflow, and preserving the archive across sessions. That part is real and backed by schema, RPCs, and tests.
+The memory engine is the most faithful part: prompt lookup, dice movement, encounter advancement, creating or extending Memories, overflow decisions, Diary capacity, forgotten-Memory readability, and durable archive storage are real code-backed behavior.
 
-It is not yet a full digital implementation of the rules text. The biggest genuine gaps are setup fidelity, prompt-driven character creation and mutation of traits, substitution logic, diary-loss consequences, and game-ending conditions.
+The weakest areas are setup fidelity, prompt-driven non-Skill/Resource trait mutation, structured prompt parsing, Diary-as-Resource handling, and broad game-ending conditions. Those are not small edge cases; they are central to the tabletop rules' pressure system.
+
+## Challenge Log
+
+This pass corrected or sharpened several claims from the previous audit:
+
+| Prior claim to challenge | Updated finding |
+| --- | --- |
+| Prompt-created Skills, Resources, Characters, and Marks were listed as `Automated`. | Downgraded to `Partial`: the app can persist them, but most prompt-required creations are optional controls that the player must choose manually. |
+| Trait mutation was described as broadly present through schema and payloads. | Kept `Partial`, but clarified that Skill/Resource changes now have a first-party panel while most other prompt-driven mutations remain manual. |
+| Character and Mark upkeep was treated similarly to Skill and Resource upkeep. | Split the finding: Character and Mark editors exist in the ledger, while Skills and Resources have PATCH routes but no first-party editor. |
+| Appendix support was summarized as general non-support. | Nuanced: alternate Appendix I prompts are seeded, but normal chronicles are forced to `base`; multiplayer and broader appendix material remain out of scope. |
+| Memory overflow language implied all five Memories must be individually full. | Corrected to occupied in-mind Memory slots. The source pressure triggers when a new Memory is needed and all five slots are occupied, not only when every Memory has three Experiences. |
 
 ## Detailed Breakdown
 
@@ -69,179 +85,182 @@ It is not yet a full digital implementation of the rules text. The biggest genui
 
 | Rule from source text | Status | Assessment | Evidence |
 | --- | --- | --- | --- |
-| The player needs a way to record the vampire's story. | Automated | The product supplies durable writing surfaces plus archive and recap storage. | `src/components/ritual/PlaySurface.tsx`, `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx`, `supabase/migrations/0002_core_gameplay_schema.sql` |
-| The player needs a `d10` and `d6`, or another randomizer. | Automated | The app internalizes the roll inside `resolve_prompt_run`, so physical dice are no longer required. | `supabase/migrations/0007_memory_rule_helpers.sql` |
-| The game is a solo, mature, emotionally challenging experience. | Partial | The setup flow now includes a deliberate safety checkpoint before the first prompt, but emotional pacing and self-regulation still rely primarily on player judgment. | `src/components/ritual/SafetyCheckpointPanel.tsx`, `src/app/(app)/chronicles/[chronicleId]/play/page.tsx`, `docs/product-vision.md` |
-| The player can answer prompts in writing. | Automated | The product is explicitly built around written `playerEntry` and `experienceText` fields. | `src/lib/validation/play.ts`, `src/components/ritual/PlaySurface.tsx` |
-| The player can answer prompts aloud. | Intentionally Unsupported | The product direction is centered on authored writing and a durable chronicle artifact, so an aloud-only mode does not look like a target for this edition. | `src/components/ritual/PlaySurface.tsx`, `docs/product-vision.md`, `docs/superpowers/specs/2026-04-19-thousand-year-old-vampire-digital-adaptation-design.md` |
-| Safety tools and appendix material are available in the book. | Partial | The app now provides first-session safety framing and compact in-play guidance, but it still does not reproduce the book's appendix material wholesale. | `src/components/ritual/SafetyCheckpointPanel.tsx`, `src/components/ritual/PlayGuidancePanel.tsx`, `docs/product-vision.md` |
+| The player needs a way to record the vampire's story. | Automated | The product supplies durable writing surfaces, prompt history, archive, ledger, and recap storage. | `src/components/ritual/PlaySurface.tsx`, `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx`, `supabase/migrations/0002_core_gameplay_schema.sql` |
+| The player needs a `d10` and `d6`, or another randomizer. | Automated | The app rolls internally inside `resolve_prompt_run`, stores `d10_roll`, `d6_roll`, and `movement`, and advances the chronicle. | `supabase/migrations/0013_prompt_created_characters.sql`, `src/lib/chronicles/resolvePrompt.ts` |
+| The game is solo. | Automated | The product models one user's private chronicles and `docs/product-vision.md` explicitly excludes multiplayer. | `docs/product-vision.md`, `src/app/api/chronicles/route.ts`, `supabase/migrations/0001_initial_profiles_chronicles.sql` |
+| The game is mature and emotionally challenging. | Partial | The setup flow includes a deliberate safety checkpoint, but emotional pacing and self-regulation remain player judgment. | `src/components/ritual/SafetyCheckpointPanel.tsx`, `src/components/ritual/PlayGuidancePanel.tsx` |
+| The player can answer prompts in writing. | Automated | Prompt resolution requires `playerEntry` and `experienceText`. | `src/lib/validation/play.ts`, `src/components/ritual/PlaySurface.tsx` |
+| The player can answer prompts aloud. | Intentionally Unsupported | The product direction is written, persistent, and archive-first. | `src/components/ritual/PlaySurface.tsx`, `docs/product-vision.md` |
+| Safety tools and appendix material are available in the book. | Partial | The app supplies its own safety checkpoint and compact guidance. It does not reproduce the book's Appendix II random tables, Appendix Three safety text, examples of play, context essays, or multiplayer rules. | `src/components/ritual/SafetyCheckpointPanel.tsx`, `src/components/ritual/PlayGuidancePanel.tsx`, `docs/product-vision.md` |
+| Additional Appendix I prompts are available after a few plays. | Partial | Alternate Appendix I prompts are seeded as `alternate_appendix_i`, but normal setup sets `prompt_version = 'base'` and no first-party selector exists. | `supabase/seed.sql`, `supabase/migrations/0013_prompt_created_characters.sql`, `src/app/(app)/chronicles/[chronicleId]/play/page.tsx` |
 
 ### 2. Canonical Trait Model and Trait Mutation Conventions
 
 | Rule from source text | Status | Assessment | Evidence |
 | --- | --- | --- | --- |
-| The vampire is represented by Memories, Skills, Resources, Characters, and Marks. | Automated | All five trait families exist in the schema and app surfaces. | `supabase/migrations/0002_core_gameplay_schema.sql`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx`, `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx` |
-| Lost traits should remain legible. | Automated | Lost skills, resources, characters, forgotten memories, and diary memories remain stored and visible. | `src/components/archive/TraitItem.tsx`, `src/components/archive/MemoryCard.tsx`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
-| Prompts may impose dramatic changes beyond simple check or strikeout. | Partial | The schema can mutate existing traits, but the active play UI does not expose most of those operations. | `src/types/chronicle.ts`, `src/lib/validation/play.ts`, `src/components/ritual/PlaySurface.tsx` |
-| Prompt-specific instructions take precedence over general rules. | Manual | Prompt text is shown, but the app does not parse prompt instructions into structured actions. The player must interpret them. | `src/components/ritual/PromptCard.tsx`, `supabase/migrations/0002_core_gameplay_schema.sql` |
+| The vampire is represented by Memories, Skills, Resources, Characters, and Marks. | Automated | All five trait families exist in the schema and archive/ledger surfaces. | `supabase/migrations/0002_core_gameplay_schema.sql`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx`, `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx` |
+| Most prompts modify one or more traits. | Partial | The app shows prompt text and can persist some new traits, but it does not parse prompt instructions into required trait actions. | `src/components/ritual/PromptCard.tsx`, `src/components/ritual/PlaySurface.tsx`, `src/lib/prompts/effects.ts` |
+| Checking a Skill means marking it as used once. | Partial | `checked` is modeled, and normal play can now check a Skill through the player-declared Skill/Resource rules panel. The app still does not parse prompt text to decide when a Skill check is required. | `src/types/chronicle.ts`, `src/lib/validation/play.ts`, `src/components/ritual/SkillResourceChangePanel.tsx`, `src/app/api/chronicles/[chronicleId]/play/resolve/route.ts` |
+| Losing a trait means striking it out while keeping it readable. | Partial | The status/location model preserves lost or forgotten records, and normal play can now lose Skills and Resources through the Skill/Resource rules panel. Non-Skill/Resource losses still rely on after-the-fact ledger edits or hidden mutation payloads. | `src/components/archive/TraitItem.tsx`, `src/components/archive/MemoryCard.tsx`, `src/components/ritual/SkillResourceChangePanel.tsx`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
+| Prompts may impose dramatic changes beyond simple check or strikeout. | Partial | Character and Mark ledger editors support some after-the-fact changes, and `traitMutations` has hidden support, but there is no prompt-specific UI for most dramatic changes such as converting a Character to a Resource or merging Memories. | `src/components/archive/CharacterEditor.tsx`, `src/components/archive/MarkEditor.tsx`, `src/lib/validation/play.ts` |
+| Prompt-specific instructions take precedence over general rules. | Manual | Prompt text is shown, but the app does not understand or enforce those instructions. | `src/components/ritual/PromptCard.tsx`, `src/lib/prompts/effects.ts` |
 
 ### 3. Experiences, Memories, and Memory Pressure
 
 | Rule from source text | Status | Assessment | Evidence |
 | --- | --- | --- | --- |
-| Every prompt answer creates an Experience unless instructed otherwise. | Partial | The app always requires `experienceText`, but it cannot represent prompt-specific exceptions. | `src/lib/validation/play.ts`, `src/components/ritual/PlaySurface.tsx` |
-| An Experience should be a single evocative sentence in first person. | Manual | The UI hints at this but does not enforce sentence count or point of view. | `src/components/ritual/PlaySurface.tsx` |
-| An Experience must be placed into a Memory immediately. | Automated | Prompt resolution writes the prompt run and memory entry in one transaction. | `supabase/migrations/0007_memory_rule_helpers.sql`, `src/lib/chronicles/resolvePrompt.ts` |
-| A Memory may contain up to 3 Experiences. | Automated | The RPC rejects a fourth entry on the same memory. | `supabase/migrations/0007_memory_rule_helpers.sql`, `tests/integration/archive-rules.test.ts` |
-| The vampire may have up to 5 active memories in mind. | Automated | The schema and helper functions treat five in-mind memories as the limit. | `supabase/migrations/0002_core_gameplay_schema.sql`, `supabase/migrations/0007_memory_rule_helpers.sql`, `src/components/ritual/MemoryDecisionPanel.tsx` |
-| If a new Experience fits an existing Memory, it may be added there. | Automated | The play UI now lets the player create a new Memory or append to a selected in-mind Memory; full Memories are shown as unavailable when entry counts are known, and the backend still enforces the three-Experience cap. | `src/components/ritual/MemoryPlacementPanel.tsx`, `src/components/ritual/PlaySurface.tsx`, `src/app/(app)/chronicles/[chronicleId]/play/page.tsx`, `supabase/migrations/0007_memory_rule_helpers.sql`, `tests/integration/setup-flow.test.tsx`, `tests/integration/archive-rules.test.ts` |
-| If all five memories are full, the player chooses what to forget unless instructed otherwise. | Automated | When the mind is full, the UI requires the player to choose a memory to forget or move into the diary. | `src/components/ritual/MemoryDecisionPanel.tsx`, `supabase/migrations/0007_memory_rule_helpers.sql`, `tests/integration/setup-flow.test.tsx` |
-| Forgetting is a player choice, not a conscious vampire choice. | Manual | The product copy supports this mood, but the distinction is not mechanically modeled. | `src/components/ritual/MemoryDecisionPanel.tsx` |
-| Forgotten memories remain readable. | Automated | Forgotten memories remain in the archive with `location = 'forgotten'`. | `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx`, `src/components/archive/MemoryCard.tsx` |
-| Lost traits may later be restored by prompts. | Partial | The app preserves old records, but it has no memory-restore flow and no prompt parser to trigger restoration. | `src/app/api/chronicles/[chronicleId]/skills/[skillId]/route.ts`, `src/app/api/chronicles/[chronicleId]/resources/[resourceId]/route.ts`, `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx` |
+| Every prompt answer creates an Experience unless instructed otherwise. | Partial | The app always requires `experienceText`, which covers the usual rule but cannot represent prompt-specific exceptions. | `src/lib/validation/play.ts`, `src/components/ritual/PlaySurface.tsx` |
+| An Experience should be a single evocative sentence in first person. | Manual | The UI asks for a distilled sentence, but sentence count and point of view are not enforced. | `src/components/ritual/PlaySurface.tsx`, `src/components/ritual/PlayGuidancePanel.tsx` |
+| An Experience must be placed into a Memory immediately. | Automated | Prompt resolution creates the prompt run and Memory entry transactionally. | `supabase/migrations/0013_prompt_created_characters.sql`, `src/lib/chronicles/resolvePrompt.ts` |
+| A Memory may contain up to 3 Experiences. | Automated | Append logic rejects a fourth entry, and full Memories are disabled in the placement UI. | `supabase/migrations/0013_prompt_created_characters.sql`, `src/components/ritual/MemoryPlacementPanel.tsx`, `tests/integration/archive-rules.test.ts` |
+| The vampire may have up to 5 active Memories in mind. | Automated | In-mind Memory slots are limited to 1-5; overflow is required once all five are occupied. | `supabase/migrations/0002_core_gameplay_schema.sql`, `supabase/migrations/0013_prompt_created_characters.sql`, `src/components/ritual/MemoryDecisionPanel.tsx` |
+| If a new Experience fits an existing Memory, it may be added there. | Automated | The player can append to an in-mind Memory that is not full; the backend confirms it is still in mind and under capacity. | `src/components/ritual/MemoryPlacementPanel.tsx`, `supabase/migrations/0013_prompt_created_characters.sql`, `tests/integration/archive-rules.test.ts` |
+| If a new Experience does not fit and all five in-mind slots are occupied, the player chooses what to forget or move to the Diary. | Automated | The UI requires a forget-or-Diary decision before creating a new Memory at capacity. | `src/components/ritual/MemoryDecisionPanel.tsx`, `src/components/ritual/PlaySurface.tsx`, `supabase/migrations/0013_prompt_created_characters.sql` |
+| Forgetting is a player choice, not a conscious vampire choice. | Manual | The UI's framing supports the mood, but this distinction is narrative rather than mechanical. | `src/components/ritual/MemoryDecisionPanel.tsx` |
+| Forgotten Memories remain readable. | Automated | Forgotten Memories remain stored with `location = 'forgotten'` and appear in the archive. | `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx`, `src/components/archive/MemoryCard.tsx` |
+| Lost or forgotten Memories may later be restored, swapped, rewritten, or merged by prompts. | Missing | The app has no first-party flow for prompt-specific Memory restoration, swapping, rewriting, merging, or conversion to Skill. | `src/components/archive/MemoryCard.tsx`, `src/components/ritual/PlaySurface.tsx`, `supabase/seed.sql` |
 
 #### Memory assessment
 
-This is the strongest implemented rules cluster in the whole app. The database logic, archive UI, and tests all agree on the memory cap, overflow handling, diary movement, and prompt history.
-
-The prior biggest memory gap is now covered in normal play: the player can decide whether a new Experience begins a new Memory or joins an existing, non-full in-mind Memory. Remaining memory gaps are less central and mostly involve prompt-specific exceptions or restoration effects.
+This remains the strongest implemented rules cluster. The main caveat is that the app implements the standard memory-pressure loop, not the full set of prompt-specific Memory exceptions found in the prompt catalog.
 
 ### 4. Diary Rules
 
 | Rule from source text | Status | Assessment | Evidence |
 | --- | --- | --- | --- |
-| The vampire may have one Diary at a time. | Automated | Only one active diary is allowed per chronicle, and overflow logic reuses it instead of creating duplicates. | `supabase/migrations/0002_core_gameplay_schema.sql`, `supabase/migrations/0007_memory_rule_helpers.sql`, `tests/integration/archive-rules.test.ts` |
-| A Diary is created when needed and becomes a physical preserved object. | Partial | The app auto-creates a generic diary titled `The Diary`, but the player does not describe it in the flow and it is not tracked as a normal resource entry. | `supabase/migrations/0007_memory_rule_helpers.sql`, `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx` |
-| A Diary must contain at least one Memory. | Automated | The diary is only created during a move-to-diary operation, so it never exists empty at creation time. | `supabase/migrations/0007_memory_rule_helpers.sql` |
-| A Diary may hold up to 4 memories. | Automated | Diary capacity is now durable state on the diary record, overflow resolution rejects illegal move-to-diary choices once the active diary is full, and the play/archive UI shows current diary usage. | `supabase/migrations/0009_diary_capacity.sql`, `src/components/ritual/MemoryDecisionPanel.tsx`, `src/components/ritual/MemoryMeter.tsx`, `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx`, `tests/integration/archive-rules.test.ts`, `tests/integration/gameplay-rpc-guards.test.ts` |
-| A Memory moved to the Diary is no longer in the vampire's head. | Automated | Moving to diary clears `slot_index` and changes `location` to `diary`. | `supabase/migrations/0007_memory_rule_helpers.sql` |
-| Once in the Diary, a Memory cannot gain new Experiences. | Automated | Appending is restricted to in-mind memories only. | `supabase/migrations/0007_memory_rule_helpers.sql`, `tests/integration/archive-rules.test.ts` |
-| If the Diary is lost, the Memories in it are lost too. | Missing | There is no diary-loss route, no diary-loss UI, and no cascade from diary loss to memory loss. | `supabase/migrations/0002_core_gameplay_schema.sql`, absence of any diary loss handler |
-| The vampire accepts the contents of the Diary as truth. | Manual | This is narrative guidance only in the current app. | No mechanical representation |
+| The vampire may have one Diary at a time. | Automated | A unique active-Diary index and helper function prevent multiple active Diaries per chronicle. | `supabase/migrations/0002_core_gameplay_schema.sql`, `supabase/migrations/0009_diary_capacity.sql` |
+| The player may create a Diary when they need to move a Memory into it. | Partial | The app creates an active Diary during `move-to-diary`, but it is auto-named `The Diary` and not described by the player. | `supabase/migrations/0009_diary_capacity.sql`, `src/components/ritual/MemoryDecisionPanel.tsx` |
+| Creating a Diary adds it to the Resource list. | Missing | Diaries are stored in a separate `diaries` table and do not create a corresponding Resource row. | `supabase/migrations/0002_core_gameplay_schema.sql`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
+| A Diary must contain at least one Memory. | Automated | The normal flow only creates a Diary as part of moving a Memory into it. | `supabase/migrations/0009_diary_capacity.sql` |
+| A Diary may hold up to 4 Memories. | Automated | `memory_capacity` defaults to 4, and overflow rejects moves into a full active Diary. | `supabase/migrations/0009_diary_capacity.sql`, `tests/integration/archive-rules.test.ts`, `tests/integration/gameplay-rpc-guards.test.ts` |
+| A Memory moved to the Diary is no longer in the vampire's head. | Automated | Moving to Diary clears `slot_index` and sets `location = 'diary'`. | `supabase/migrations/0009_diary_capacity.sql` |
+| Once in the Diary, a Memory cannot gain new Experiences. | Automated | Append targets must be in-mind Memories. | `supabase/migrations/0013_prompt_created_characters.sql`, `tests/integration/archive-rules.test.ts` |
+| If the Diary is lost, the Memories in it are lost too. | Missing | `diary_status = 'lost'` exists, but there is no UI, route, helper, or cascade that loses stored Memories. | `supabase/migrations/0002_core_gameplay_schema.sql`, absence of a diary-loss handler |
+| The vampire accepts the contents of the Diary as truth. | Manual | The app stores Diary Memories, but this is narrative guidance for the player. | `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx` |
 
 ### 5. Skills
 
 | Rule from source text | Status | Assessment | Evidence |
 | --- | --- | --- | --- |
-| Skills are named capabilities tied to context. | Partial | Skills exist in setup, schema, ledger storage, and prompt resolution, but the guided setup still only asks for one initial skill instead of the book's fuller starting state. | `src/components/ritual/SetupStepper.tsx`, `src/lib/validation/setup.ts`, `src/components/ritual/PromptSkillComposer.tsx`, `supabase/migrations/0010_prompt_created_skills.sql` |
-| A Skill may be checked once. | Partial | The model has a `checked` state, so repeated checkmarks are not represented, but there is no play UI enforcing legal check choices. | `supabase/migrations/0002_core_gameplay_schema.sql`, `src/app/api/chronicles/[chronicleId]/skills/[skillId]/route.ts` |
-| Losing a Skill strikes it out but keeps it readable. | Partial | The status model supports `lost`, but there is no first-party play UI for prompt-driven skill loss. | `src/types/chronicle.ts`, `src/app/api/chronicles/[chronicleId]/skills/[skillId]/route.ts`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
-| Checked skills flavor later prompt answers. | Manual | This remains entirely with the player. | No automation |
-| Prompts can create new Skills during play. | Automated | The play surface exposes an optional prompt-created skill flow, and prompt resolution persists the new skill transactionally with the prompt answer. | `src/components/ritual/PromptSkillComposer.tsx`, `src/components/ritual/PlaySurface.tsx`, `src/lib/validation/play.ts`, `supabase/migrations/0010_prompt_created_skills.sql` |
+| Skills are named capabilities tied to context. | Partial | Skills are modeled and displayed, but guided setup only asks for one starting Skill. | `src/components/ritual/SetupStepper.tsx`, `src/lib/validation/setup.ts`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
+| A Skill may be checked once. | Partial | The state model has `checked`, and the Skill/Resource rules panel offers only active Skills for checking. Coverage remains partial because the player declares the required prompt action. | `src/types/chronicle.ts`, `src/components/ritual/SkillResourceChangePanel.tsx`, `src/lib/chronicles/skillResourceRules.ts` |
+| Losing a Skill strikes it out but keeps it readable. | Partial | `lost` is modeled, visible in the ledger, and available in the Skill/Resource rules panel when a prompt requires Skill loss. Coverage remains partial because prompt parsing is still manual. | `src/app/api/chronicles/[chronicleId]/skills/[skillId]/route.ts`, `src/components/archive/TraitItem.tsx`, `src/components/ritual/SkillResourceChangePanel.tsx` |
+| Checked Skills flavor later prompt answers. | Manual | The app can show checked Skills, but using them as later narrative color is player judgment. | `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
+| Prompts can create new Skills during play. | Partial | The play surface can persist one new Skill transactionally. Base Prompt 1 is specifically guided and required by `getPromptEffectByPosition`; other prompt-required Skills rely on the player opening the optional composer. | `src/lib/prompts/effects.ts`, `src/components/ritual/PromptSkillComposer.tsx`, `src/components/ritual/PlaySurface.tsx`, `supabase/migrations/0010_prompt_created_skills.sql` |
 
 ### 6. Resources
 
 | Rule from source text | Status | Assessment | Evidence |
 | --- | --- | --- | --- |
-| Resources are named assets that matter mechanically. | Partial | Resources exist in the schema, setup, ledger, and prompt resolution, but the guided setup still only asks for one initial resource instead of the book's fuller starting state. | `src/components/ritual/SetupStepper.tsx`, `src/lib/validation/setup.ts`, `src/components/ritual/PromptResourceComposer.tsx`, `supabase/migrations/0011_prompt_created_resources.sql` |
-| Resources can be stationary. | Automated | `is_stationary` is modeled and surfaced in the ledger. | `src/types/chronicle.ts`, `src/lib/validation/setup.ts`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
-| Losing a Resource strikes it out but keeps it readable. | Partial | The status model supports `lost`, but the normal play UI has no resource-loss controls. | `src/types/chronicle.ts`, `src/app/api/chronicles/[chronicleId]/resources/[resourceId]/route.ts`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
-| Not every fictional possession must be a Resource. | Manual | This remains a player judgment call. | No automation |
-| Prompts can create new Resources during play. | Automated | The play surface now supports prompt-created resources, including stationary resources, and prompt resolution persists them transactionally with the prompt answer. | `src/components/ritual/PromptResourceComposer.tsx`, `src/components/ritual/PlaySurface.tsx`, `src/lib/validation/play.ts`, `supabase/migrations/0011_prompt_created_resources.sql` |
+| Resources are named assets that matter mechanically. | Partial | Resources are modeled and displayed, but guided setup only asks for one starting Resource. | `src/components/ritual/SetupStepper.tsx`, `src/lib/validation/setup.ts`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
+| Resources can be stationary. | Partial | `is_stationary` is modeled and visible, but guided setup does not expose a stationary/portable choice for the first Resource. Prompt 4 does require a stationary Resource. | `src/lib/validation/setup.ts`, `src/components/ritual/SetupStepper.tsx`, `src/lib/prompts/effects.ts`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
+| Losing a Resource strikes it out but keeps it readable. | Partial | `lost` is modeled, visible, and available in the Skill/Resource rules panel when a prompt requires Resource loss or a legal substitution spends a Resource. Coverage remains partial because prompt parsing is still manual. | `src/app/api/chronicles/[chronicleId]/resources/[resourceId]/route.ts`, `src/components/archive/TraitItem.tsx`, `src/components/ritual/SkillResourceChangePanel.tsx` |
+| Not every fictional possession must be a Resource. | Manual | This remains a player judgment call. | `src/components/ritual/PlaySurface.tsx` |
+| Prompts can create new Resources during play. | Partial | The play surface can persist one new Resource transactionally. Base Prompt 4 is specifically guided and required as stationary; other prompt-required Resources rely on the player opening the optional composer. | `src/lib/prompts/effects.ts`, `src/components/ritual/PromptResourceComposer.tsx`, `supabase/migrations/0011_prompt_created_resources.sql` |
 
 ### 7. Characters
 
 | Rule from source text | Status | Assessment | Evidence |
 | --- | --- | --- | --- |
-| Characters are named and described. | Automated | Characters exist in the schema and ledger view. | `supabase/migrations/0002_core_gameplay_schema.sql`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
-| Characters may be mortal or immortal. | Automated | `character_kind` is modeled and displayed. | `supabase/migrations/0002_core_gameplay_schema.sql`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
-| Character descriptions may accumulate detail over time. | Manual | The ledger editor lets the player revise descriptions after the fact. | `src/components/archive/CharacterEditor.tsx`, `src/app/api/chronicles/[chronicleId]/characters/[characterId]/route.ts` |
-| If a prompt requires a Character and none is available, create one. | Automated | The play surface now supports prompt-created Characters, including mortal or immortal kind selection, and prompt resolution persists the new Character transactionally with the prompt answer. | `src/components/ritual/PromptCharacterComposer.tsx`, `src/components/ritual/PlaySurface.tsx`, `src/lib/validation/play.ts`, `supabase/migrations/0013_prompt_created_characters.sql`, `tests/integration/setup-flow.test.tsx`, `tests/integration/archive-rules.test.ts` |
-| Mortals occasionally die of old age. | Manual | The player can mark a character dead in the ledger or through hidden trait mutations, but there is no automatic cadence or reminder. | `src/components/archive/CharacterEditor.tsx`, `src/types/chronicle.ts` |
-| Characters cannot otherwise be killed unless a prompt says so. | Manual | The editor allows `dead` or `lost` at any time; the app does not police whether a prompt authorized it. | `src/components/archive/CharacterEditor.tsx`, `src/app/api/chronicles/[chronicleId]/characters/[characterId]/route.ts` |
+| Characters are named and described. | Automated | Characters are modeled and shown in the ledger. | `supabase/migrations/0002_core_gameplay_schema.sql`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
+| Characters may be Mortal or Immortal. | Automated | `character_kind` is modeled and displayed. | `supabase/migrations/0002_core_gameplay_schema.sql`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
+| Character descriptions may accumulate detail over time. | Partial | The ledger editor lets the player revise descriptions after the fact, but active prompt resolution does not prompt for accumulated detail. | `src/components/archive/CharacterEditor.tsx`, `src/app/api/chronicles/[chronicleId]/characters/[characterId]/route.ts` |
+| If a prompt requires a Character and none is available, create one. | Partial | The play surface can create a new Character, but it is optional and prompt text is not parsed to require it when needed. | `src/components/ritual/PromptCharacterComposer.tsx`, `src/components/ritual/PlaySurface.tsx`, `supabase/migrations/0013_prompt_created_characters.sql` |
+| Mortals occasionally die of old age. | Manual | The player can mark Characters dead in the ledger, but there is no cadence, reminder, or automation every four or five prompts. | `src/components/archive/CharacterEditor.tsx`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
+| Characters cannot otherwise be killed unless a prompt says so. | Manual | The app cannot know whether a prompt authorized death; the ledger editor allows status changes at any time. | `src/components/archive/CharacterEditor.tsx`, `src/app/api/chronicles/[chronicleId]/characters/[characterId]/route.ts` |
 
 ### 8. Marks
 
 | Rule from source text | Status | Assessment | Evidence |
 | --- | --- | --- | --- |
-| The vampire carries a Mark throughout existence. | Partial | Marks are stored durably, but the app also introduces an `is_active` / dormant state that the source rules do not define. | `supabase/migrations/0002_core_gameplay_schema.sql`, `src/components/archive/MarkEditor.tsx` |
-| The player should consider whether the Mark is concealed. | Partial | Concealment exists in the model and ledger editor, but the guided setup does not ask about concealment and defaults to `true`. | `src/components/ritual/SetupStepper.tsx`, `src/lib/validation/setup.ts`, `src/components/archive/MarkEditor.tsx` |
-| Prompts may change a Mark. | Partial | Existing marks can be updated through `traitMutations` or the ledger editor, but there is no normal in-play mark-edit UI. | `src/types/chronicle.ts`, `src/lib/validation/play.ts`, `src/components/archive/MarkEditor.tsx` |
-| Prompts may create a new Mark. | Automated | The play surface now supports prompt-created marks, including concealed marks, and prompt resolution persists them transactionally with the prompt answer. | `src/components/ritual/PromptMarkComposer.tsx`, `src/components/ritual/PlaySurface.tsx`, `src/lib/validation/play.ts`, `supabase/migrations/0012_prompt_created_marks.sql` |
+| The vampire carries a Mark throughout existence. | Partial | Marks are stored durably, but the app also has an `is_active`/dormant state not described by the source rules. | `supabase/migrations/0002_core_gameplay_schema.sql`, `src/components/archive/MarkEditor.tsx` |
+| The player should consider whether the Mark is concealed. | Partial | Concealment is modeled and editable in the ledger, but setup defaults the starting Mark to concealed and does not ask the player. | `src/components/ritual/SetupStepper.tsx`, `src/lib/validation/setup.ts`, `src/components/archive/MarkEditor.tsx` |
+| Prompts may change a Mark. | Partial | Existing Marks can be edited through the ledger and hidden `traitMutations`, but active play has no existing-Mark mutation control. | `src/components/archive/MarkEditor.tsx`, `src/lib/validation/play.ts`, `src/components/ritual/PlaySurface.tsx` |
+| Prompts may create a new Mark. | Partial | The play surface can create a new Mark, but it is optional and prompt text is not parsed to require it. | `src/components/ritual/PromptMarkComposer.tsx`, `supabase/migrations/0012_prompt_created_marks.sql` |
 
 ### 9. What Counts as a Vampire
 
 | Rule from source text | Status | Assessment | Evidence |
 | --- | --- | --- | --- |
-| The vampire should prey on humans, camouflage itself, have once been human, be vulnerable to dangers like sunlight, be practically immortal, and be mostly a loner. | Manual | These are thematic assumptions from the source text. The app does not validate them beyond tone and prose prompts. | `src/app/(app)/chronicles/[chronicleId]/setup/page.tsx`, `src/app/(app)/chronicles/[chronicleId]/play/page.tsx` |
+| The vampire should prey on humans, camouflage itself, have once been human, be vulnerable to dangers like sunlight, be practically immortal, and be mostly a loner. | Manual | These are thematic assumptions. The app can invite this tone, but it does not validate vampire ontology. | `src/components/ritual/SetupStepper.tsx`, `src/components/ritual/PlaySurface.tsx` |
+| The game is not tuned for complex immortal faction politics. | Manual | This is player-facing premise guidance, not an app-enforced constraint. | `src/components/ritual/PlaySurface.tsx`, `docs/product-vision.md` |
 
 ### 10. Setup: Creating the Vampire
 
 | Rule from source text | Status | Assessment | Evidence |
 | --- | --- | --- | --- |
-| Imagine a person in the distant past and summarize their mortal life. | Partial | The app collects `mortalSummary`, but not as a required first Memory Experience and not with dedicated fields for birthplace, era, or original identity. | `src/components/ritual/SetupStepper.tsx`, `src/lib/validation/setup.ts`, `supabase/migrations/0003_fix_setup_summary_ambiguity.sql` |
-| Start with one first Memory containing that mortal-life Experience. | Partial | The setup API can create memories, but the UI only collects one memory and does not ensure it is specifically the mortal-life summary. | `src/components/ritual/SetupStepper.tsx`, `supabase/migrations/0003_fix_setup_summary_ambiguity.sql` |
-| Create at least 3 Mortal Characters. | Missing in normal flow | The schema allows arrays, but validation only requires `min(1)` and the UI collects exactly one mortal. | `src/lib/validation/setup.ts`, `src/components/ritual/SetupStepper.tsx`, `tests/e2e/first-session.spec.ts` |
-| Create 3 Skills. | Missing in normal flow | The schema allows arrays, but validation only requires `min(1)` and the UI collects exactly one skill. | `src/lib/validation/setup.ts`, `src/components/ritual/SetupStepper.tsx`, `tests/e2e/first-session.spec.ts` |
-| Create 3 Resources. | Missing in normal flow | Same issue as skills: one in UI, one minimum in validation, three in the book. | `src/lib/validation/setup.ts`, `src/components/ritual/SetupStepper.tsx` |
-| Create 3 more Experiences, each in a separate Memory, combining existing traits. | Missing | The setup UI only collects one memory and does not scaffold the trait-combination exercise. | `src/components/ritual/SetupStepper.tsx`, `supabase/migrations/0003_fix_setup_summary_ambiguity.sql` |
-| Create 1 Immortal who made the vampire. | Automated | The setup flow does collect one immortal. | `src/components/ritual/SetupStepper.tsx`, `src/lib/validation/setup.ts` |
-| Create 1 Mark. | Automated | The setup flow collects one mark label and description. | `src/components/ritual/SetupStepper.tsx`, `src/lib/validation/setup.ts` |
-| Create an Experience explaining the becoming-undead moment and the Mark. | Partial | The UI does not explicitly ask for a separate turning Experience. The player can fold it into the single memory, but the app does not require the book's five-memory setup end state. | `src/components/ritual/SetupStepper.tsx`, `supabase/migrations/0003_fix_setup_summary_ambiguity.sql` |
-| Finish setup with 5 Memories, 3 Skills, 3 Resources, at least 3 Mortals, and 1 Immortal. | Missing in normal flow | The normal setup flow does not produce this state. The backend can accept up to five setup memories, but the UI and validation minimums are well below the source rules. | `src/lib/validation/setup.ts`, `src/components/ritual/SetupStepper.tsx`, `tests/integration/chronicle-validation.test.ts` |
-| Begin play at the first prompt. | Automated | The app sets current prompt number and encounter to `1.1`. This is a product decision because the source rules text itself notes prompt-start ambiguity. | `supabase/migrations/0003_fix_setup_summary_ambiguity.sql`, `docs/thousand-year-old-vampire-rules-spec.md` |
+| Imagine a person in the distant past and summarize their mortal life. | Partial | The app collects `mortalSummary`, but it does not require explicit birthplace, era, original identity, or that the summary become the first Memory Experience. | `src/components/ritual/SetupStepper.tsx`, `src/lib/validation/setup.ts`, `supabase/migrations/0013_prompt_created_characters.sql` |
+| Start with one first Memory containing that mortal-life Experience. | Partial | The setup API can create setup Memories, but the UI only collects one freeform Memory and does not tie it structurally to `mortalSummary`. | `src/components/ritual/SetupStepper.tsx`, `src/lib/chronicles/setup.ts` |
+| Create at least 3 Mortal Characters. | Partial | The backend accepts 1-8 initial Characters, but the UI collects exactly one Mortal in normal setup. | `src/lib/validation/setup.ts`, `src/components/ritual/SetupStepper.tsx` |
+| Create 3 Skills. | Partial | The backend accepts 1-8 initial Skills, but the UI collects exactly one Skill in normal setup. | `src/lib/validation/setup.ts`, `src/components/ritual/SetupStepper.tsx` |
+| Create 3 Resources. | Partial | The backend accepts 1-8 initial Resources, but the UI collects exactly one Resource in normal setup. | `src/lib/validation/setup.ts`, `src/components/ritual/SetupStepper.tsx` |
+| Create 3 more Experiences, each in a separate Memory, combining existing traits. | Partial | The backend accepts multiple setup Memories, but the UI collects one and does not scaffold the trait-combination exercise. | `src/lib/validation/setup.ts`, `src/components/ritual/SetupStepper.tsx` |
+| Create 1 Immortal who made the vampire. | Automated | The setup flow collects one Immortal. | `src/components/ritual/SetupStepper.tsx`, `src/lib/validation/setup.ts` |
+| Create 1 Mark. | Automated | The setup flow collects one Mark label and description. | `src/components/ritual/SetupStepper.tsx`, `src/lib/validation/setup.ts` |
+| Create an Experience explaining the becoming-undead moment and the Mark. | Partial | The player can write this in the one Memory field, but the UI does not require a distinct turning Experience. | `src/components/ritual/SetupStepper.tsx` |
+| Finish setup with 5 Memories, 3 Skills, 3 Resources, at least 3 Mortals, 1 Immortal, and 1 Mark. | Partial | The backend can accept enough entries to represent this state, but normal setup produces a smaller onboarding state and validation does not require the book minimums. | `src/lib/validation/setup.ts`, `src/components/ritual/SetupStepper.tsx`, `tests/integration/chronicle-validation.test.ts` |
+| Begin play at the first prompt. | Automated | The app sets current prompt number and encounter to `1.1`; the supplied rules text does not explicitly define a starting prompt number, so this is a product interpretation. | `supabase/migrations/0013_prompt_created_characters.sql`, `docs/thousand-year-old-vampire-rules-spec.md` |
 
 #### Setup assessment
 
-Setup is the clearest gap between the source rules and the current first-party experience.
-
-The data structures are broad enough to hold a richer starting state, but the shipped setup flow intentionally narrows the entry ritual to a single example of most things. That may be good for onboarding, but it is not yet a faithful implementation of the book's setup rules.
+Setup is still the clearest mismatch between source rules and the current first-party product. The backend shape is more permissive than the UI, but normal players are guided into a deliberately lighter starting state.
 
 ### 11. Prompt Play Loop and Prompt Movement
 
 | Rule from source text | Status | Assessment | Evidence |
 | --- | --- | --- | --- |
-| The current prompt is presented to the player. | Automated | The play page loads from `prompt_catalog` using current prompt number and encounter index. | `src/app/(app)/chronicles/[chronicleId]/play/page.tsx`, `src/lib/prompts/catalog.ts` |
-| The player answers the prompt and records chronology. | Automated | The app saves `player_entry`, `experience_text`, prompt number, encounter index, and created time. | `supabase/migrations/0007_memory_rule_helpers.sql`, `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx` |
-| The app rolls `d10` and `d6`, then moves by `d10 - d6`. | Automated | This happens inside `resolve_prompt_run`, and the result is returned and stored. | `supabase/migrations/0007_memory_rule_helpers.sql` |
-| Positive movement goes forward, negative goes backward, `0` repeats the prompt. | Automated | The RPC applies signed movement, clamps at prompt 1, and preserves current-prompt encounter rules for same-prompt rerolls. | `supabase/migrations/0007_memory_rule_helpers.sql`, `tests/integration/gameplay-rpc-guards.test.ts` |
-| Prompts have first, second, and third entries based on repeated encounters. | Automated | Encounter index is loaded from `prompt_catalog` and advanced via prior `prompt_runs`. | `src/lib/prompts/catalog.ts`, `supabase/migrations/0007_memory_rule_helpers.sql` |
-| If a prompt has no remaining entry, move to the next prompt. | Automated with interpretation | The app skips forward until it finds the next available prompt entry. That is a concrete product interpretation of a source rule the spec already marked as somewhat ambiguous. | `supabase/migrations/0007_memory_rule_helpers.sql`, `tests/integration/gameplay-rpc-guards.test.ts` |
+| The current prompt is presented to the player. | Automated | The play page loads the prompt from `prompt_catalog` by current prompt number, encounter index, and prompt version. | `src/app/(app)/chronicles/[chronicleId]/play/page.tsx`, `src/lib/prompts/catalog.ts` |
+| The player answers the prompt and records chronology. | Automated | Prompt runs store prompt number, encounter index, prompt markdown, player entry, Experience text, rolls, movement, and creation time. | `supabase/migrations/0013_prompt_created_characters.sql`, `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx` |
+| Roll `d10` and `d6`, then move by `d10 - d6`. | Automated | The RPC rolls, computes `movement`, stores it, and updates current prompt state. | `supabase/migrations/0013_prompt_created_characters.sql` |
+| Positive movement goes forward, negative goes backward, `0` repeats the prompt. | Automated | The RPC applies signed movement and same-prompt encounter advancement. It also clamps below prompt 1, which is a product interpretation. | `supabase/migrations/0013_prompt_created_characters.sql`, `tests/integration/gameplay-rpc-guards.test.ts` |
+| Prompts have repeated entries based on repeated encounters. | Automated | Encounter index is loaded from `prompt_catalog` and derived from prior prompt runs. | `src/lib/prompts/catalog.ts`, `supabase/migrations/0013_prompt_created_characters.sql` |
+| If a prompt has no remaining entry, move to the next prompt. | Automated | The app scans forward until it finds an available entry. The source does not define direction-sensitive skip behavior, so this is a product interpretation. | `supabase/migrations/0013_prompt_created_characters.sql`, `tests/integration/gameplay-rpc-guards.test.ts` |
 | Prompt entries should be numbered chronologically. | Automated | The archive keeps chronological prompt history without asking the player to number entries manually. | `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx` |
-| Prompt-specific trait gains, losses, and checks happen during resolution. | Partial | The payload format supports mutation of existing traits, but prompt text is plain markdown and the play UI exposes no trait controls. The player must interpret the prompt and cannot fully enact many outcomes in the current UI. | `src/components/ritual/PromptCard.tsx`, `src/types/chronicle.ts`, `src/components/ritual/PlaySurface.tsx` |
-| The player does not have to answer every question in a prompt. | Manual | This remains up to the player in freeform writing. | `src/components/ritual/PlaySurface.tsx` |
+| Prompt-specific trait gains, losses, checks, conversions, and special instructions happen during resolution. | Partial | New trait creation and player-declared Skill/Resource changes are available, but the app still does not parse prompt text into every required trait effect. | `src/components/ritual/PromptCard.tsx`, `src/components/ritual/PlaySurface.tsx`, `src/components/ritual/SkillResourceChangePanel.tsx`, `src/lib/validation/play.ts` |
+| The player does not have to answer every question in a prompt. | Manual | Freeform writing allows this; the app does not inspect whether every sub-question was answered. | `src/components/ritual/PlaySurface.tsx` |
 
 ### 12. Skill and Resource Substitution Rules
 
 | Rule from source text | Status | Assessment | Evidence |
 | --- | --- | --- | --- |
-| If asked to check a Skill and none are available, lose a Resource instead. | Missing | The app does not parse prompt costs or inspect current checked/lost states during prompt resolution. | `src/components/ritual/PromptCard.tsx`, `src/components/ritual/PlaySurface.tsx`, `supabase/migrations/0007_memory_rule_helpers.sql` |
-| If asked to lose a Resource and none are available, check a Skill instead. | Missing | Same issue: there is no prompt-rule engine for substitution. | Same evidence as above |
-| Only Skills and Resources may substitute for each other. | Missing | No substitution enforcement exists. | Same evidence as above |
-| When substitution occurs, narrate the worst possible outcome. | Manual | The player can do this in prose, but the app does not detect or prompt for it. | `src/components/ritual/PlaySurface.tsx` |
-| If no legal Skill/Resource substitution remains, the game ends. | Missing | There is no end-condition handler for impossible prompt costs. Prompt resolution advances play state but never evaluates or transitions to a rules-driven game-over state. | `supabase/migrations/0007_memory_rule_helpers.sql`, `src/components/ritual/PlaySurface.tsx`, `src/components/ritual/PromptCard.tsx` |
-| Losing a Skill with no Skill available ends the game. | Missing | There is no game-over logic for this condition. | `supabase/migrations/0007_memory_rule_helpers.sql`, `src/components/ritual/PlaySurface.tsx`, `src/components/ritual/PromptCard.tsx` |
+| If asked to check a Skill and none are available, lose a Resource instead. | Partial | The play surface lets the player declare that the prompt requires a Skill check; the shared rules helper detects when no unchecked Skill is available, offers Resource loss as the only legal substitution, and the resolve route validates the mutation against current ledger state. The app still does not parse prompt text into this requirement automatically. | `src/components/ritual/SkillResourceChangePanel.tsx`, `src/lib/chronicles/skillResourceRules.ts`, `src/app/api/chronicles/[chronicleId]/play/resolve/route.ts`, `tests/integration/skill-resource-rules.test.ts` |
+| If asked to lose a Resource and none are available, check a Skill instead. | Partial | The same player-declared rules panel substitutes an unchecked Skill when no Resource can be lost, and route validation converts that choice into a Skill check mutation. Prompt parsing remains manual. | `src/components/ritual/SkillResourceChangePanel.tsx`, `src/lib/chronicles/skillResourceRules.ts`, `tests/integration/setup-flow.test.tsx` |
+| Only Skills and Resources may substitute for each other. | Partial | The substitution helper exposes only Skill and Resource targets and rejects illegal action/target combinations before prompt resolution. This is enforced for the new panel, but not for arbitrary prompt instructions the app does not yet understand. | `src/lib/chronicles/skillResourceRules.ts`, `src/app/api/chronicles/[chronicleId]/play/resolve/route.ts` |
+| When substitution occurs, narrate the worst possible outcome. | Partial | Substitution choices require a dedicated worst-outcome narration before submission. The text remains player-authored, as in the source rules. | `src/components/ritual/SkillResourceChangePanel.tsx`, `src/components/ritual/PlaySurface.tsx`, `tests/integration/setup-flow.test.tsx` |
+| If no legal Skill/Resource substitution remains, the game ends. | Partial | When a declared Skill/Resource requirement has no legal primary or substitute target, the play surface exposes a demise narration flow and a completion endpoint marks the chronicle completed. The app still relies on the player to identify that the current prompt requires the exhausted change. | `src/components/ritual/SkillResourceChangePanel.tsx`, `src/app/api/chronicles/[chronicleId]/play/end/route.ts`, `tests/integration/setup-flow.test.tsx` |
+| Losing a Skill with no Skill available ends the game. | Partial | Required Skill loss does not substitute to Resource loss; when no Skill can be lost, the same no-legal-action completion flow is available. | `src/lib/chronicles/skillResourceRules.ts`, `src/components/ritual/PlaySurface.tsx` |
 
 ### 13. End Conditions
 
 | Rule from source text | Status | Assessment | Evidence |
 | --- | --- | --- | --- |
-| The game ends if a prompt explicitly says so. | Missing | Prompt text is unstructured markdown and prompt resolution never interprets prompt content into a chronicle completion transition. | `src/components/ritual/PromptCard.tsx`, `supabase/migrations/0007_memory_rule_helpers.sql` |
-| The game ends if the player cannot legally satisfy a required Skill/Resource change. | Missing | No such rules engine exists today. Prompt resolution updates memories and next-prompt state, but it does not evaluate impossible prompt costs. | `supabase/migrations/0007_memory_rule_helpers.sql`, `src/components/ritual/PlaySurface.tsx` |
-| On a forced game end, the player narrates the vampire's demise using the prompt for inspiration. | Missing | No game-over screen, completion route, or demise flow exists in the current play loop. | `src/components/ritual/PlaySurface.tsx`, `src/app/(app)/chronicles/[chronicleId]/play/page.tsx` |
+| The game ends if a prompt explicitly says so. | Missing | Prompt text includes game-over prompts, but the app does not parse them into chronicle completion. | `supabase/seed.sql`, `src/components/ritual/PromptCard.tsx`, `supabase/migrations/0013_prompt_created_characters.sql` |
+| The game ends if the player cannot legally satisfy a required Skill/Resource change. | Partial | The new player-declared Skill/Resource panel can detect exhaustion and complete the chronicle, but the app does not yet parse prompt text to trigger this automatically. | `src/lib/chronicles/skillResourceRules.ts`, `src/app/api/chronicles/[chronicleId]/play/end/route.ts`, `src/components/ritual/PlaySurface.tsx` |
+| On a forced game end, the player narrates the vampire's demise using the prompt for inspiration. | Partial | The exhausted Skill/Resource flow now requires demise narration before completing the chronicle, but explicit game-ending prompts still have no dedicated prompt-parsed demise flow. | `src/components/ritual/PlaySurface.tsx`, `src/app/api/chronicles/[chronicleId]/play/end/route.ts` |
 
 ### 14. Two Styles of Play
 
 | Rule from source text | Status | Assessment | Evidence |
 | --- | --- | --- | --- |
-| Quick Game: resolve directly in the memory area without a separate journal. | Intentionally Unsupported | The current edition is built around written entries, archive continuity, and rereadable authored history rather than a lighter quick-play mode. | `src/lib/validation/play.ts`, `src/components/ritual/PlaySurface.tsx`, `docs/product-vision.md` |
-| Journaling Game: keep a separate journal entry plus an Experience. | Partial | The current play surface behaves like a hybrid journaling mode by requiring both a larger entry and a distilled Experience. | `src/components/ritual/PlaySurface.tsx`, `supabase/migrations/0007_memory_rule_helpers.sql` |
-| Memories and Experiences take precedence over journal detail. | Partial | Structurally, memories and prompt runs are stored separately, but the rule is not surfaced explicitly in UI. | `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx` |
-| Earlier journal entries may be modified or ignored later. | Intentionally Unsupported | Allowing retroactive editing of past prompt entries appears to run against the product's archive-first direction, where the written chronicle is meant to remain a durable artifact. | `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx`, `docs/product-vision.md` |
-| Memories may not be modified unless a prompt says so. | Partial | The current product effectively keeps memories and prompt history read-only, but it does not model prompt-specific exceptions that would allow controlled memory rewriting. | `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx`, `src/components/archive/MemoryCard.tsx` |
+| Quick Game: resolve directly in the Memory area without a separate journal. | Intentionally Unsupported | The app requires both `playerEntry` and `experienceText`, favoring a journaling/archive experience. | `src/lib/validation/play.ts`, `src/components/ritual/PlaySurface.tsx`, `docs/product-vision.md` |
+| Journaling Game: keep a journal entry plus an Experience. | Automated | The current play surface requires a larger player entry and a distilled Experience. | `src/components/ritual/PlaySurface.tsx`, `src/lib/validation/play.ts`, `supabase/migrations/0013_prompt_created_characters.sql` |
+| Memories and Experiences take precedence over journal detail. | Partial | Memories and prompt entries are structurally separate, but the precedence rule is not surfaced as a rules reminder. | `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx` |
+| Earlier journal entries may be modified or ignored later. | Partial | The player can mentally ignore or reinterpret older entries, but the app does not support retroactive journal editing; that appears aligned with the archive-first product direction. | `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx`, `docs/product-vision.md` |
+| Memories may not be modified unless a prompt says so. | Partial | Memories are effectively read-only in the UI, which covers the prohibition, but prompt-specific rewrite permissions are also unsupported. | `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx`, `src/components/archive/MemoryCard.tsx` |
 
 ### 15. Answering Prompts, Time, and Narrative Guidance
 
 | Rule from source text | Status | Assessment | Evidence |
 | --- | --- | --- | --- |
 | Answer prompts naturally rather than force continuity. | Manual | Entirely player-judged. | `src/components/ritual/PlaySurface.tsx` |
-| Use existing traits and past events when relevant. | Manual | The archive and ledger make this possible, but the app does not validate it. | `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
-| Not every prompt answer needs to matter equally. | Manual | Player judgment only. | No automation |
-| The player may reinterpret earlier journal details gently. | Manual | Possible only mentally; no edit tool. | No automation |
-| The vampire's life should span loose centuries. | Manual | The app stores real timestamps, not fictional dates. | `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx` |
-| Mortals should occasionally die of old age, roughly every 4 or 5 prompts. | Manual | No cadence, reminder, or automation exists. | `src/components/archive/CharacterEditor.tsx` |
+| Use existing traits and past events when relevant. | Manual | Archive and ledger make this possible, but the app does not validate it. | `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx`, `src/app/(app)/chronicles/[chronicleId]/ledger/page.tsx` |
+| Not every prompt answer needs to matter equally. | Manual | Player judgment only. | `src/components/ritual/PlaySurface.tsx` |
+| The player may reinterpret earlier journal details gently. | Manual | Possible as player interpretation, but not supported by editing tools. | `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx` |
+| The vampire's life should span loose centuries. | Manual | The app stores real creation timestamps, not fictional dates or eras. | `src/app/(app)/chronicles/[chronicleId]/archive/page.tsx` |
+| Mortals should occasionally die of old age, roughly every four or five prompts. | Manual | No cadence, reminder, or automation exists. | `src/components/archive/CharacterEditor.tsx` |
 | Historical events and changing society should be worked in when useful. | Manual | The player must do this in prose. | `src/components/ritual/PlaySurface.tsx` |
-| The first 7 or 8 prompts usually cover the early undead years. | Manual | No fictional-time tracker exists. | No automation |
+| The first seven or eight prompts usually cover the early undead years. | Manual | No fictional-time tracker exists. | `src/components/ritual/PlaySurface.tsx` |
+| The player should allow discomfort, predation, moral ugliness, loose ends, and unresolved events. | Manual | The app's tone supports this, but it is not enforceable. | `src/components/ritual/SafetyCheckpointPanel.tsx`, `src/components/ritual/PlaySurface.tsx` |
 
 ## Biggest Rule Gaps
 
@@ -249,10 +268,11 @@ These are the highest-value mismatches between the source rules and the current 
 
 | Gap | Why it matters now |
 | --- | --- |
-| Guided setup does not produce the book's required starting state | A player who only uses the first-party setup flow begins with a simpler chronicle than the rules describe. |
-| No skill/resource substitution engine | The game-ending pressure around dwindling traits is one of the book's core mechanics, and it is currently absent. |
-| Diary loss and cascading memory loss are still missing | Diary capacity pressure now exists, but losing the diary and the memories preserved in it is still absent from the rules loop. |
-| No end-game flow | The app has statuses for `completed`, but no prompt-driven or rules-driven completion path in play. |
+| Guided setup does not produce the book's required starting state | A player who only follows the first-party setup flow starts with a simpler chronicle than the source rules describe. |
+| Prompt instructions are not parsed or enforced | Most checks, losses, conversions, restorations, swaps, deaths, and special cases remain manual or impossible to record faithfully. |
+| Skill/Resource substitution is player-declared rather than prompt-parsed | The core substitution pressure now exists, but the player still tells the app which Skill/Resource rule the current prompt requires. |
+| Diary is not a normal Resource and cannot be lost | The app covers Diary capacity but not the full Diary risk loop. |
+| End-game flow is narrow | Exhausted Skill/Resource changes can complete a chronicle, but explicit game-ending prompts and broader demise flows are still unsupported. |
 
 ## Areas That Are Already Quite Faithful
 
@@ -260,15 +280,15 @@ The current build is closest to the source text in these places:
 
 | Area | What is already faithful |
 | --- | --- |
-| Prompt navigation | Prompt number, encounter index, repeat encounters, and movement all exist as durable state rather than ad hoc client logic. |
-| Memory stack | Three-entry memory limit, five in-mind memory limit, forgetting, and diary overflow are backed by transactional database logic. |
-| Archive readability | Forgotten memories remain readable, prompt history is preserved, and immediate consequences are surfaced as archive events. |
-| Durable state | The system consistently treats the chronicle as something preserved over time rather than a transient text box. |
+| Prompt navigation | Prompt number, encounter index, repeated encounters, and dice movement are durable state, not client-only guesswork. |
+| Memory stack | Three-Experience Memory limit, five in-mind Memory slots, forgetting, Diary movement, and Diary capacity are backed by transactional database logic. |
+| Archive readability | Forgotten Memories remain readable, prompt history is preserved, and the ledger keeps visible state for traits. |
+| Written journaling flow | The app's `playerEntry` plus `experienceText` split maps well to the book's journaling-game style. |
 
 ## Final Assessment
 
 If the question is "can a player use the app today to play a recognizable slice of *Thousand Year Old Vampire*?", the answer is yes.
 
-If the question is "are all of the rules from the source text currently covered either by code or by the normal player flow inside the app?", the answer is no.
+If the question is "are all rules from the supplied source text covered either by app code or by normal manual player action inside the app?", the answer is no.
 
-The app currently covers the **memory-and-movement backbone** of the game much more completely than it covers the **full trait economy, book-faithful setup, substitution pressure, and end-state rules**. A few other source-text options, like aloud play and quick-game mode, now look less like missing work and more like conscious non-goals for a writing-first digital edition. In other words: it already has a strong ritual shell and archive engine, but it is not yet a full rules-complete digital edition of the source text.
+The app covers the **memory-and-movement backbone** much more completely than it covers the **full trait economy, book-faithful setup, prompt-instruction parsing, Diary-as-Resource handling, prompt-specific exceptions, and broad end-state rules**. It is a strong ritual shell and archive engine with a real Skill/Resource substitution loop, but not yet a full rules-complete digital edition.
