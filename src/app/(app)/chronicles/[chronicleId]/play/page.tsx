@@ -7,7 +7,6 @@ import { PageShell } from "@/components/ui/PageShell";
 import { QuietAlert } from "@/components/ui/QuietAlert";
 import { SurfacePanel } from "@/components/ui/SurfacePanel";
 import { getPromptByPosition } from "@/lib/prompts/catalog";
-import { getPromptEffectByPosition } from "@/lib/prompts/effects";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { ActiveDiarySummary } from "@/types/chronicle";
 
@@ -286,11 +285,6 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
     (memory) => memory.location === "mind",
   );
   const memoriesInMind = mindMemories.length;
-  const promptEffect = getPromptEffectByPosition(
-    chronicle.current_prompt_number,
-    chronicle.current_prompt_encounter,
-    chronicle.prompt_version,
-  );
   const activeDiary: ActiveDiarySummary | null = diaryResult.data
     ? {
         id: diaryResult.data.id,
@@ -352,7 +346,6 @@ export default async function ChroniclePlayPage({ params }: PlayPageProps) {
             slotIndex: memory.slot_index,
             title: memory.title,
           }))}
-          promptEffect={promptEffect}
           resources={(resourcesResult.data ?? []).map((resource) => ({
             description: resource.description,
             id: resource.id,

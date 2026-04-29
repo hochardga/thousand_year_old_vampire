@@ -1502,32 +1502,62 @@ describe("guided setup flow", () => {
     fetchMock.mockRestore();
   });
 
-  it("surfaces known prompt skill effects and prefills Prompt 1's required skill", async () => {
+  it("keeps the prompt-created skill composer optional even if legacy prompt metadata is passed", async () => {
     const { PlaySurface } = await import("@/components/ritual/PlaySurface");
-    const fetchMock = vi.spyOn(globalThis, "fetch");
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            archiveEvents: [
+              {
+                eventType: "prompt_resolved",
+                summary: "The entry has been set into memory.",
+              },
+            ],
+            nextPrompt: {
+              encounterIndex: 1,
+              promptNumber: 4,
+            },
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            status: 200,
+          },
+        ),
+      );
+    const legacyPromptEffectProps = {
+      promptEffect: {
+        guidance:
+          "This prompt requires a new skill: Bloodthirsty. Add it before setting the entry into memory.",
+        skill: {
+          label: "Bloodthirsty",
+        },
+      },
+    } as unknown as Partial<Parameters<typeof PlaySurface>[0]>;
 
     render(
       <PlaySurface
         chronicleId="chronicle-1"
         currentPromptNumber={1}
         initialSessionId="session-1"
-        promptEffect={{
-          guidance:
-            "This prompt requires a new skill: Bloodthirsty. Add it before setting the entry into memory.",
-          skill: {
-            label: "Bloodthirsty",
-          },
-        }}
+        {...legacyPromptEffectProps}
       />,
     );
 
     expect(
-      screen.getByText(
+      screen.queryByText(
         "This prompt requires a new skill: Bloodthirsty. Add it before setting the entry into memory.",
       ),
-    ).toBeInTheDocument();
-
-    expect(screen.getByLabelText("Skill name")).toHaveValue("Bloodthirsty");
+    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Skill name")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Add a skill from this prompt",
+      }),
+    ).toBeEnabled();
 
     fireEvent.change(screen.getByLabelText("Player entry"), {
       target: {
@@ -1547,15 +1577,21 @@ describe("guided setup flow", () => {
       }),
     );
 
-    expect(
-      screen.getByText("Name the skill and explain why this prompt gave it shape."),
-    ).toBeInTheDocument();
-    expect(fetchMock).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const payload = JSON.parse(String(request.body)) as {
+      newSkill?: unknown;
+    };
+
+    expect(payload.newSkill).toBeUndefined();
 
     fetchMock.mockRestore();
   });
 
-  it("keeps required prompt skill fields open when a stale draft disabled skill creation", async () => {
+  it("uses saved drafts, not prompt metadata, to decide whether the skill composer starts open", async () => {
     window.localStorage.setItem(
       "tyov.prompt.chronicle-1",
       JSON.stringify({
@@ -1571,52 +1607,89 @@ describe("guided setup flow", () => {
       }),
     );
     const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+    const legacyPromptEffectProps = {
+      promptEffect: {
+        guidance:
+          "This prompt requires a new skill: Bloodthirsty. Add it before setting the entry into memory.",
+        skill: {
+          label: "Bloodthirsty",
+        },
+      },
+    } as unknown as Partial<Parameters<typeof PlaySurface>[0]>;
 
     render(
       <PlaySurface
         chronicleId="chronicle-1"
         currentPromptNumber={1}
         initialSessionId="session-1"
-        promptEffect={{
-          guidance:
-            "This prompt requires a new skill: Bloodthirsty. Add it before setting the entry into memory.",
-          skill: {
-            label: "Bloodthirsty",
-          },
-        }}
+        {...legacyPromptEffectProps}
       />,
     );
 
-    expect(screen.getByLabelText("Skill name")).toHaveValue("Bloodthirsty");
-    expect(screen.getByRole("button", { name: "Required by this prompt" })).toBeDisabled();
+    expect(screen.queryByLabelText("Skill name")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Add a skill from this prompt",
+      }),
+    ).toBeEnabled();
   });
 
-  it("surfaces known prompt resource effects and preselects stationary resources", async () => {
+  it("keeps the prompt-created resource composer optional even if legacy prompt metadata is passed", async () => {
     const { PlaySurface } = await import("@/components/ritual/PlaySurface");
-    const fetchMock = vi.spyOn(globalThis, "fetch");
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            archiveEvents: [
+              {
+                eventType: "prompt_resolved",
+                summary: "The entry has been set into memory.",
+              },
+            ],
+            nextPrompt: {
+              encounterIndex: 1,
+              promptNumber: 7,
+            },
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            status: 200,
+          },
+        ),
+      );
+    const legacyPromptEffectProps = {
+      promptEffect: {
+        guidance:
+          "This prompt requires a new stationary resource. Add the place that now shelters the chronicle.",
+        resource: {
+          isStationary: true,
+        },
+      },
+    } as unknown as Partial<Parameters<typeof PlaySurface>[0]>;
 
     render(
       <PlaySurface
         chronicleId="chronicle-1"
         currentPromptNumber={4}
         initialSessionId="session-1"
-        promptEffect={{
-          guidance:
-            "This prompt requires a new stationary resource. Add the place that now shelters the chronicle.",
-          resource: {
-            isStationary: true,
-          },
-        }}
+        {...legacyPromptEffectProps}
       />,
     );
 
     expect(
-      screen.getByText(
+      screen.queryByText(
         "This prompt requires a new stationary resource. Add the place that now shelters the chronicle.",
       ),
-    ).toBeInTheDocument();
-
-    expect(screen.getByLabelText("Stationary")).toBeChecked();
+    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Resource name")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Add a resource from this prompt",
+      }),
+    ).toBeEnabled();
 
     fireEvent.change(screen.getByLabelText("Player entry"), {
       target: {
@@ -1635,17 +1708,21 @@ describe("guided setup flow", () => {
       }),
     );
 
-    expect(
-      screen.getByText(
-        "Name the resource and explain why this prompt made it matter.",
-      ),
-    ).toBeInTheDocument();
-    expect(fetchMock).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const payload = JSON.parse(String(request.body)) as {
+      newResource?: unknown;
+    };
+
+    expect(payload.newResource).toBeUndefined();
 
     fetchMock.mockRestore();
   });
 
-  it("keeps required prompt resource fields open when a stale draft disabled resource creation", async () => {
+  it("uses saved drafts, not prompt metadata, to decide whether the resource composer starts open", async () => {
     window.localStorage.setItem(
       "tyov.prompt.chronicle-1",
       JSON.stringify({
@@ -1661,24 +1738,31 @@ describe("guided setup flow", () => {
       }),
     );
     const { PlaySurface } = await import("@/components/ritual/PlaySurface");
+    const legacyPromptEffectProps = {
+      promptEffect: {
+        guidance:
+          "This prompt requires a new stationary resource. Add the place that now shelters the chronicle.",
+        resource: {
+          isStationary: true,
+        },
+      },
+    } as unknown as Partial<Parameters<typeof PlaySurface>[0]>;
 
     render(
       <PlaySurface
         chronicleId="chronicle-1"
         currentPromptNumber={4}
         initialSessionId="session-1"
-        promptEffect={{
-          guidance:
-            "This prompt requires a new stationary resource. Add the place that now shelters the chronicle.",
-          resource: {
-            isStationary: true,
-          },
-        }}
+        {...legacyPromptEffectProps}
       />,
     );
 
-    expect(screen.getByLabelText("Stationary")).toBeChecked();
-    expect(screen.getByRole("button", { name: "Required by this prompt" })).toBeDisabled();
+    expect(screen.queryByLabelText("Resource name")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Add a resource from this prompt",
+      }),
+    ).toBeEnabled();
   });
 
   it("reveals prompt-created skill fields on demand and sends newSkill in the request body", async () => {
@@ -3083,12 +3167,18 @@ describe("guided setup flow", () => {
     expect(resourcesOrder).toHaveBeenCalledTimes(1);
     expect(marksOrder).toHaveBeenCalledTimes(1);
     expect(charactersOrder).toHaveBeenCalledTimes(1);
+    const legacyRequiredButtonLabel = ["Required", "by this prompt"].join(" ");
+    expect(
+      screen.queryByRole("button", {
+        name: legacyRequiredButtonLabel,
+      }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Skill name")).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: "Required by this prompt",
+        name: "Add a skill from this prompt",
       }),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Skill name")).toHaveValue("Bloodthirsty");
     expect(
       screen.getByRole("button", {
         name: "Add a resource from this prompt",

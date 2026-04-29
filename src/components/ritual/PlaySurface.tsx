@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ActiveDiarySummary } from "@/types/chronicle";
 import { trackAnalyticsEvent } from "@/lib/analytics/posthog";
-import type { PromptEffectGuidance } from "@/lib/prompts/effects";
 import { ConsequencePanel } from "@/components/ritual/ConsequencePanel";
 import { MemoryDecisionPanel } from "@/components/ritual/MemoryDecisionPanel";
 import { MemoryPlacementPanel } from "@/components/ritual/MemoryPlacementPanel";
@@ -61,7 +60,6 @@ type PlaySurfaceProps = {
     slotIndex: number | null;
     title: string;
   }>;
-  promptEffect?: PromptEffectGuidance | null;
   resources?: SkillResourceResource[];
   skills?: SkillResourceSkill[];
 };
@@ -78,21 +76,17 @@ export function PlaySurface({
   existingSkillLabels = [],
   initialSessionId,
   mindMemories = [],
-  promptEffect = null,
   resources = [],
   skills = [],
 }: PlaySurfaceProps) {
   const hasTrackedFirstPromptResolved = useRef(false);
   const initialDraft = loadPromptDraft(chronicleId);
-  const requiresPromptResource = Boolean(promptEffect?.resource);
-  const requiresPromptSkill = Boolean(promptEffect?.skill);
   const [playerEntry, setPlayerEntry] = useState(() => initialDraft?.playerEntry ?? "");
   const [experienceText, setExperienceText] = useState(
     () => initialDraft?.experienceText ?? "",
   );
   const [isAddingResource, setIsAddingResource] = useState(
-    () =>
-      requiresPromptResource ? true : (initialDraft?.shouldCreateResource ?? false),
+    () => initialDraft?.shouldCreateResource ?? false,
   );
   const [newResourceLabel, setNewResourceLabel] = useState(
     () => initialDraft?.newResourceLabel ?? "",
@@ -101,10 +95,7 @@ export function PlaySurface({
     () => initialDraft?.newResourceDescription ?? "",
   );
   const [newResourceIsStationary, setNewResourceIsStationary] = useState(
-    () =>
-      requiresPromptResource
-        ? (promptEffect?.resource?.isStationary ?? false)
-        : (initialDraft?.newResourceIsStationary ?? false),
+    () => initialDraft?.newResourceIsStationary ?? false,
   );
   const [isAddingCharacter, setIsAddingCharacter] = useState(
     () => initialDraft?.shouldCreateCharacter ?? false,
@@ -131,13 +122,10 @@ export function PlaySurface({
     () => initialDraft?.newMarkIsConcealed ?? false,
   );
   const [isAddingSkill, setIsAddingSkill] = useState(
-    () => (requiresPromptSkill ? true : (initialDraft?.shouldCreateSkill ?? false)),
+    () => initialDraft?.shouldCreateSkill ?? false,
   );
   const [newSkillLabel, setNewSkillLabel] = useState(
-    () =>
-      requiresPromptSkill
-        ? (initialDraft?.newSkillLabel?.trim() || promptEffect?.skill?.label || "")
-        : (initialDraft?.newSkillLabel ?? ""),
+    () => initialDraft?.newSkillLabel ?? "",
   );
   const [newSkillDescription, setNewSkillDescription] = useState(
     () => initialDraft?.newSkillDescription ?? "",
@@ -634,10 +622,6 @@ export function PlaySurface({
   const hasResolvedPrompt = Boolean(activeResult);
 
   function handleSkillComposerToggle() {
-    if (requiresPromptSkill) {
-      return;
-    }
-
     if (isAddingSkill) {
       syncPromptDraft({
         newSkillDescription: "",
@@ -654,20 +638,9 @@ export function PlaySurface({
 
     setIsAddingSkill(true);
     setSkillErrorMessage(null);
-    if (promptEffect?.skill?.label && !newSkillLabel.trim()) {
-      setNewSkillLabel(promptEffect.skill.label);
-      syncPromptDraft({
-        newSkillLabel: promptEffect.skill.label,
-        shouldCreateSkill: true,
-      });
-    }
   }
 
   function handleResourceComposerToggle() {
-    if (requiresPromptResource) {
-      return;
-    }
-
     if (isAddingResource) {
       syncPromptDraft({
         newResourceDescription: "",
@@ -686,13 +659,6 @@ export function PlaySurface({
 
     setIsAddingResource(true);
     setResourceErrorMessage(null);
-    if (promptEffect?.resource?.isStationary && !newResourceIsStationary) {
-      setNewResourceIsStationary(true);
-      syncPromptDraft({
-        newResourceIsStationary: true,
-        shouldCreateResource: true,
-      });
-    }
   }
 
   function handleCharacterComposerToggle() {
@@ -864,17 +830,6 @@ export function PlaySurface({
         </SurfacePanel>
       ) : null}
 
-      {!hasResolvedPrompt && promptEffect?.guidance ? (
-        <SurfacePanel className="border-gold/20 bg-gold/8 px-5 py-4">
-          <p className="font-mono text-xs uppercase tracking-[0.22em] text-ink-muted">
-            Prompt requirement
-          </p>
-          <p className="mt-2 text-sm leading-relaxed text-ink">
-            {promptEffect.guidance}
-          </p>
-        </SurfacePanel>
-      ) : null}
-
       {!hasResolvedPrompt ? (
         <SurfacePanel className="space-y-5 px-6 py-6 sm:px-8">
           <div>
@@ -962,7 +917,6 @@ export function PlaySurface({
             description={newSkillDescription}
             errorMessage={skillErrorMessage}
             isOpen={isAddingSkill}
-            isRequired={requiresPromptSkill}
             label={newSkillLabel}
             onDescriptionChange={setNewSkillDescription}
             onLabelChange={setNewSkillLabel}
@@ -972,7 +926,6 @@ export function PlaySurface({
             description={newResourceDescription}
             errorMessage={resourceErrorMessage}
             isOpen={isAddingResource}
-            isRequired={requiresPromptResource}
             isStationary={newResourceIsStationary}
             label={newResourceLabel}
             onDescriptionChange={setNewResourceDescription}
